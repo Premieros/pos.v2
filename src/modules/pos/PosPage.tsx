@@ -3,6 +3,7 @@ import { useBranch } from '../branches/useBranch'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
+import { ReceiptControls } from '../receipts/ReceiptControls'
 import { SplitBillControls } from '../splits/SplitBillControls'
 import { TableOrderControls } from './TableOrderControls'
 import {
@@ -66,6 +67,8 @@ export function PosPage() {
   const canDiscount = can('pos.discount.apply')
   const canSplit = can('pos.order.split')
   const canTransfer = can('pos.order.transfer')
+  const canPrintReceipt = can('pos.receipt.print')
+  const canReprintReceipt = can('pos.receipt.reprint')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
@@ -342,6 +345,8 @@ export function PosPage() {
                 canTransfer={canTransfer}
                 onChanged={refreshOrderState}
               />
+
+              <ReceiptControls order={selectedOrder} canPrint={canPrintReceipt} canReprint={canReprintReceipt} />
 
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
                 <div className="payment-card">
