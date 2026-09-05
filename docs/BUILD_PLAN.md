@@ -197,17 +197,26 @@ Verification:
 
 # Current phase — POS Operational Completion 🚧
 
-## 1. Discounts ⏳
+## 1. Discounts ✅
 
-Required:
-- `pos.discount.apply` command.
+Completed:
+- `pos.discount.apply` server-authoritative command.
 - Fixed and percentage discount.
-- Reason/audit fields.
-- Server recalculation of totals.
-- Optional approval threshold contract.
-- No client-authoritative discount total.
+- Reason required.
+- Audit table for apply/clear events.
+- Discount metadata stored on order; `discount_total` remains derived.
+- Order totals recalculate server-side after item quantity changes.
+- Discount cannot exceed subtotal; percentage cannot exceed 100%.
+- Discount cannot be changed after payment starts.
+- Discount clear command requires an audit reason.
+- POS UI shows subtotal / discount / final total and permission-gated controls.
 
-## 2. Cancel / Void ⏳
+Verification:
+- Verify push run #97: Typecheck / Build / GitHub Pages Deploy ✅
+- Security Advisor: no discount-specific security regression.
+- Performance Advisor: no missing FK/index warning; only expected unused-index INFO on the new database.
+
+## 2. Cancel / Void 🚧
 
 Required:
 - Keep pre-kitchen cancel separate from post-kitchen void.
