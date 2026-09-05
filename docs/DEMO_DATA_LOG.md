@@ -64,8 +64,53 @@ Journal verification:
 
 Inventory verification confirms positive demo balances after receipt, waste, and count adjustment movements.
 
+## Authenticated application-path verification
+The demo data was not validated only through the maintenance/Postgres role. The real application user was impersonated under PostgreSQL role `authenticated` with its JWT subject to exercise RLS and the public RPC surface.
+
+Read-only smoke verification passed for:
+- DEMO branch visibility and effective permissions.
+- unified report filter options with the 7 demo products, employee, Cash/Card and all five order types.
+- Sales & Operations report RPC.
+- Procurement/Inventory report RPC.
+- Purchase Cost History report RPC.
+- Trial Balance and Balance Sheet RPCs.
+- statement-account reference RPC.
+- Administration snapshot.
+- Customer Display projection.
+- Guided Initial Setup state.
+
+A mutation smoke test also passed under `authenticated`, entirely inside a transaction that was deliberately rolled back so it did not add temporary smoke rows. It exercised:
+- supplier creation;
+- POS order creation, line addition, hold and resume;
+- purchase-order creation and line addition;
+- waste document and waste line creation;
+- stock-count session and counted-line update;
+- journal creation and balanced journal-line creation.
+
+## Regression found and fixed during full demo testing
+The authenticated smoke test exposed a real contract regression: several public `SECURITY INVOKER` wrappers called `app_private.*_internal` functions whose `EXECUTE` privilege had been revoked from `authenticated`, causing otherwise-authorized application calls such as report filters to fail.
+
+Fixed with forward-only migration:
+- `20260905212439_fix_invoker_wrapper_private_execute_contract.sql`
+
+The migration grants `authenticated` execution only to `app_private` function signatures that are actually referenced by public invoker wrappers. The public API remains the public wrapper surface, and the internal functions retain their branch and permission assertions. The post-fix authenticated read and mutation smoke tests passed.
+
+Post-fix CI on implementation commit `14269e5ed2ad110850069761d51e729cd3686bc4`:
+- CI #263 ✅
+- Release Guard #24 ✅
+- Verify #584 ✅
+- Typecheck ✅
+- Build ✅
+
+Post-DDL Advisors:
+- Security Advisor: only the known external Supabase Auth warning `Leaked Password Protection Disabled`.
+- Performance Advisor: `unused_index` INFO only; no material finding.
+
 ## Design checkpoint
 The final UI polish was updated in `src/styles/final-ui.css` to tighten the production visual system: stronger glass hierarchy, sticky desktop workspace header, clearer tables and totals, improved product cards/POS selection states, focus/touch states, and responsive preservation without moving authorization or business logic into layout code.
+
+Design polish implementation commit:
+- `71cd6d08f3c27f445482decfd42c30e72e187545`
 
 ## Safety / scope
 - No `main` merge was performed.
