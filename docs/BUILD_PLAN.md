@@ -51,7 +51,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Server totals; draft-only line edits.
 - Permissions: `procurement.purchases.view/create/edit/receive`.
 - SELECT-only authenticated table grants; RPC-only mutations.
-- Purchase reference reads do not grant supplier-management or inventory-mutation rights.
+- Reference reads do not grant management/mutation rights.
 - Duplicate permissive reference policies were merged after Advisor review.
 - Migrations:
   - `20260905165954_purchase_documents_and_lines`
@@ -60,31 +60,39 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Verify #219 ✅.
 
 ### 6.3 Purchase Receive → Warehouse Inventory ✅
-- Real active warehouse from the same branch is mandatory.
-- `procurement.purchases.receive` is independent from manual `inventory.receive`.
-- Partial receipts supported; cumulative quantity cannot exceed ordered quantity.
-- Accepted quantities write the existing `stock_movements` ledger in the same transaction.
-- `received_quantity` and purchase status update atomically.
-- Full receipt → `received`; partial receipt → `partially_received`.
-- Receipt history: `purchase_receipts` + `purchase_receipt_lines` with exact stock-movement lineage.
-- Receipt tables are SELECT-only to authenticated; mutations are RPC-only.
-- Private receive function is not executable by authenticated; public wrapper is.
-- Warehouse read visibility extended only for purchase receivers.
-- Composite branch FK enforces receipt-line → purchase-line lineage.
+- Real active same-branch warehouse mandatory.
+- `procurement.purchases.receive` independent from manual `inventory.receive`.
+- Partial receipts supported and cumulative quantity protected.
+- Accepted quantities write the existing `stock_movements` ledger atomically.
+- Receipt history preserves exact stock-movement lineage.
+- Receipt tables SELECT-only; mutation RPC-only.
+- Composite branch FKs enforce receipt lineage.
 - Migrations:
   - `20260905173029_purchase_atomic_receiving`
   - `20260905173238_purchase_receipt_lineage_and_indexes`
   - `20260905173541_purchase_receipt_order_line_covering_index`
+- Verify #233 ✅.
+
+### 6.4 Purchase Workflow + Cost History ✅
+- New independent permissions: `procurement.purchases.submit` / `procurement.purchases.cancel`.
+- Draft must contain at least one line before Submit.
+- Cancel is limited to draft/submitted, requires a reason, and is blocked once receipt history exists.
+- Receiving now requires submitted/partially_received state.
+- Every explicit/derived status transition is audited in `purchase_order_status_events`.
+- Status event table is SELECT-only to authenticated; private workflow RPCs are non-executable by authenticated clients.
+- Cost history view `inventory_item_purchase_cost_history` is `security_invoker=true` and derives only from accepted receipt lines.
+- Historical accepted receipt cost is not rewritten by later purchase state changes.
+- Migration: `20260905173904_purchase_workflow_and_cost_history`.
 - Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no missing-FK warning; fresh-DB unused-index INFO only.
-- Verify #233 ✅ — regression / Typecheck / Build / Pages Deploy.
+- Performance Advisor: no phase-specific structural warning; fresh-DB unused-index INFO only.
+- Verify #245 ✅ — Batch 5 regression / Typecheck / Build / Pages Deploy.
 
-### 6.4 Purchase Workflow + Cost History 🚧 NEXT
-- Explicit submit/cancel lifecycle commands.
-- Accepted receipt-derived cost history.
-- Historical receipt cost must never be rewritten by later purchase edits.
+### 6.5 Formal Waste Documents 🚧 NEXT
+- Real branch warehouse + inventory item references.
+- Formal header/lines/audit instead of standalone movement UI.
+- Accepted waste must write existing stock ledger atomically and never directly edit balances.
+- `inventory.waste` remains independent.
 
-### 6.5 Formal Waste Documents ⏳
 ### 6.6 Stock Count Sessions + Variance ⏳
 ### 6.7 Approval Center ⏳
 ### 6.8 Batch 6 Regression + Advisors + Verify ⏳
@@ -93,11 +101,9 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD before this log update: `a0a52d24f36f2fdfae76f6ae67e0110655fce6ad`.
-- Batch 6.1 ✅
-- Batch 6.2 ✅
-- Batch 6.3 ✅
-- Immediate target: **6.4 Purchase Workflow + Cost History**.
+- Verified implementation HEAD before this log update: `544e1157d12f487d9558a22e83f7cc94f324a4d9`.
+- Batch 6.1–6.4 ✅
+- Immediate target: **6.5 Formal Waste Documents**.
 - `main` untouched.
 
 ## Hardening backlog
