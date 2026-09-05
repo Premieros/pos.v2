@@ -21,8 +21,12 @@ A domain operation must never depend on component location, screen layout, role 
 ## 4. Contract First
 Define database/RPC/domain contracts before UI integration. Sensitive financial and inventory calculations are server authoritative.
 
-## 5. Permission First
-Authorization requires both effective permission and branch access. Role names are labels/templates, not authority. Super Admin is the only implicit platform bypass.
+## 5. Permission First — mandatory
+Authorization requires both branch access and an effective permission. No feature, route, button, RPC, policy or business action may be authorized by a role name.
+
+Roles are optional permission templates only. A user may receive permissions directly without any role. Explicit per-user `revoke` overrides direct grants and role-template grants.
+
+There is no role-based implicit bypass. Elevated users receive their authority through actual permission records and pass the same authorization resolver as every other user.
 
 ## 6. RLS is mandatory
 Every table exposed through the Data API must have RLS enabled and narrowly scoped policies. Never weaken RLS to make a test pass.
