@@ -30,7 +30,7 @@ export function App() {
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
-  const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.receive')
+  const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
