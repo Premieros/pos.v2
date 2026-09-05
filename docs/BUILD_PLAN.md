@@ -216,16 +216,26 @@ Verification:
 - Security Advisor: no discount-specific security regression.
 - Performance Advisor: no missing FK/index warning; only expected unused-index INFO on the new database.
 
-## 2. Cancel / Void 🚧
+## 2. Cancel / Void ✅
 
-Required:
-- Keep pre-kitchen cancel separate from post-kitchen void.
-- Add granular void permission.
-- Correct inventory reversal for already-sent quantities.
-- Correct payment treatment if money already exists.
-- Reason + actor + timestamp audit.
+Completed:
+- Pre-kitchen `Cancel` remains limited to `created` / `held` orders and uses `pos.order.cancel`.
+- Post-kitchen `Void` uses separate `pos.order.void` permission.
+- Void is limited to unpaid `sent_to_kitchen` / `preparing` / `ready` orders.
+- Any existing completed payment blocks Void and requires the Return/Refund path instead.
+- Void has reason, actor, timestamp and idempotency audit through `order_voids`.
+- Inventory reversal is based on the exact Kitchen-linked stock movements already written for the order, including prior positive/negative kitchen deltas.
+- Reversal cannot create negative inventory when reversing a prior kitchen return.
+- Kitchen tickets are cancelled and the order becomes `voided` atomically.
+- POS UI exposes Cancel and Void as separate actions and only when their states/permissions allow them.
 
-## 3. Return / Refund ⏳
+Verification:
+- Verify push run #107: Install / Typecheck / Build / GitHub Pages Deploy ✅
+- Security Advisor: no Void-specific security regression.
+- Missing `order_voids(order_id, branch_id)` FK covering index fixed forward-only.
+- Remaining performance notices are unused-index INFO expected on a new database.
+
+## 3. Return / Refund 🚧
 
 Required:
 - Separate return permission.
