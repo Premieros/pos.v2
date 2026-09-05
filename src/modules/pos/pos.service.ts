@@ -194,6 +194,16 @@ export async function cancelPosOrder(orderId: string, reason: string): Promise<v
   if (error) throw error
 }
 
+export async function voidPosOrder(orderId: string, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc('void_pos_order', {
+    p_order_id: orderId,
+    p_reason: reason.trim(),
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
+}
+
 export async function sendOrderToKitchen(orderId: string, warehouseId: string): Promise<string> {
   const { data, error } = await supabase.rpc('send_order_to_kitchen', {
     p_order_id: orderId,
