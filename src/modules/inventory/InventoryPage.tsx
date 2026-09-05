@@ -63,6 +63,7 @@ export function InventoryPage() {
   }, [balances])
 
   if (!currentBranchId || !canView) return null
+  const branchId = currentBranchId
 
   async function runAction(action: () => Promise<void>) {
     setError(null)
@@ -78,7 +79,7 @@ export function InventoryPage() {
     const data = new FormData(form)
     await runAction(async () => {
       await createWarehouse({
-        branchId: currentBranchId,
+        branchId,
         code: String(data.get('code') ?? ''),
         nameAr: String(data.get('nameAr') ?? ''),
       })
@@ -90,7 +91,7 @@ export function InventoryPage() {
     const data = new FormData(form)
     await runAction(async () => {
       await createInventoryItem({
-        branchId: currentBranchId,
+        branchId,
         code: String(data.get('code') ?? ''),
         nameAr: String(data.get('nameAr') ?? ''),
         baseUnit: String(data.get('baseUnit') ?? ''),
@@ -106,7 +107,7 @@ export function InventoryPage() {
     const quantityDelta = mode === 'waste' ? -Math.abs(rawQuantity) : rawQuantity
     await runAction(async () => {
       await recordStockMovement({
-        branchId: currentBranchId,
+        branchId,
         warehouseId: String(data.get('warehouseId') ?? ''),
         inventoryItemId: String(data.get('inventoryItemId') ?? ''),
         movementType: mode,
@@ -122,7 +123,7 @@ export function InventoryPage() {
     const data = new FormData(form)
     await runAction(async () => {
       await transferStock({
-        branchId: currentBranchId,
+        branchId,
         fromWarehouseId: String(data.get('fromWarehouseId') ?? ''),
         toWarehouseId: String(data.get('toWarehouseId') ?? ''),
         inventoryItemId: String(data.get('inventoryItemId') ?? ''),
