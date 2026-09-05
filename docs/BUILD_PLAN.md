@@ -39,31 +39,36 @@ Preview: `https://premieros.github.io/pos.v2/`
 - 6.7 Approval Center ✅ — Verify #283
 - 6.8 Final Batch 6 Regression / Advisors / Audit ✅ — Verify #293
 
-Batch 6 closing evidence:
-- Required procurement/inventory/approval permissions: 13/13 present.
-- RLS enabled on suppliers, purchase headers/lines/receipts, waste docs/lines, stock-count sessions/lines and approval requests.
-- Authenticated grants on those sensitive tables are SELECT-only; writes remain RPC-only.
-- Approval center uses `approvals.view`, `approvals.review`, and explicit `approvals.self_review`.
-- Self-approval is denied by default.
-- Approved count variance writes idempotent `count_adjustment` movements atomically; rejected requests do not touch stock.
-- Waste and count flows use the existing stock ledger; balances are never directly edited.
-- Applied Waste RLS migration is represented exactly as `20260905175537_waste_rls_initplan_hardening` in repository and database.
-- Batch 6 repository regression guard is mandatory in Verify after Batch 5 regression.
-- Security Advisor: only the existing Auth leaked-password-protection warning remains.
-- Performance Advisor: no structural WARN; fresh-DB `unused_index` INFO only.
-- Verify #293 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / GitHub Pages Deploy.
-- Verified implementation HEAD before this log update: `bbf880fba0d460d3722a00fbc6c87c34db85277f`.
-
 ## Batch 7 — Accounting & Treasury 🚧 CURRENT
-Planned order:
-- 7.1 Chart of Accounts foundation.
-- 7.2 Journal entries + balanced journal lines.
-- 7.3 Expenses and source-linked posting.
-- 7.4 Cash/Bank treasury accounts and movements.
-- 7.5 Automatic source links from operational modules where contractually valid.
-- 7.6 Idempotent posting / reversal rules.
-- 7.7 Accounting statements contracts: Trial Balance, Ledger, Income Statement, Balance Sheet, AR/AP aging foundations.
-- 7.8 Batch 7 regression + Advisors + Verify.
+
+### 7.1 Chart of Accounts ✅
+- Branch-scoped `accounts` hierarchy with unique branch account codes.
+- Types: asset / liability / equity / revenue / expense.
+- Normal balance is server-derived from account type.
+- Parent and child must remain in the same branch and account type.
+- Postable accounts cannot be used as parents; hierarchy cycles are rejected.
+- Permissions: `accounting.coa.view` / `accounting.coa.manage`.
+- Authenticated table access is SELECT-only; mutations are RPC-only.
+- Private create/update RPCs are not executable by authenticated clients.
+- Migration: `20260905183814_chart_of_accounts_foundation`.
+- Security Advisor: only existing leaked-password Auth warning.
+- Performance Advisor: no accounting-specific WARN; fresh-DB unused-index INFO only.
+- Verify #305 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+
+### 7.2 Journal Entries + Balanced Lines 🚧 NEXT
+- Branch-scoped draft/posted journal entries.
+- Draft lines reference active postable accounts in the same branch.
+- Debit/credit values are server-validated.
+- Posting is blocked unless total debit equals total credit and is greater than zero.
+- Posted entries become immutable; reversal is deferred to 7.6.
+- Direct authenticated writes remain blocked.
+
+### 7.3 Expenses + Source-linked Posting ⏳
+### 7.4 Cash/Bank Treasury Accounts + Movements ⏳
+### 7.5 Automatic Operational Source Links ⏳
+### 7.6 Idempotent Posting + Reversal Rules ⏳
+### 7.7 Accounting Statements Contracts ⏳
+### 7.8 Batch 7 Regression + Advisors + Verify ⏳
 
 Accounting rules:
 - Branch-scoped accounting records unless an explicit global accounting object is defined.
@@ -74,7 +79,7 @@ Accounting rules:
 - Treasury movements must preserve cash/bank account lineage and branch isolation.
 - Permissions remain granular and permission-first.
 
-Immediate target: **7.1 Chart of Accounts foundation**.
+Immediate target: **7.2 Journal Entries + Balanced Lines**.
 
 ## Batch 8 — Reports & Central Printing ⏳ QUEUED
 One table-first reports page with filters/totals/custom columns/Excel/print, plus centralized Kitchen/Receipt/Shift close/Day close/Report printing.
@@ -90,8 +95,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–6: ✅ CLOSED.
-- Batch 7: 🚧 CURRENT.
-- Immediate target: **7.1 Chart of Accounts foundation**.
+- Batch 7.1: ✅ CLOSED.
+- Immediate target: **7.2 Journal Entries + Balanced Lines**.
+- Verified implementation HEAD before this log update: `4c68817eced4795c87eebe53ea7763fde64925ea`.
 - `main` untouched.
 
 ## Hardening backlog
