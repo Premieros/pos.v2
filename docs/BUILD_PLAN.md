@@ -32,33 +32,31 @@ Preview: `https://premieros.github.io/pos.v2/`
 ## Batch 8 — Reports & Central Printing 🚧 CURRENT
 
 ### 8.1 Unified Reports Contract ✅
-- One professional table-first Reports workspace, not duplicated report icons/pages.
-- Permission-first with `reports.view`, branch-scoped server-side access assertion and no role-label checks.
-- Shared filters: date range, payment method, employee, product and order type.
-- Product and employee options come from the real authorized branch through a dedicated read-only RPC.
-- No charts and no fake report rows; report bodies remain explicit future contracts until 8.2–8.4.
-- Responsive RTL-first report selector/result workspace integrated into the app shell under `التقارير`.
+- One table-first Reports workspace, `reports.view`, branch-scoped server access and shared date/payment/employee/product/order-type filters.
+- No charts or fake rows; responsive RTL-first UI.
 - Migration: `20260905192644_unified_reports_foundation`.
-- Security Advisor: only the known leaked-password-protection Auth warning.
-- Performance Advisor: no report-specific material finding; fresh-DB unused-index INFO only.
-- Live audit: `reports.view` exists; private report functions are non-executable by authenticated; public filter RPC is executable.
-- Verify #411 ✅ — Batch 5/6/7 regression, Typecheck, Build and Pages Deploy.
+- Verify #411 ✅.
 
-### 8.2 Sales & Operations Reports 🚧 NEXT
-- Sales summary / detailed invoices.
-- Sales by payment / employee / product / order type.
-- Returns/refunds/voids/discounts.
-- Cashier and shift performance.
-- All projections remain read-only, branch-scoped and consume the unified filter contract.
+### 8.2 Sales & Operations Reports ✅
+- Real read-only projections for sales summary, detailed invoices, payment method, employee, product, order type, returns/refunds/voids/discounts and cashier/shift performance.
+- Uses the unified branch/date/payment/employee/product/order-type filter contract.
+- Migration: `20260905193209_sales_operations_report_projections`.
+- Verify #421 ✅.
 
-### 8.3 Procurement, Inventory & Cost Reports ⏳
-- Purchases and suppliers.
-- Inventory balances/movements.
-- Component consumption / stock alerts / counts / waste.
-- Purchase cost history and relevant cost projections.
+### 8.3 Procurement, Inventory & Cost Reports ✅
+- Purchases/suppliers with ordered/received quantities and accepted receipt value.
+- Ledger-derived inventory balances plus period inbound/outbound and low-stock indicators.
+- Formal waste report by warehouse/item/date.
+- Historical accepted purchase-cost report from `inventory_item_purchase_cost_history`, including quantity, unit cost, total cost and weighted average cost without rewriting historical costs.
+- Migrations: `20260905194116_procurement_inventory_report_projections`, `20260905194501_purchase_cost_history_report_projection`.
+- Private report functions are non-executable by authenticated; public wrappers remain permission/branch guarded.
+- Security Advisor: only known leaked-password-protection Auth warning.
+- Performance Advisor: unused-index INFO only; no material report-specific finding.
+- Verify #433 ✅ — regressions / Typecheck / Build / Pages Deploy.
 
-### 8.4 Accounting Reports Integration ⏳
-- Integrate Trial Balance, General Ledger, Income Statement and Balance Sheet into the central reports experience without duplicating accounting contracts.
+### 8.4 Accounting Reports Integration 🚧 NEXT
+- Integrate Trial Balance, General Ledger, Income Statement and Balance Sheet into the central reports experience.
+- Reuse the existing Batch 7 read-only statement RPCs and `accounting.statements.view`; do not duplicate accounting calculations or weaken permissions.
 
 ### 8.5 Custom Columns + Excel Export ⏳
 - User-selectable report columns.
@@ -70,7 +68,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 8.7 Batch 8 Regression + Advisors + Verify ⏳
 
-Immediate target: **8.2 Sales & Operations Reports**.
+Immediate target: **8.4 Accounting Reports Integration**.
 
 ## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
@@ -83,9 +81,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–7: ✅ CLOSED.
-- Batch 8.1: ✅ CLOSED — Verify #411.
-- Immediate target: **8.2 Sales & Operations Reports**.
-- Verified implementation HEAD before this log update: `adf02788244098bd460210501d4623899587e6b3`.
+- Batch 8.1–8.3: ✅ CLOSED.
+- Immediate target: **8.4 Accounting Reports Integration**.
+- Verified implementation HEAD before this log update: `a1313bec2a020173fa082fd51f4c4adb6224bc09` — Verify #433 ✅.
 - `main` untouched.
 
 ## Hardening backlog
