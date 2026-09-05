@@ -4,13 +4,26 @@
 Supabase PostgreSQL is authoritative for persisted business state, authorization scope, inventory and financial transactions.
 
 ## Authorization invariant
+For ordinary users:
+
 `allowed(action, branch) = branch_access AND effective_permission`
 
-Effective permission may come from a direct user grant or from a role template. An explicit direct user revoke always wins.
+Effective permission may come from a direct user grant or from a normal role template. An explicit direct user revoke wins over normal grants.
 
-No feature is authorized by a role name. Roles are labels/templates for grouping permissions only and are never authority by themselves.
+No application feature is authorized by checking a role name. Roles group permissions; feature code consumes permission keys only.
 
-Elevated/platform users must also receive real permission records and pass the same authorization resolver as every other user. No role-based implicit bypass is allowed.
+### Protected Super Admin
+The platform has one special system role identified internally as `super_admin`.
+
+- It is hidden from normal role/user management queries.
+- It is immutable and cannot be edited or deleted through the application.
+- It owns every permission in the permission registry.
+- New permissions are automatically attached to it.
+- Its user assignments live only in `app_private.platform_role_assignments` and are inaccessible to authenticated application users.
+- It has platform-wide branch scope.
+- Even for Super Admin, feature code checks the requested permission; no page or business action contains `role == super_admin` authorization logic.
+
+Thus Super Admin is a protected full-permission platform identity while the application remains permission-first.
 
 ## Domain boundaries
 - Identity & Access
