@@ -24,18 +24,24 @@ import { ReturnPanel } from '../modules/returns/ReturnPanel'
 import { GuidedSetupBanner } from '../modules/setup/GuidedSetupBanner'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 import { ShiftsPage } from '../modules/shifts/ShiftsPage'
+import { useShellPreferences } from '../modules/shell/useShellPreferences'
+
+type NavItem = { href: string; icon: string; ar: string; en: string; visible: boolean }
 
 export function App() {
   const { user, loading: authLoading } = useAuth()
   const { branches, currentBranch, setCurrentBranchId, loading: branchLoading, error: branchError } = useBranch()
   const { can, loading: permissionLoading } = usePermissions()
+  const { locale, dir, collapsed, mobileOpen, setLocale, setCollapsed, setMobileOpen } = useShellPreferences()
+  const isArabic = locale === 'ar'
+  const t = (ar: string, en: string) => isArabic ? ar : en
 
-  if (authLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الجلسة…</p></main>
+  if (authLoading) return <main className="shell" dir={dir}><p>{t('جارٍ تحميل الجلسة…', 'Loading session…')}</p></main>
   if (!user) return <LoginPage />
-  if (branchLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الفروع…</p></main>
-  if (branchError) return <main className="shell" dir="rtl"><section className="card"><h1>تعذر تحميل الفروع</h1><p className="error-text">{branchError}</p></section></main>
+  if (branchLoading) return <main className="shell" dir={dir}><p>{t('جارٍ تحميل الفروع…', 'Loading branches…')}</p></main>
+  if (branchError) return <main className="shell" dir={dir}><section className="card"><h1>{t('تعذر تحميل الفروع', 'Could not load branches')}</h1><p className="error-text">{branchError}</p></section></main>
   if (!currentBranch) return <InitialSetupPage />
-  if (permissionLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الصلاحيات…</p></main>
+  if (permissionLoading) return <main className="shell" dir={dir}><p>{t('جارٍ تحميل الصلاحيات…', 'Loading permissions…')}</p></main>
 
   const showPos = can('pos.view')
   const showReturns = can('pos.order.return') && can('pos.payment.refund')
@@ -58,41 +64,75 @@ export function App() {
   const showPrinting = can('pos.receipt.print') || can('pos.receipt.reprint') || showKitchen || can('shifts.view') || can('shifts.manage') || showReports
   const showAdmin = can('settings.manage') || can('branches.view') || can('branches.manage') || can('branches.update') || can('users.view') || can('users.manage') || can('users.permissions.manage') || can('roles.view') || can('roles.manage') || can('roles.assign') || can('inventory.setup')
 
+  const navItems: NavItem[] = [
+    { href: '#overview', icon: '⌂', ar: 'الرئيسية', en: 'Overview', visible: true },
+    { href: '#pos-section', icon: '▣', ar: 'شاشة البيع', en: 'POS', visible: showPos },
+    { href: '#returns-section', icon: '↩', ar: 'المرتجعات', en: 'Returns', visible: showReturns },
+    { href: '#kds-section', icon: '⌁', ar: 'المطبخ KDS', en: 'Kitchen KDS', visible: showKitchen },
+    { href: '#catalog-section', icon: '◇', ar: 'المنتجات والتصنيفات', en: 'Catalog', visible: showCatalog },
+    { href: '#inventory-section', icon: '▦', ar: 'المخزون والمخازن', en: 'Inventory', visible: showInventory },
+    { href: '#waste-section', icon: '△', ar: 'مركز الهالك', en: 'Waste', visible: showWaste },
+    { href: '#count-section', icon: '✓', ar: 'جلسات الجرد', en: 'Stock Counts', visible: showCounts },
+    { href: '#approvals-section', icon: '◎', ar: 'مركز الموافقات', en: 'Approvals', visible: showApprovals },
+    { href: '#suppliers-section', icon: '♢', ar: 'الموردون', en: 'Suppliers', visible: showSuppliers },
+    { href: '#purchases-section', icon: '＋', ar: 'أوامر الشراء', en: 'Purchases', visible: showPurchases },
+    { href: '#reports-section', icon: '≡', ar: 'التقارير', en: 'Reports', visible: showReports },
+    { href: '#printing-section', icon: '▤', ar: 'مركز الطباعة', en: 'Printing', visible: showPrinting },
+    { href: '#admin-section', icon: '⚙', ar: 'الإدارة والإعدادات', en: 'Administration', visible: showAdmin },
+    { href: '#accounting-section', icon: '∑', ar: 'دليل الحسابات', en: 'Chart of Accounts', visible: showAccounting },
+    { href: '#journals-section', icon: '≣', ar: 'القيود اليومية', en: 'Journals', visible: showJournals },
+    { href: '#expenses-section', icon: '−', ar: 'المصروفات', en: 'Expenses', visible: showExpenses },
+    { href: '#treasury-section', icon: '□', ar: 'الخزينة والبنوك', en: 'Treasury', visible: showTreasury },
+    { href: '#posting-section', icon: '⇄', ar: 'ربط المحاسبة', en: 'Posting Center', visible: showPosting },
+    { href: '#statements-section', icon: '▥', ar: 'القوائم المالية', en: 'Statements', visible: showStatements },
+    { href: '#shifts-section', icon: '◷', ar: 'الورديات والدرج', en: 'Shifts & Drawer', visible: showShifts },
+  ]
+
+  const branchName = isArabic ? currentBranch.name_ar : (currentBranch.name_en || currentBranch.name_ar)
+
   return (
-    <main className="app-shell" dir="rtl">
-      <aside className="app-sidebar" aria-label="أقسام النظام">
-        <div className="sidebar-brand"><span className="sidebar-brand-mark">P</span><div><strong>POS.V2</strong><small>{currentBranch.name_ar}</small></div></div>
+    <main className="app-shell" dir={dir} data-locale={locale} data-sidebar-collapsed={collapsed ? 'true' : 'false'} data-mobile-nav={mobileOpen ? 'open' : 'closed'}>
+      <button type="button" className="mobile-nav-button" aria-label={t('فتح القائمة', 'Open navigation')} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}>☰</button>
+      <button type="button" className="sidebar-overlay" aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileOpen(false)} />
+
+      <aside className="app-sidebar" aria-label={t('أقسام النظام', 'System sections')}>
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-mark">P</span>
+          <div className="sidebar-brand-copy"><strong>POS.V2</strong><small>{branchName}</small></div>
+          <button type="button" className="sidebar-mobile-close" aria-label={t('إغلاق القائمة', 'Close navigation')} onClick={() => setMobileOpen(false)}>×</button>
+        </div>
+
         <nav className="sidebar-nav">
-          <a href="#overview">الرئيسية</a>
-          {showPos ? <a href="#pos-section">شاشة البيع</a> : null}
-          {showReturns ? <a href="#returns-section">المرتجعات</a> : null}
-          {showKitchen ? <a href="#kds-section">المطبخ KDS</a> : null}
-          {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
-          {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
-          {showWaste ? <a href="#waste-section">مركز الهالك</a> : null}
-          {showCounts ? <a href="#count-section">جلسات الجرد</a> : null}
-          {showApprovals ? <a href="#approvals-section">مركز الموافقات</a> : null}
-          {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
-          {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
-          {showReports ? <a href="#reports-section">التقارير</a> : null}
-          {showPrinting ? <a href="#printing-section">مركز الطباعة</a> : null}
-          {showAdmin ? <a href="#admin-section">الإدارة والإعدادات</a> : null}
-          {showAccounting ? <a href="#accounting-section">دليل الحسابات</a> : null}
-          {showJournals ? <a href="#journals-section">القيود اليومية</a> : null}
-          {showExpenses ? <a href="#expenses-section">المصروفات</a> : null}
-          {showTreasury ? <a href="#treasury-section">الخزينة والبنوك</a> : null}
-          {showPosting ? <a href="#posting-section">ربط المحاسبة</a> : null}
-          {showStatements ? <a href="#statements-section">القوائم المالية</a> : null}
-          {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
+          {navItems.filter((item) => item.visible).map((item) => (
+            <a key={item.href} href={item.href} title={isArabic ? item.ar : item.en} onClick={() => setMobileOpen(false)}>
+              <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
+              <span className="sidebar-nav-label">{isArabic ? item.ar : item.en}</span>
+            </a>
+          ))}
         </nav>
-        <div className="sidebar-footer"><span>الفرع الحالي</span><strong>{currentBranch.code}</strong></div>
+
+        <div className="sidebar-controls">
+          <div className="locale-switch" role="group" aria-label={t('لغة واتجاه الواجهة', 'Interface language and direction')}>
+            <button type="button" className={locale === 'ar' ? 'active' : ''} onClick={() => setLocale('ar')}>AR</button>
+            <button type="button" className={locale === 'en' ? 'active' : ''} onClick={() => setLocale('en')}>EN</button>
+          </div>
+          <button type="button" className="sidebar-collapse-button" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? t('توسيع القائمة', 'Expand sidebar') : t('طي القائمة', 'Collapse sidebar')}>
+            <span aria-hidden="true">{collapsed ? '»' : '«'}</span><span className="sidebar-nav-label">{collapsed ? t('توسيع', 'Expand') : t('طي القائمة', 'Collapse')}</span>
+          </button>
+        </div>
+
+        <div className="sidebar-footer"><span>{t('الفرع الحالي', 'Current branch')}</span><strong>{currentBranch.code}</strong></div>
       </aside>
+
       <div className="app-content">
         <header className="app-header" id="overview">
-          <div><p className="eyebrow">POS.V2</p><h1>نظام التشغيل</h1><p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p></div>
-          {branches.length > 1 ? <label className="branch-switcher">تغيير الفرع<select value={currentBranch.id} onChange={(event) => setCurrentBranchId(event.target.value)}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name_ar} — {branch.code}</option>)}</select></label> : null}
+          <div><p className="eyebrow">POS.V2</p><h1>{t('نظام التشغيل', 'Operations')}</h1><p>{t('الفرع الحالي:', 'Current branch:')} <strong>{branchName}</strong></p></div>
+          <div className="header-controls">
+            {branches.length > 1 ? <label className="branch-switcher">{t('تغيير الفرع', 'Switch branch')}<select value={currentBranch.id} onChange={(event) => setCurrentBranchId(event.target.value)}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{isArabic ? branch.name_ar : (branch.name_en || branch.name_ar)} — {branch.code}</option>)}</select></label> : null}
+            <div className="header-locale-switch"><button type="button" className={locale === 'ar' ? 'active' : ''} onClick={() => setLocale('ar')}>AR</button><button type="button" className={locale === 'en' ? 'active' : ''} onClick={() => setLocale('en')}>EN</button></div>
+          </div>
         </header>
-        <section className="card status-card"><h2>الأساس التشغيلي جاهز</h2><p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p></section>
+        <section className="card status-card"><h2>{t('الأساس التشغيلي جاهز', 'Operational foundation ready')}</h2><p>{t('الموديولات مستقلة بعقود صريحة وتُعرض حسب الصلاحيات الفعلية.', 'Modules remain contract-isolated and are displayed by effective permissions.')}</p></section>
         {showPos ? <GuidedSetupBanner /> : null}
         {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
         {showReturns ? <section id="returns-section" className="app-section-anchor"><ReturnPanel /></section> : null}
