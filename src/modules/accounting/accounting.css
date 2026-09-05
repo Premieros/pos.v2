@@ -1,7 +1,7 @@
 .accounting-workspace { display: grid; gap: 1rem; }
 .account-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; align-items: end; }
-.account-form input, .account-form select, .journal-create-form input, .journal-line-form input, .journal-line-form select, .expense-form input, .expense-form select, .treasury-form input, .treasury-form select, .posting-map-form select, .journal-reversal-box input { width: 100%; min-height: 42px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; padding: .7rem .8rem; background: var(--surface, #fff); }
-.account-form button, .journal-create-form button, .journal-line-form button, .expense-form button, .treasury-form button, .posting-map-form button, .journal-reversal-box button { min-height: 42px; }
+.account-form input, .account-form select, .journal-create-form input, .journal-line-form input, .journal-line-form select, .expense-form input, .expense-form select, .treasury-form input, .treasury-form select, .posting-map-form select, .journal-reversal-box input, .statement-filters input, .statement-filters select { width: 100%; min-height: 42px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; padding: .7rem .8rem; background: var(--surface, #fff); }
+.account-form button, .journal-create-form button, .journal-line-form button, .expense-form button, .treasury-form button, .posting-map-form button, .journal-reversal-box button, .statement-filters button { min-height: 42px; }
 .account-check { display: flex; align-items: center; gap: .5rem; min-height: 42px; }
 .account-check input { width: auto; min-height: 0; }
 .account-table-wrap { overflow-x: auto; }
@@ -36,5 +36,12 @@
 .posting-map-form { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; align-items:end; }
 .posting-map-form label { display:grid; gap:.35rem; font-size:.85rem; }
 .posting-table { min-width: 960px; }
-@media (max-width: 960px) { .account-form, .expense-form, .treasury-form, .posting-map-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .journal-layout { grid-template-columns: 1fr; } .journal-list { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-create-form, .journal-line-form { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-summary { grid-template-columns: repeat(2,1fr); } .treasury-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 640px) { .account-form, .expense-form, .treasury-form, .posting-map-form, .journal-create-form, .journal-line-form, .journal-summary, .journal-list, .treasury-cards, .journal-reversal-box { grid-template-columns: 1fr; } }
+.statement-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
+.statement-tabs button { min-height:40px; border:1px solid var(--border,#e5e7eb); border-radius:999px; padding:.55rem .9rem; background:var(--surface,#fff); }
+.statement-tabs button.active { outline:2px solid currentColor; outline-offset:-2px; }
+.statement-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.75rem; align-items:end; }
+.statement-filters label { display:grid; gap:.35rem; font-size:.85rem; }
+.statement-table { min-width: 860px; }
+.statement-total { font-weight:700; }
+@media (max-width: 960px) { .account-form, .expense-form, .treasury-form, .posting-map-form, .statement-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .journal-layout { grid-template-columns: 1fr; } .journal-list { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-create-form, .journal-line-form { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-summary { grid-template-columns: repeat(2,1fr); } .treasury-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 640px) { .account-form, .expense-form, .treasury-form, .posting-map-form, .statement-filters, .journal-create-form, .journal-line-form, .journal-summary, .journal-list, .treasury-cards, .journal-reversal-box { grid-template-columns: 1fr; } }
