@@ -27,6 +27,20 @@ export type InventoryBalance = {
   quantity: number
 }
 
+export type InventoryProduct = {
+  id: string
+  name_ar: string
+  inventory_item_id: string | null
+  is_active: boolean
+}
+
+export type ProductComponent = {
+  branch_id: string
+  product_id: string
+  inventory_item_id: string
+  quantity: number
+}
+
 export type StockMovementType = 'opening' | 'receipt' | 'adjustment' | 'waste' | 'count_adjustment' | 'return_in' | 'return_out'
 
 export async function listWarehouses(branchId: string): Promise<Warehouse[]> {
@@ -53,6 +67,25 @@ export async function listInventoryBalances(branchId: string): Promise<Inventory
   const { data, error } = await supabase
     .from('inventory_balances')
     .select('branch_id, warehouse_id, inventory_item_id, quantity')
+    .eq('branch_id', branchId)
+  if (error) throw error
+  return (data ?? []).map((row) => ({ ...row, quantity: Number(row.quantity) }))
+}
+
+export async function listInventoryProducts(branchId: string): Promise<InventoryProduct[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name_ar, inventory_item_id, is_active')
+    .eq('branch_id', branchId)
+    .order('name_ar')
+  if (error) throw error
+  return (data ?? []) as InventoryProduct[]
+}
+
+export async function listProductComponents(branchId: string): Promise<ProductComponent[]> {
+  const { data, error } = await supabase
+    .from('product_components')
+    .select('branch_id, product_id, inventory_item_id, quantity')
     .eq('branch_id', branchId)
   if (error) throw error
   return (data ?? []).map((row) => ({ ...row, quantity: Number(row.quantity) }))
@@ -95,6 +128,34 @@ export async function createInventoryItem(input: {
     .single()
   if (error) throw error
   return data.id as string
+}
+
+export async function setProductInventoryItem(productId: string, inventoryItemId: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_product_inventory_item', {
+    p_product_id: productId,
+    p_inventory_item_id: inventoryItemId,
+  })
+  if (error) throw error
+}
+
+export async function addProductComponent(input: { branchId: string; productId: string; inventoryItemId: string; quantity: number }): Promise<void> {
+  const { error } = await supabase.from('product_components').insert({
+    branch_id: input.branchId,
+    product_id: input.productId,
+    inventory_item_id: input.inventoryItemId,
+    quantity: input.quantity,
+  })
+  if (error) throw error
+}
+
+export async function removeProductComponent(input: { branchId: string; productId: string; inventoryItemId: string }): Promise<void> {
+  const { error } = await supabase
+    .from('product_components')
+    .delete()
+    .eq('branch_id', input.branchId)
+    .eq('product_id', input.productId)
+    .eq('inventory_item_id', input.inventoryItemId)
+  if (error) throw error
 }
 
 export async function recordStockMovement(input: {
