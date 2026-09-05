@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase/client'
 
 export type PosOrderType = 'dine_in' | 'take_away' | 'drive_thru' | 'delivery' | 'quick'
-export type PosOrderStatus = 'created' | 'held' | 'sent_to_kitchen' | 'preparing' | 'ready' | 'partially_paid' | 'paid' | 'closed' | 'cancelled' | 'voided' | 'returned'
+export type PosOrderStatus = 'created' | 'held' | 'sent_to_kitchen' | 'preparing' | 'ready' | 'partially_paid' | 'paid' | 'closed' | 'cancelled' | 'voided' | 'returned' | 'merged'
 
 export type PosProduct = {
   id: string
@@ -197,6 +197,28 @@ export async function cancelPosOrder(orderId: string, reason: string): Promise<v
 export async function voidPosOrder(orderId: string, reason: string): Promise<string> {
   const { data, error } = await supabase.rpc('void_pos_order', {
     p_order_id: orderId,
+    p_reason: reason.trim(),
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+export async function transferOrderTable(orderId: string, toTableId: string, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc('transfer_order_table', {
+    p_order_id: orderId,
+    p_to_table_id: toTableId,
+    p_reason: reason.trim(),
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+export async function mergeDineInOrders(targetOrderId: string, sourceOrderId: string, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc('merge_dine_in_orders', {
+    p_target_order_id: targetOrderId,
+    p_source_order_id: sourceOrderId,
     p_reason: reason.trim(),
     p_idempotency_key: crypto.randomUUID(),
   })
