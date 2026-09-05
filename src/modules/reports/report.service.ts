@@ -32,9 +32,10 @@ export type ReportFilters = {
 
 export type SalesOperationsReportKey = 'sales' | 'invoices' | 'payments' | 'employees' | 'products' | 'returns' | 'cashiers'
 export type ProcurementInventoryReportKey = 'purchases' | 'inventory' | 'waste'
+export type CostReportKey = 'costs'
 
 export type ReportData = {
-  report_key: SalesOperationsReportKey | ProcurementInventoryReportKey
+  report_key: SalesOperationsReportKey | ProcurementInventoryReportKey | CostReportKey
   rows: Array<Record<string, unknown>>
   totals: Record<string, unknown>
   generated_at: string
@@ -52,6 +53,16 @@ export async function getReportFilterOptions(branchId: string): Promise<ReportFi
   }
 }
 
+function normalizeReportData(data: unknown, reportKey: ReportData['report_key']): ReportData {
+  const value = (data ?? {}) as Partial<ReportData>
+  return {
+    report_key: reportKey,
+    rows: Array.isArray(value.rows) ? value.rows : [],
+    totals: value.totals && typeof value.totals === 'object' ? value.totals : {},
+    generated_at: typeof value.generated_at === 'string' ? value.generated_at : new Date().toISOString(),
+  }
+}
+
 export async function getSalesOperationsReport(branchId: string, reportKey: SalesOperationsReportKey, filters: ReportFilters): Promise<ReportData> {
   const { data, error } = await supabase.rpc('get_sales_operations_report', {
     p_branch_id: branchId,
@@ -64,13 +75,7 @@ export async function getSalesOperationsReport(branchId: string, reportKey: Sale
     p_order_type: filters.orderType || null,
   })
   if (error) throw error
-  const value = (data ?? {}) as Partial<ReportData>
-  return {
-    report_key: reportKey,
-    rows: Array.isArray(value.rows) ? value.rows : [],
-    totals: value.totals && typeof value.totals === 'object' ? value.totals : {},
-    generated_at: typeof value.generated_at === 'string' ? value.generated_at : new Date().toISOString(),
-  }
+  return normalizeReportData(data, reportKey)
 }
 
 export async function getProcurementInventoryReport(branchId: string, reportKey: ProcurementInventoryReportKey, filters: ReportFilters): Promise<ReportData> {
@@ -82,11 +87,16 @@ export async function getProcurementInventoryReport(branchId: string, reportKey:
     p_product_id: filters.productId || null,
   })
   if (error) throw error
-  const value = (data ?? {}) as Partial<ReportData>
-  return {
-    report_key: reportKey,
-    rows: Array.isArray(value.rows) ? value.rows : [],
-    totals: value.totals && typeof value.totals === 'object' ? value.totals : {},
-    generated_at: typeof value.generated_at === 'string' ? value.generated_at : new Date().toISOString(),
-  }
+  return normalizeReportData(data, reportKey)
+}
+
+export async function getPurchaseCostHistoryReport(branchId: string, filters: ReportFilters): Promise<ReportData> {
+  const { data, error } = await supabase.rpc('get_purchase_cost_history_report', {
+    p_branch_id: branchId,
+    p_from_date: filters.fromDate,
+    p_to_date: filters.toDate,
+    p_product_id: filters.productId || null,
+  })
+  if (error) throw error
+  return normalizeReportData(data, 'costs')
 }
