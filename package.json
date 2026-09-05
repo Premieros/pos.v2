@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test:batch5": "node scripts/verify-batch5.mjs",
+    "test:batch6": "node scripts/verify-batch6.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
