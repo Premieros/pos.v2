@@ -1,5 +1,7 @@
 import { supabase } from '../../lib/supabase/client'
 
+export type StatementAccount = { id: string; code: string; name_ar: string; name_en: string | null; account_type: string }
+
 export type TrialBalanceRow = {
   account_id: string
   code: string
@@ -37,6 +39,12 @@ export type BalanceSheetRow = {
   account_type: 'asset' | 'liability' | 'equity'
   amount: number
   is_synthetic: boolean
+}
+
+export async function getStatementAccounts(branchId: string): Promise<StatementAccount[]> {
+  const { data, error } = await supabase.rpc('get_statement_accounts', { p_branch_id: branchId })
+  if (error) throw error
+  return (data ?? []) as StatementAccount[]
 }
 
 export async function getTrialBalance(branchId: string, fromDate: string, toDate: string): Promise<TrialBalanceRow[]> {
