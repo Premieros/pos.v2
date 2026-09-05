@@ -19,17 +19,16 @@ Development preview: `https://premieros.github.io/pos.v2/`
 - Applied migrations are forward-only.
 - Do not weaken RLS/tests to make failures pass.
 - Missing prerequisites use guided setup instead of raw DB errors.
-- Every build batch is isolated: do not mix work from a later batch into the current batch unless required by a proven contract dependency.
-- A batch is not ✅ until its functional scope, permission/RLS checks, Security/Performance Advisor review, Typecheck, Build and GitHub Pages Deploy are green.
-- No merge to `main` before final release gate and explicit approval.
+- Every build batch is isolated; do not mix later-batch work into the current batch without a proven contract dependency.
+- A batch is not ✅ until functional scope, permissions/RLS, Security/Performance Advisor, Typecheck, Build and Pages Deploy are green.
+- No merge to `main` before the final release gate and explicit approval.
 
 ---
 
 # Build batches
 
-## Batch 1 — Platform Foundation ✅
+## Batch 1 — Platform Foundation ✅ CLOSED
 
-Scope:
 - Repository / React / TypeScript / Vite foundation.
 - Supabase client and database identity lock.
 - Auth profiles and branch context.
@@ -37,27 +36,17 @@ Scope:
 - Hidden immutable Super Admin and first bootstrap.
 - GitHub Verify and Pages deployment from `development`.
 
-Status: ✅ CLOSED
+## Batch 2 — Catalog, Inventory & Shift Foundation ✅ CLOSED
 
----
-
-## Batch 2 — Catalog, Inventory & Shift Foundation ✅
-
-Scope:
 - Categories and products.
 - Warehouses and inventory items.
 - Inventory movement ledger and derived balances.
-- Ready-product inventory mapping and BOM/components.
+- Ready-product mapping and BOM/components.
 - Receipt / adjustment / waste movement / warehouse transfer.
 - Open/close shift and cash-drawer movements.
 
-Status: ✅ CLOSED
+## Batch 3 — POS Core, Kitchen & Payments ✅ CLOSED
 
----
-
-## Batch 3 — POS Core, Kitchen & Payments ✅
-
-Scope:
 - Five POS order types.
 - Dining tables and occupancy.
 - Order/item lifecycle, Hold/Resume/Cancel.
@@ -67,29 +56,24 @@ Scope:
 - Server-authoritative balance and drawer linkage.
 - Paid-order close.
 
-Key verification:
+Verification:
 - Kitchen Verify #64 ✅
 - Payments Verify #79 ✅
 
-Status: ✅ CLOSED
+## Batch 4 — POS Operational Controls I ✅ CLOSED
 
----
-
-## Batch 4 — POS Operational Controls I ✅
-
-Scope:
 - Discounts.
 - Pre-kitchen Cancel vs post-kitchen Void.
 - Return / Refund.
-- Explicit restock using historical Kitchen stock lineage.
+- Explicit Restock from historical Kitchen stock lineage.
 - Split Bill inside the original order without duplicating revenue.
 - Payment collection against split parts.
 
-Key verification:
+Verification:
 - Discounts Verify #97 ✅
 - Cancel/Void Verify #107 ✅
 - Return/Refund post-index Verify #121 ✅
-- Split Bill Verify #135 ✅ — Typecheck / Build / GitHub Pages Deploy all green.
+- Split Bill Verify #135 ✅
 
 Split Bill closed contract:
 - 2–6 split parts.
@@ -97,51 +81,93 @@ Split Bill closed contract:
 - Full quantity allocation validation.
 - Server-calculated split totals with rounding reconciliation.
 - Cash/Card per split part.
-- General order payment blocked after a split exists.
-- Order becomes `partially_paid` / `paid` from actual total paid.
+- General order payment blocked once a split exists.
+- Order derives `partially_paid` / `paid` from actual paid total.
 - `pos.order.split` remains independent from `pos.payment.take`.
-
-Status: ✅ CLOSED
 
 ---
 
 ## Batch 5 — POS Operational Controls II 🚧 CURRENT
 
-Execution order:
-1. Table Transfer.
-2. Table Merge.
-3. Receipt first-print contract.
-4. Reprint audit + separate permission.
-5. Customer Display read-only projection.
-6. Final cashier lifecycle regression for the whole POS operational layer.
+### 5.1 Table Transfer ✅
 
-Required contract:
-- Transfer dine-in order only to an available table.
-- Merge is one atomic command and cannot duplicate active occupancy.
-- Preserve order, Kitchen, payment and audit history.
-- `pos.order.transfer` is independent.
-- Receipt first print uses `pos.receipt.print`.
-- Reprint uses `pos.receipt.reprint` with reason/actor/timestamp audit.
-- Customer Display has read-only projection and no write authority.
+Closed contract:
+- Dine-in orders only.
+- `pos.order.transfer` required independently.
+- Target table must exist, be active, belong to the same branch and be unoccupied.
+- Works on active dine-in states without recreating the order or touching payment history.
+- Reason, actor, timestamp and idempotency audit in `order_table_actions`.
+- Cross-branch target is rejected server-side.
 
-Batch 5 DoD:
-- Full cashier lifecycle works with granular permissions and no role-name checks.
-- Cross-branch transfer/merge denied.
-- No duplicate table occupancy.
+### 5.2 Table Merge ✅
+
+Closed contract:
+- Atomic server command `merge_dine_in_orders`.
+- Same branch, same shift, dine-in orders only.
+- Source and target remain historically identifiable; source becomes `merged` and stores `merged_into_order_id`.
+- Order items and Kitchen tickets move to the target order without duplication.
+- Target totals and guest count recalculate server-side.
+- Kitchen aggregate state recalculates after merge.
+- Merge fails closed if either order has payment history, Split Bill, Return history or an active discount.
+- No payment or revenue rows are copied.
+- Reason, actor, timestamp and idempotency audit.
+
+Database migrations:
+- `20260905163626_pos_table_transfer_and_merge_contract`
+- `20260905164017_order_table_actions_table_indexes`
+
+Frontend:
+- Permission-aware Transfer/Merge controls inside POS.
+- Only free destination tables are offered for transfer.
+- Merge candidates are active dine-in orders; final validation remains server-authoritative.
+
+Verification:
+- Security Advisor: no Table Transfer/Merge database security regression; only the existing Supabase Auth leaked-password warning remains.
+- Performance Advisor: two missing table-action FK indexes were detected and fixed forward-only.
+- After the fix, no missing FK warning remains for this contract; remaining notices are expected fresh-database `unused_index` INFO.
+- Verify #151 ✅ — Typecheck / Build / GitHub Pages Deploy all green.
+
+### 5.3 Receipt first-print contract 🚧 NEXT
+
+Required:
+- `pos.receipt.print` required for first receipt print.
+- Server-side print registration; UI alone must not decide first-print state.
+- Receipt projection must come from immutable/authoritative order-payment data.
+- First print is auditable and idempotent.
+
+### 5.4 Reprint audit ⏳
+
+Required:
+- `pos.receipt.reprint` separate permission.
+- Reprint reason required.
+- Actor / timestamp / print sequence audit.
+- Reprint must never mutate the sale.
+
+### 5.5 Customer Display ⏳
+
+Required:
+- Read-only order/payment projection.
+- No write authority.
+- No sensitive admin/permission data.
+
+### 5.6 Batch 5 cashier regression ⏳
+
+Required:
+- Complete cashier lifecycle regression across POS Core, Kitchen, discounts, void, split, payment, return/refund, transfer/merge and receipt.
+- Cross-branch and missing-permission actions denied.
 - Security/Performance Advisor reviewed.
-- Verify / Build / Deploy green.
+- Final Batch 5 Verify / Build / Deploy green.
 
-Status: 🚧 CURRENT — next action: **Table Transfer / Merge**.
+Status: 🚧 CURRENT — immediate target: **Receipt first-print contract**.
 
 ---
 
-## Batch 6 — Procurement & Stock Control ⏳
+## Batch 6 — Procurement & Stock Control ⏳ QUEUED
 
-Execution order:
 1. Suppliers.
 2. Purchase documents and lines.
 3. Purchase receipt -> warehouse inventory atomically.
-4. Purchase status workflow and costing history.
+4. Purchase workflow and costing history.
 5. Formal waste documents.
 6. Stock count sessions and variance.
 7. Approval center for sensitive inventory operations.
@@ -149,54 +175,41 @@ Execution order:
 Rules:
 - Real branch + warehouse + inventory-item references only.
 - No direct balance editing.
-- No self-approval unless an explicit permission allows it.
-- Purchasing and stock permissions remain granular.
+- No self-approval unless explicitly permitted.
+- Granular purchasing/stock permissions.
 
-Status: ⏳ QUEUED
+## Batch 7 — Accounting & Treasury ⏳ QUEUED
 
----
-
-## Batch 7 — Accounting & Treasury ⏳
-
-Execution order:
 1. Chart of Accounts.
 2. Journal entries and lines.
 3. Expenses.
 4. Cash/bank treasury accounts.
 5. Source-transaction linkage.
-6. Idempotent automatic posting from operational modules.
-7. Trial Balance / Ledger / Income Statement / Balance Sheet / AR & AP aging contracts.
+6. Idempotent automatic posting.
+7. Trial Balance / Ledger / Income Statement / Balance Sheet / AR & AP aging.
 
 Rules:
-- Accounting postings are server-side and idempotent.
-- Operational records remain source of truth; journals reference their source transaction.
-- No fake balancing entries to silence validation.
+- Server-side idempotent posting.
+- Operational records remain source of truth.
+- No fake balancing entries.
 
-Status: ⏳ QUEUED
-
----
-
-## Batch 8 — Reports & Central Printing ⏳
+## Batch 8 — Reports & Central Printing ⏳ QUEUED
 
 Reports:
 - One consolidated table-first page; no chart clutter.
-- Filters: branch, date, payment method, employee, product, order type.
+- Branch/date/payment/employee/product/order-type filters.
 - Totals, custom columns, Excel export and print.
-- Sales/invoices, payment/employee/product, purchases, expenses/profit, inventory/consumption, returns/waste and accounting reports.
+- Sales/invoices, purchases, expenses/profit, inventory/consumption, returns/waste and accounting reports.
 
-Printing:
-- Central kitchen ticket.
+Central printing:
+- Kitchen ticket.
 - Receipt.
 - Shift close.
 - Day close.
 - Reports.
 - Business rules remain outside print components.
 
-Status: ⏳ QUEUED
-
----
-
-## Batch 9 — Administration, Offline & Final UX ⏳
+## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 
 Administration:
 - Branches, warehouses, users.
@@ -204,26 +217,22 @@ Administration:
 - Direct user grants/revokes.
 - User-creation controls.
 - POS / Kitchen / Print settings.
-- Guided setup for missing prerequisites.
+- Guided setup.
 
-Offline critical scope only:
+Offline critical scope:
 - Shift close.
 - Day close.
 - Required close/receipt printing.
-- Local queue, idempotency, retry, conflict and pending/synced/error states.
+- Local queue, idempotency, retry, conflict and sync states.
 
 Final UX:
 - Arabic RTL primary / English LTR secondary.
 - Sidebar right in Arabic / left in English.
 - Mobile drawer and collapsible sidebar.
 - Touch-friendly layouts.
-- Final iOS-inspired glass layer only after operational contracts are stable.
+- Final iOS-inspired glass layer after operational contracts stabilize.
 
-Status: ⏳ QUEUED
-
----
-
-## Batch 10 — Full Verification & Release Candidate ⏳
+## Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
 Required automated layers:
 - Typecheck.
@@ -236,19 +245,19 @@ Required automated layers:
 - Security Advisor.
 - Performance Advisor review.
 
-Mandatory E2E operational cycle:
-1. Login as Super Admin.
+Mandatory E2E cycle:
+1. Login Super Admin.
 2. Create branch / warehouse / normal user.
 3. Grant scoped permissions.
 4. Create product + inventory mapping/BOM.
 5. Receive stock.
 6. Open shift.
 7. Create order.
-8. Send initial Kitchen quantity and verify exact stock deduction.
+8. Send Kitchen quantity and verify exact stock deduction.
 9. Edit and send delta only.
 10. KDS preparing -> ready.
 11. Discount / Split Bill / Cash + Card payment.
-12. Table transfer/merge scenario.
+12. Table transfer/merge.
 13. Receipt / reprint permission scenario.
 14. Return/refund and cash-drawer verification.
 15. Close order and shift/day.
@@ -257,20 +266,20 @@ Mandatory E2E operational cycle:
 18. Cross-branch and missing-permission attempts denied.
 19. Offline close/retry scenario.
 
-Status: ⏳ QUEUED
-
 ---
 
 # Current checkpoint
 
-- Development HEAD before this planning update: `829d209ee575559ecfaf567cf374646438ee9673`.
-- Verify #135: ✅ completed successfully including GitHub Pages Deploy.
+- Locked database: `scpovyrqmsbiduanykod` ✅
+- Repository: `Premieros/pos.v2` ✅
+- Branch: `development` ✅
+- Verified implementation HEAD before this log update: `50c864f2f2fa352dedba949e85d243a4c97d9f06`.
+- Verify #151: ✅ Typecheck / Build / GitHub Pages Deploy.
 - Batches 1–4: ✅ CLOSED.
 - Batch 5: 🚧 CURRENT.
-- Immediate implementation target: **Table Transfer / Merge**.
-- `main` remains untouched until final release gate.
-
----
+- Table Transfer / Merge: ✅ CLOSED.
+- Immediate implementation target: **Receipt first-print contract**.
+- `main` remains untouched.
 
 # Security / Hardening backlog
 
