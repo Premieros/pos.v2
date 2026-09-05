@@ -85,19 +85,40 @@ Verification:
 - Performance Advisor: no missing-FK warning; Supplier notices are unused-index INFO on fresh DB.
 - Verify #201 ✅ — Batch 5 regression / Typecheck / Build / GitHub Pages Deploy all green.
 
-### 6.2 Purchase documents + lines 🚧 NEXT
-Required:
-- Branch-scoped purchase header with supplier and explicit lifecycle.
-- Real inventory-item purchase lines; no product-name-only fake lines.
-- Draft editing only before receipt/closure.
-- Server-calculated totals.
-- Granular create/edit/view/receive permissions.
-- No direct client table writes.
+### 6.2 Purchase documents + lines ✅
 
-### 6.3 Purchase receive -> warehouse inventory atomically ⏳
-- Real branch warehouse + items.
+Completed contract:
+- Branch-scoped `purchase_orders` header linked to a real branch supplier.
+- Real `purchase_order_lines` linked to branch-scoped `inventory_items` through composite branch FKs.
+- Explicit lifecycle values: `draft`, `submitted`, `partially_received`, `received`, `cancelled`.
+- Server-calculated line totals and purchase totals.
+- Draft-only line add/update/remove commands.
+- Fine-grained `procurement.purchases.view/create/edit/receive` permissions.
+- Purchase header creation is idempotent per branch.
+- Purchase numbering is branch-local and allocated server-side under advisory transaction lock.
+- `authenticated` has SELECT-only table grants; all mutations stay behind public RPC wrappers and private non-executable internals.
+- Purchase users receive read-only supplier and inventory-item reference access without supplier-management or inventory-mutation authority.
+- Reference SELECT policies were merged into the existing policies after Performance Advisor detected duplicate permissive policies.
+- Permission-aware Purchase workspace added to the sidebar with create/list/select/add/edit/remove draft lines and guided missing-reference messages.
+
+Migrations:
+- `20260905165954_purchase_documents_and_lines`
+- `20260905172328_purchase_reference_read_policies`
+- `20260905172555_merge_purchase_reference_select_policies`
+
+Verification:
+- Security Advisor: no purchase-specific security issue; only the existing leaked-password Auth warning remains.
+- Performance Advisor: duplicate permissive policies fixed; remaining notices are expected fresh-DB `unused_index` INFO.
+- Private purchase internals are not executable by `authenticated`; public purchase wrappers are executable and permission-check server-side.
+- Verify #217 exposed only a TypeScript branch-id narrowing issue; no backend regression.
+- Verify #219 ✅ — Batch 5 regression / Typecheck / Build / GitHub Pages Deploy all green.
+
+### 6.3 Purchase receive -> warehouse inventory atomically 🚧 NEXT
+- Real branch warehouse + inventory items.
 - Idempotent receiving and cumulative quantity protection.
-- Existing inventory ledger only; never direct balance edits.
+- Existing `stock_movements` ledger only; never direct balance edits.
+- Partial receipt must update `received_quantity` and derive purchase status atomically.
+- Cross-branch warehouse/item references must fail closed.
 
 ### 6.4 Purchase workflow + cost history ⏳
 - Explicit statuses and accepted-receipt-derived cost history.
@@ -117,7 +138,7 @@ Procurement/stock rules:
 - Sensitive variance/adjustment operations require granular permissions and approval contracts.
 - No self-approval unless explicit permission is defined.
 
-Immediate target: **Purchase documents + lines**.
+Immediate target: **Purchase receive -> warehouse inventory atomically**.
 
 ## Batch 7 — Accounting & Treasury ⏳ QUEUED
 COA → journals/lines → expenses → cash/bank treasury → source links → idempotent posting → Trial Balance/Ledger/Income Statement/Balance Sheet/AR/AP aging.
@@ -138,12 +159,13 @@ Typecheck, Build, Unit, DB contract, RLS/permission, Integration, E2E, Advisors,
 - Locked database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD before this log update: `dfe7b65a5fb468d951441cf603b67bd54d85d98e`.
-- Supplier Verify #201: ✅ regression / Typecheck / Build / Pages Deploy.
+- Verified implementation HEAD before this log update: `dd6e9d928a0ebbcd4f6069fad0460d3f16a29a28`.
+- Purchase Documents Verify #219: ✅ regression / Typecheck / Build / Pages Deploy.
 - Batches 1–5: ✅ CLOSED.
 - Batch 6: 🚧 CURRENT.
 - Suppliers: ✅ CLOSED.
-- Immediate target: **Purchase documents + lines**.
+- Purchase documents + lines: ✅ CLOSED.
+- Immediate target: **Purchase receive -> warehouse inventory atomically**.
 - `main` remains untouched.
 
 # Security / Hardening backlog
