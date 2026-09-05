@@ -4,6 +4,7 @@ import { usePermissions } from '../permissions/usePermissions'
 import {
   addPosOrderItem,
   cancelPosOrder,
+  countKitchenQueue,
   createDiningTable,
   createPosOrder,
   hasOwnOpenShift,
@@ -12,14 +13,17 @@ import {
   listDiningTables,
   listOrderItems,
   listPosProducts,
+  listPosWarehouses,
   removePosOrderItem,
   resumePosOrder,
+  sendOrderToKitchen,
   setPosOrderItemQuantity,
   type DiningTable,
   type PosOrder,
   type PosOrderItem,
   type PosOrderType,
   type PosProduct,
+  type PosWarehouse,
 } from './pos.service'
 
 const orderTypeLabels: Record<PosOrderType, string> = {
@@ -34,10 +38,13 @@ export function PosPage() {
   const { currentBranchId } = useBranch()
   const { can } = usePermissions()
   const [products, setProducts] = useState<PosProduct[]>([])
+  const [warehouses, setWarehouses] = useState<PosWarehouse[]>([])
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('')
   const [tables, setTables] = useState<DiningTable[]>([])
   const [orders, setOrders] = useState<PosOrder[]>([])
   const [items, setItems] = useState<PosOrderItem[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [kitchenQueueCount, setKitchenQueueCount] = useState(0)
   const [hasShift, setHasShift] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,27 +53,35 @@ export function PosPage() {
   const canCreate = can('pos.order.create')
   const canEdit = can('pos.order.edit')
   const canCancel = can('pos.order.cancel')
+  const canSendKitchen = can('pos.send_kitchen')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
   const selectedOrder = useMemo(() => orders.find((order) => order.id === selectedOrderId) ?? null, [orders, selectedOrderId])
   const occupiedTableIds = useMemo(() => new Set(orders.filter((order) => order.dining_table_id).map((order) => order.dining_table_id as string)), [orders])
+  const hasKitchenDelta = useMemo(() => items.some((item) => (item.is_removed ? 0 : item.quantity) !== item.sent_quantity), [items])
+  const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
 
   async function refreshAll() {
     if (!branchId || !canView) return
     setLoading(true)
     setError(null)
     try {
-      const [nextProducts, nextTables, nextOrders, openShift] = await Promise.all([
+      const [nextProducts, nextWarehouses, nextTables, nextOrders, openShift, queueCount] = await Promise.all([
         listPosProducts(branchId),
+        listPosWarehouses(branchId),
         listDiningTables(branchId),
         listActiveOrders(branchId),
         hasOwnOpenShift(branchId),
+        countKitchenQueue(branchId),
       ])
       setProducts(nextProducts)
+      setWarehouses(nextWarehouses)
       setTables(nextTables)
       setOrders(nextOrders)
       setHasShift(openShift)
+      setKitchenQueueCount(queueCount)
+      setSelectedWarehouseId((current) => nextWarehouses.some((warehouse) => warehouse.id === current) ? current : nextWarehouses[0]?.id ?? '')
       if (selectedOrderId && !nextOrders.some((order) => order.id === selectedOrderId)) setSelectedOrderId(null)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تحميل شاشة البيع')
@@ -130,20 +145,23 @@ export function PosPage() {
     })
   }
 
-  const editable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
+  const editable = selectedOrder && ['created', 'held', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
+  const cancellable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
+  const kitchenSendable = selectedOrder && ['created', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
 
   return (
     <section className="workspace-card pos-workspace" aria-labelledby="pos-title">
       <div className="workspace-heading">
         <div>
-          <p className="eyebrow">POS CORE</p>
+          <p className="eyebrow">POS</p>
           <h2 id="pos-title">شاشة البيع</h2>
-          <p>الطلب والمنتجات وحالة الطلب منفصلة عن Kitchen وPayments.</p>
+          <p>تعديلات الطلب بعد الإرسال تبقى محلية حتى تضغط «إرسال التغييرات» للمطبخ.</p>
         </div>
         <div className="pos-counters">
           <span>مفتوحة: {orders.length}</span>
           <span>طاولات مشغولة: {occupiedTableIds.size}</span>
           <span>Held: {orders.filter((order) => order.status === 'held').length}</span>
+          <span>طابور KDS: {kitchenQueueCount}</span>
         </div>
       </div>
 
@@ -154,6 +172,13 @@ export function PosPage() {
         <div className="prerequisite-card">
           <strong>يجب فتح وردية قبل إنشاء طلب.</strong>
           <p>استخدم قسم الورديات لفتح ورديتك ثم عد إلى شاشة البيع.</p>
+        </div>
+      ) : null}
+
+      {canSendKitchen && !warehouses.length ? (
+        <div className="prerequisite-card">
+          <strong>لا يوجد مخزن نشط للإرسال للمطبخ.</strong>
+          <p>أنشئ مخزنًا من قسم المخزون أولًا؛ لن يتم خصم أي مخزون بصورة عشوائية.</p>
         </div>
       ) : null}
 
@@ -236,7 +261,26 @@ export function PosPage() {
               <div className="pos-actions">
                 {canEdit && selectedOrder.status === 'created' ? <button type="button" onClick={() => void runAction(() => holdPosOrder(selectedOrder.id))}>Hold</button> : null}
                 {canEdit && selectedOrder.status === 'held' ? <button type="button" onClick={() => void runAction(() => resumePosOrder(selectedOrder.id))}>Resume</button> : null}
-                {canCancel && editable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
+                {canCancel && cancellable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
+
+                {canSendKitchen && kitchenSendable ? (
+                  <div className="kitchen-send-controls">
+                    <select aria-label="مخزن خصم المطبخ" value={selectedWarehouseId} onChange={(event) => setSelectedWarehouseId(event.target.value)} disabled={!warehouses.length}>
+                      {!warehouses.length ? <option value="">لا يوجد مخزن</option> : null}
+                      {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_ar}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!selectedWarehouseId || !hasKitchenDelta}
+                      onClick={() => void runAction(async () => { await sendOrderToKitchen(selectedOrder.id, selectedWarehouseId) })}
+                    >
+                      {hasBeenSent ? 'إرسال التغييرات' : 'إرسال للمطبخ'}
+                    </button>
+                    <span className={hasKitchenDelta ? 'pending-delta' : 'synced-delta'}>
+                      {hasKitchenDelta ? 'توجد تغييرات غير مرسلة' : 'المطبخ متزامن'}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : <p>اختر طلبًا أو أنشئ طلبًا جديدًا.</p>}
