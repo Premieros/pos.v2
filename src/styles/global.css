@@ -92,6 +92,20 @@ p { line-height: 1.8; }
 .return-summary span { padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 999px; background: #f9fafb; }
 .return-submit { grid-template-columns: minmax(220px, 1fr) auto; align-items: center; }
 
+.split-bill-card { display: grid; gap: 12px; padding: 14px; border: 1px solid #d1d5db; border-radius: 16px; background: #f9fafb; }
+.split-bill-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.split-bill-header > div:first-child { display: grid; gap: 4px; }
+.split-bill-header small { color: #6b7280; }
+.split-create-controls { display: flex; gap: 8px; align-items: center; }
+.split-create-controls select, .split-payment-form select, .split-payment-form input { min-height: 40px; border: 1px solid #d1d5db; border-radius: 10px; background: white; padding-inline: 10px; }
+.split-create-controls button, .split-payment-form button { min-height: 40px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.split-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.split-card { display: grid; gap: 10px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 14px; background: white; }
+.split-card > div { display: grid; gap: 4px; }
+.split-card span { color: #4b5563; }
+.split-payment-form { display: grid; grid-template-columns: 110px minmax(100px, 1fr) auto; gap: 8px; }
+.split-paid { color: #166534; }
+
 @media (max-width: 1020px) {
   .app-sidebar { position: sticky; inset-block-start: 0; inset-inline-start: auto; width: 100%; height: auto; padding: 10px 12px; border-inline-end: 0; border-bottom: 1px solid #e5e7eb; box-shadow: 0 8px 24px rgb(15 23 42 / .06); gap: 10px; }
   .sidebar-brand { padding-block-end: 8px; }
@@ -118,4 +132,6 @@ p { line-height: 1.8; }
   .return-panel > .workspace-heading > select { width: 100%; min-width: 0; }
   .return-line { grid-template-columns: 1fr; }
   .return-submit { grid-template-columns: 1fr; }
+  .split-bill-header, .split-create-controls { align-items: stretch; flex-direction: column; }
+  .split-payment-form { grid-template-columns: 1fr; }
 }
