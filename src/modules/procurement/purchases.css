@@ -1,7 +1,7 @@
 .purchases-workspace { display: grid; gap: 18px; }
 .purchase-create-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr) auto; gap: 10px; }
 .purchase-create-form select, .purchase-create-form input, .purchase-line-form select, .purchase-line-form input, .purchase-receive-form select, .purchase-receive-form input { min-height: 42px; border: 1px solid #d1d5db; border-radius: 10px; padding-inline: 10px; background: white; }
-.purchase-create-form button, .purchase-line-form button, .purchase-line button, .purchase-receive-form button { min-height: 40px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.purchase-create-form button, .purchase-line-form button, .purchase-line button, .purchase-receive-form button, .purchase-workflow-actions button { min-height: 40px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
 .purchase-layout { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 14px; align-items: start; }
 .purchase-order-list { display: grid; gap: 8px; max-height: 560px; overflow: auto; padding-inline-end: 4px; }
 .purchase-order-card { display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; text-align: start; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #f9fafb; color: #111827; }
@@ -11,6 +11,8 @@
 .purchase-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .purchase-summary > div { display: grid; gap: 4px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
 .purchase-summary span { color: #6b7280; font-size: 0.85rem; }
+.purchase-workflow-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.purchase-workflow-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
 .purchase-line-form { display: grid; grid-template-columns: minmax(220px, 2fr) 1fr 1fr auto; gap: 8px; }
 .purchase-lines { display: grid; gap: 7px; overflow-x: auto; }
 .purchase-line { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(4, minmax(90px, 1fr)) minmax(130px, auto); gap: 10px; align-items: center; min-width: 820px; padding: 11px; border: 1px solid #e5e7eb; border-radius: 11px; background: white; }
@@ -24,6 +26,9 @@
 .purchase-receive-lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .purchase-receive-lines label { display: grid; gap: 4px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; background: white; }
 .purchase-receive-lines small { color: #6b7280; }
+.purchase-cost-history { display: grid; gap: 8px; padding: 14px; border: 1px solid #e5e7eb; border-radius: 14px; }
+.purchase-cost-history > div { display: grid; grid-template-columns: minmax(160px, 2fr) repeat(3, minmax(100px, 1fr)); gap: 10px; padding-block: 8px; border-top: 1px solid #f3f4f6; }
+.purchase-cost-history time { color: #6b7280; font-size: 0.9rem; }
 
 @media (max-width: 980px) {
   .purchase-layout { grid-template-columns: 1fr; }
@@ -34,5 +39,5 @@
 }
 
 @media (max-width: 620px) {
-  .purchase-create-form, .purchase-line-form, .purchase-summary, .purchase-order-list, .purchase-receive-lines { grid-template-columns: 1fr; }
+  .purchase-create-form, .purchase-line-form, .purchase-summary, .purchase-order-list, .purchase-receive-lines, .purchase-cost-history > div { grid-template-columns: 1fr; }
 }
