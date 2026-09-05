@@ -11,6 +11,12 @@ export type PosProduct = {
   category_id: string | null
 }
 
+export type PosWarehouse = {
+  id: string
+  name_ar: string
+  is_active: boolean
+}
+
 export type DiningTable = {
   id: string
   code: string
@@ -75,6 +81,17 @@ export async function listPosProducts(branchId: string): Promise<PosProduct[]> {
     .order('name_ar')
   if (error) throw error
   return (data ?? []) as PosProduct[]
+}
+
+export async function listPosWarehouses(branchId: string): Promise<PosWarehouse[]> {
+  const { data, error } = await supabase
+    .from('warehouses')
+    .select('id, name_ar, is_active')
+    .eq('branch_id', branchId)
+    .eq('is_active', true)
+    .order('name_ar')
+  if (error) throw error
+  return (data ?? []) as PosWarehouse[]
 }
 
 export async function listDiningTables(branchId: string): Promise<DiningTable[]> {
@@ -169,4 +186,14 @@ export async function resumePosOrder(orderId: string): Promise<void> {
 export async function cancelPosOrder(orderId: string, reason: string): Promise<void> {
   const { error } = await supabase.rpc('cancel_pos_order', { p_order_id: orderId, p_reason: reason.trim() })
   if (error) throw error
+}
+
+export async function sendOrderToKitchen(orderId: string, warehouseId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('send_order_to_kitchen', {
+    p_order_id: orderId,
+    p_warehouse_id: warehouseId,
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
 }
