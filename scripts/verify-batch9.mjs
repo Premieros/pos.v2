@@ -26,7 +26,7 @@ requireText('src/modules/setup/GuidedSetupBanner.tsx', ['hasOwnOpenShift', 'list
 requireText('src/modules/setup/InitialSetupPage.tsx', ['bootstrap_available', 'لا يوجد فرع متاح لهذا الحساب'])
 requireText('src/modules/shifts/offlineShiftClose.ts', ['localStorage', 'idempotencyKey', 'syncPendingShiftCloses'])
 requireText('src/modules/shifts/shift.service.ts', ['close_shift_idempotent', 'p_idempotency_key'])
-requireText('src/styles/shell.css', ['sidebar-collapsed', 'sidebar-open', 'inset-inline-start'])
+requireText('src/styles/shell.css', ['data-sidebar-collapsed', 'data-mobile-nav="open"', 'inset-inline-start'])
 requireText('src/styles/final-ui.css', ['backdrop-filter', 'prefers-reduced-motion', 'state-panel'])
 requireText('src/components/StatePanel.tsx', ['state-panel', 'unauthorized', 'loading'])
 requireText('src/main.tsx', ["./styles/shell.css", "./styles/final-ui.css"])
@@ -61,7 +61,7 @@ if (!offline.includes('idempotencyKey') || !offline.includes('syncPendingShiftCl
 }
 
 const shell = read('src/styles/shell.css')
-if (!shell.includes('inset-inline-start') || !shell.includes('sidebar-open')) {
+if (!shell.includes('inset-inline-start') || !shell.includes('data-mobile-nav="open"')) {
   throw new Error('Direction-aware responsive sidebar contract is missing')
 }
 
