@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
+import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import {
   addPosOrderItem,
@@ -54,6 +55,8 @@ export function PosPage() {
   const canEdit = can('pos.order.edit')
   const canCancel = can('pos.order.cancel')
   const canSendKitchen = can('pos.send_kitchen')
+  const canPay = can('pos.payment.take')
+  const canClose = can('pos.order.close')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
@@ -61,6 +64,8 @@ export function PosPage() {
   const occupiedTableIds = useMemo(() => new Set(orders.filter((order) => order.dining_table_id).map((order) => order.dining_table_id as string)), [orders])
   const hasKitchenDelta = useMemo(() => items.some((item) => (item.is_removed ? 0 : item.quantity) !== item.sent_quantity), [items])
   const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
+
+  const { payments, paidAmount, remainingAmount, refreshPayments, takePayment, closePaidOrder } = usePayments(selectedOrder)
 
   async function refreshAll() {
     if (!branchId || !canView) return
@@ -114,6 +119,7 @@ export function PosPage() {
       await action()
       await refreshAll()
       await refreshItems(selectedOrderId)
+      await refreshPayments()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تنفيذ العملية')
     }
@@ -145,9 +151,21 @@ export function PosPage() {
     })
   }
 
+  async function handlePayment(form: HTMLFormElement) {
+    if (!selectedOrder) return
+    const data = new FormData(form)
+    const method = String(data.get('method')) as 'cash' | 'card'
+    const amount = Number(data.get('amount'))
+    await runAction(async () => {
+      await takePayment(method, amount)
+      form.reset()
+    })
+  }
+
   const editable = selectedOrder && ['created', 'held', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
   const cancellable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
   const kitchenSendable = selectedOrder && ['created', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
+  const paymentReady = selectedOrder && ['ready', 'partially_paid'].includes(selectedOrder.status)
 
   return (
     <section className="workspace-card pos-workspace" aria-labelledby="pos-title">
@@ -155,7 +173,7 @@ export function PosPage() {
         <div>
           <p className="eyebrow">POS</p>
           <h2 id="pos-title">شاشة البيع</h2>
-          <p>تعديلات الطلب بعد الإرسال تبقى محلية حتى تضغط «إرسال التغييرات» للمطبخ.</p>
+          <p>تعديلات الطلب بعد الإرسال تبقى محلية حتى تضغط «إرسال التغييرات» للمطبخ، والدفع منفصل عن إنشاء الطلب.</p>
         </div>
         <div className="pos-counters">
           <span>مفتوحة: {orders.length}</span>
@@ -282,6 +300,37 @@ export function PosPage() {
                   </div>
                 ) : null}
               </div>
+
+              {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
+                <div className="payment-card">
+                  <div className="payment-summary">
+                    <span>الإجمالي: <strong>{selectedOrder.total.toFixed(2)}</strong></span>
+                    <span>المدفوع: <strong>{paidAmount.toFixed(2)}</strong></span>
+                    <span>المتبقي: <strong>{remainingAmount.toFixed(2)}</strong></span>
+                  </div>
+
+                  {payments.length ? (
+                    <div className="payment-history">
+                      {payments.map((payment) => <span key={payment.id}>{payment.method === 'cash' ? 'نقدي' : 'بطاقة'} · {payment.amount.toFixed(2)}</span>)}
+                    </div>
+                  ) : null}
+
+                  {canPay && paymentReady ? (
+                    <form className="payment-form" onSubmit={(event) => { event.preventDefault(); void handlePayment(event.currentTarget) }}>
+                      <select name="method" defaultValue="cash" aria-label="طريقة الدفع">
+                        <option value="cash">نقدي</option>
+                        <option value="card">بطاقة</option>
+                      </select>
+                      <input name="amount" type="number" min="0.01" step="0.01" max={remainingAmount} defaultValue={remainingAmount > 0 ? remainingAmount.toFixed(2) : ''} required aria-label="مبلغ الدفع" />
+                      <button type="submit" disabled={remainingAmount <= 0}>تحصيل</button>
+                    </form>
+                  ) : null}
+
+                  {canClose && selectedOrder.status === 'paid' ? (
+                    <button type="button" onClick={() => void runAction(async () => { await closePaidOrder() })}>إغلاق الطلب</button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : <p>اختر طلبًا أو أنشئ طلبًا جديدًا.</p>}
 
