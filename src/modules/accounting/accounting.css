@@ -1,7 +1,7 @@
 .accounting-workspace { display: grid; gap: 1rem; }
 .account-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; align-items: end; }
-.account-form input, .account-form select { width: 100%; min-height: 42px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; padding: .7rem .8rem; background: var(--surface, #fff); }
-.account-form button { min-height: 42px; }
+.account-form input, .account-form select, .journal-create-form input, .journal-line-form input, .journal-line-form select { width: 100%; min-height: 42px; border: 1px solid var(--border, #d7dce2); border-radius: 12px; padding: .7rem .8rem; background: var(--surface, #fff); }
+.account-form button, .journal-create-form button, .journal-line-form button { min-height: 42px; }
 .account-check { display: flex; align-items: center; gap: .5rem; min-height: 42px; }
 .account-check input { width: auto; min-height: 0; }
 .account-table-wrap { overflow-x: auto; }
@@ -10,5 +10,19 @@
 .account-table th { font-size: .85rem; white-space: nowrap; }
 .account-table td small { display: block; margin-top: .25rem; opacity: .65; }
 .account-table button { white-space: nowrap; }
-@media (max-width: 960px) { .account-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .account-form { grid-template-columns: 1fr; } }
+.journal-create-form { display: grid; grid-template-columns: 180px minmax(220px,1fr) minmax(180px,.8fr) auto; gap: .75rem; align-items: end; }
+.journal-layout { display: grid; grid-template-columns: minmax(220px,280px) minmax(0,1fr); gap: 1rem; }
+.journal-list { display: grid; gap: .5rem; align-content: start; }
+.journal-entry { display: grid; grid-template-columns: auto 1fr auto; gap: .25rem .6rem; text-align: right; padding: .8rem; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; background: var(--surface, #fff); }
+.journal-entry.active { outline: 2px solid currentColor; outline-offset: -2px; }
+.journal-entry small { grid-column: 1 / -1; opacity: .7; }
+.journal-entry em { font-style: normal; font-size: .8rem; opacity: .75; }
+.journal-detail { min-width: 0; display: grid; gap: .9rem; align-content: start; }
+.journal-summary { display: grid; grid-template-columns: 2fr repeat(3,1fr); gap: .75rem; }
+.journal-summary > div { display: grid; gap: .2rem; padding: .8rem; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; }
+.journal-summary span { font-size: .82rem; opacity: .7; }
+.journal-line-form { display: grid; grid-template-columns: minmax(220px,1.5fr) repeat(2,minmax(100px,.6fr)) minmax(180px,1fr) auto; gap: .65rem; align-items: end; }
+.journal-post-button { justify-self: start; }
+.journal-lines-table { min-width: 760px; }
+@media (max-width: 960px) { .account-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .journal-layout { grid-template-columns: 1fr; } .journal-list { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-create-form, .journal-line-form { grid-template-columns: repeat(2,minmax(0,1fr)); } .journal-summary { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 640px) { .account-form, .journal-create-form, .journal-line-form, .journal-summary, .journal-list { grid-template-columns: 1fr; } }
