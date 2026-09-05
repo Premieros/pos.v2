@@ -6,6 +6,7 @@ import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
+import { SuppliersPage } from '../modules/procurement/SuppliersPage'
 import { ReturnPanel } from '../modules/returns/ReturnPanel'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 import { ShiftsPage } from '../modules/shifts/ShiftsPage'
@@ -27,6 +28,7 @@ export function App() {
   const showKitchen = can('kitchen.view') || can('kitchen.manage')
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
+  const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -47,6 +49,7 @@ export function App() {
           {showKitchen ? <a href="#kds-section">المطبخ KDS</a> : null}
           {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
           {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
+          {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
 
@@ -75,6 +78,7 @@ export function App() {
         {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
         {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
         {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
+        {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
