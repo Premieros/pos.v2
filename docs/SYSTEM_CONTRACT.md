@@ -4,9 +4,13 @@
 Supabase PostgreSQL is authoritative for persisted business state, authorization scope, inventory and financial transactions.
 
 ## Authorization invariant
-`allowed(action, branch) = super_admin OR (branch_access AND effective_permission)`
+`allowed(action, branch) = branch_access AND effective_permission`
 
-Super Admin is stored in trusted database state, never user-editable metadata.
+Effective permission may come from a direct user grant or from a role template. An explicit direct user revoke always wins.
+
+No feature is authorized by a role name. Roles are labels/templates for grouping permissions only and are never authority by themselves.
+
+Elevated/platform users must also receive real permission records and pass the same authorization resolver as every other user. No role-based implicit bypass is allowed.
 
 ## Domain boundaries
 - Identity & Access
