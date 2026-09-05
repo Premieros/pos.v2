@@ -1,3 +1,4 @@
+import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
 import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
@@ -37,6 +38,7 @@ export function App() {
   const showApprovals = can('approvals.view') || can('approvals.review')
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
+  const showAccounting = can('accounting.coa.view') || can('accounting.coa.manage')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -62,6 +64,7 @@ export function App() {
           {showApprovals ? <a href="#approvals-section">مركز الموافقات</a> : null}
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
+          {showAccounting ? <a href="#accounting-section">دليل الحسابات</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
 
@@ -95,6 +98,7 @@ export function App() {
         {showApprovals ? <section id="approvals-section" className="app-section-anchor"><ApprovalCenterPage /></section> : null}
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
+        {showAccounting ? <section id="accounting-section" className="app-section-anchor"><ChartOfAccountsPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
