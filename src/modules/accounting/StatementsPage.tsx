@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
-import { listAccounts, type Account } from './account.service'
-import { getBalanceSheet, getGeneralLedger, getIncomeStatement, getTrialBalance, type BalanceSheetRow, type IncomeStatementRow, type LedgerRow, type TrialBalanceRow } from './statements.service'
+import { getBalanceSheet, getGeneralLedger, getIncomeStatement, getStatementAccounts, getTrialBalance, type BalanceSheetRow, type IncomeStatementRow, type LedgerRow, type StatementAccount, type TrialBalanceRow } from './statements.service'
 import './accounting.css'
 
 type StatementTab = 'trial' | 'ledger' | 'income' | 'balance'
@@ -22,7 +21,7 @@ export function StatementsPage() {
   const [fromDate, setFromDate] = useState(monthStart())
   const [toDate, setToDate] = useState(today())
   const [accountId, setAccountId] = useState('')
-  const [accounts, setAccounts] = useState<Account[]>([])
+  const [accounts, setAccounts] = useState<StatementAccount[]>([])
   const [trial, setTrial] = useState<TrialBalanceRow[]>([])
   const [ledger, setLedger] = useState<LedgerRow[]>([])
   const [income, setIncome] = useState<IncomeStatementRow[]>([])
@@ -34,10 +33,9 @@ export function StatementsPage() {
 
   useEffect(() => {
     if (!currentBranchId || !canView) return
-    void listAccounts(currentBranchId).then((rows) => {
-      const postable = rows.filter((row) => row.is_postable)
-      setAccounts(postable)
-      if (!accountId && postable.length) setAccountId(postable[0].id)
+    void getStatementAccounts(currentBranchId).then((rows) => {
+      setAccounts(rows)
+      if (!accountId && rows.length) setAccountId(rows[0].id)
     }).catch((cause) => setError(cause instanceof Error ? cause.message : 'تعذر تحميل الحسابات'))
   }, [currentBranchId, canView])
 
