@@ -9,6 +9,8 @@ export type JournalEntry = {
   memo: string | null
   reference: string | null
   posted_at: string | null
+  source_type?: string | null
+  source_id?: string | null
 }
 
 export type JournalLine = {
@@ -25,7 +27,7 @@ export type JournalLine = {
 export async function listJournalEntries(branchId: string): Promise<JournalEntry[]> {
   const { data, error } = await supabase
     .from('journal_entries')
-    .select('id, branch_id, entry_number, entry_date, status, memo, reference, posted_at')
+    .select('id, branch_id, entry_number, entry_date, status, memo, reference, posted_at, source_type, source_id')
     .eq('branch_id', branchId)
     .order('entry_date', { ascending: false })
     .order('entry_number', { ascending: false })
@@ -74,6 +76,15 @@ export async function removeJournalLine(lineId: string): Promise<void> {
 
 export async function postJournalEntry(entryId: string): Promise<string> {
   const { data, error } = await supabase.rpc('post_journal_entry', { p_journal_entry_id: entryId })
+  if (error) throw error
+  return data as string
+}
+
+export async function reverseJournalEntry(entryId: string, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc('reverse_journal_entry', {
+    p_journal_entry_id: entryId,
+    p_reason: reason.trim(),
+  })
   if (error) throw error
   return data as string
 }
