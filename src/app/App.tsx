@@ -2,6 +2,7 @@ import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
 import { CatalogPage } from '../modules/catalog/CatalogPage'
+import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 
@@ -29,10 +30,11 @@ export function App() {
 
       <section className="card status-card">
         <h2>الأساس التشغيلي جاهز</h2>
-        <p>Auth وBranch Context وPermission Context تعمل بعقد موحد.</p>
+        <p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p>
       </section>
 
       {can('catalog.view') || can('catalog.manage') ? <CatalogPage /> : null}
+      {can('inventory.view') ? <InventoryPage /> : null}
     </main>
   )
 }
