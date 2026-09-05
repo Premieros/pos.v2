@@ -39,40 +39,34 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 8.2 Sales & Operations Reports ✅
 - Real read-only projections for sales summary, detailed invoices, payment method, employee, product, order type, returns/refunds/voids/discounts and cashier/shift performance.
-- Uses the unified branch/date/payment/employee/product/order-type filter contract.
 - Migration: `20260905193209_sales_operations_report_projections`.
 - Verify #421 ✅.
 
 ### 8.3 Procurement, Inventory & Cost Reports ✅
-- Purchases/suppliers with ordered/received quantities and accepted receipt value.
-- Ledger-derived inventory balances plus period inbound/outbound and low-stock indicators.
-- Formal waste report by warehouse/item/date.
-- Historical accepted purchase-cost report from `inventory_item_purchase_cost_history`, including quantity, unit cost, total cost and weighted average cost without rewriting historical costs.
+- Purchases/suppliers, ledger-derived inventory, waste and historical accepted purchase cost.
 - Migrations: `20260905194116_procurement_inventory_report_projections`, `20260905194501_purchase_cost_history_report_projection`.
-- Private report functions are non-executable by authenticated; public wrappers remain permission/branch guarded.
-- Security Advisor: only known leaked-password-protection Auth warning.
-- Performance Advisor: unused-index INFO only; no material report-specific finding.
 - Verify #433 ✅.
 
 ### 8.4 Accounting Reports Integration ✅
-- Central Reports workspace now includes Trial Balance, General Ledger, Income Statement and Balance Sheet.
-- Reuses existing Batch 7 statement services/RPCs; no accounting calculation was duplicated or replaced.
-- Accounting reports still require `accounting.statements.view`; `reports.view` alone does not grant financial-statement access.
-- General Ledger keeps explicit account selection through the existing statement account reference RPC.
-- Verify #441 ✅ — regressions / Typecheck / Build / Pages Deploy.
+- Trial Balance, General Ledger, Income Statement and Balance Sheet are integrated into the central workspace by reusing Batch 7 contracts.
+- `accounting.statements.view` remains mandatory for financial statements.
+- Verify #441 ✅.
 
-### 8.5 Custom Columns + Excel Export 🚧 NEXT
-- User-selectable report columns.
-- Excel export based on the same filtered result and totals.
-- Export must not bypass report/accounting permissions or refetch a broader dataset than what is displayed.
+### 8.5 Custom Columns + Excel Export ✅
+- Operational and accounting reports support per-report selectable visible columns.
+- Excel export uses the exact currently loaded filtered rows and the same selected columns; it does not refetch or widen scope.
+- Exports include a separate totals worksheet and preserve numeric values using dependency-free SpreadsheetML `.xls` generation.
+- Permission boundaries remain unchanged; accounting exports require the same statement permission as the displayed report.
+- Verify #453 ✅ — Batch 5/6/7 regression, Typecheck, Build and Pages Deploy.
 
-### 8.6 Central Printing ⏳
+### 8.6 Central Printing 🚧 NEXT
 - Centralized print workflows for Kitchen, receipts/reprints, shift close, day close and reports.
-- Permission-aware reprint behavior; receipt immutable snapshot contract remains authoritative.
+- Preserve immutable receipt snapshot and permission-aware reprint contracts.
+- Reuse existing Kitchen/Receipt/Shift commands and projections; do not duplicate business logic.
 
 ### 8.7 Batch 8 Regression + Advisors + Verify ⏳
 
-Immediate target: **8.5 Custom Columns + Excel Export**.
+Immediate target: **8.6 Central Printing**.
 
 ## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
@@ -85,9 +79,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–7: ✅ CLOSED.
-- Batch 8.1–8.4: ✅ CLOSED.
-- Immediate target: **8.5 Custom Columns + Excel Export**.
-- Verified implementation HEAD before this log update: `bf394a3e275f71f37d202ecfce1c64f9c6e8f68d` — Verify #441 ✅.
+- Batch 8.1–8.5: ✅ CLOSED.
+- Immediate target: **8.6 Central Printing**.
+- Verified implementation HEAD before this log update: `a1e37e7df8b54cd2f779c65a0b4235efa93939f0` — Verify #453 ✅.
 - `main` untouched.
 
 ## Hardening backlog
