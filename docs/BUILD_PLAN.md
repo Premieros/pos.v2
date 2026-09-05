@@ -29,54 +29,46 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 6 — Procurement & Stock Control ✅ CLOSED
-- 6.1 Suppliers ✅ — Verify #201
-- 6.2 Purchase Documents + Lines ✅ — Verify #219
-- 6.3 Purchase Receive → Inventory ✅ — Verify #233
-- 6.4 Purchase Workflow + Cost History ✅ — Verify #245
-- 6.5 Formal Waste Documents ✅ — Verify #259
-- 6.6 Stock Count Sessions + Variance ✅ — Verify #271
-- 6.7 Approval Center ✅ — Verify #283
-- 6.8 Final Batch 6 Regression / Advisors / Audit ✅ — Verify #293
-
 ## Batch 7 — Accounting & Treasury 🚧 CURRENT
 
 ### 7.1 Chart of Accounts ✅
-- Branch-scoped `accounts` hierarchy with unique branch account codes.
-- Types: asset / liability / equity / revenue / expense.
-- Normal balance is server-derived from account type.
-- Parent and child must remain in the same branch and account type.
-- Postable accounts cannot be used as parents; hierarchy cycles are rejected.
-- Permissions: `accounting.coa.view` / `accounting.coa.manage`.
-- Authenticated table access is SELECT-only; mutations are RPC-only.
+- Branch-scoped account hierarchy.
+- Permissions: `accounting.coa.view/manage`.
 - Migration: `20260905183814_chart_of_accounts_foundation`.
 - Verify #305 ✅.
 
 ### 7.2 Journal Entries + Balanced Lines ✅
-- Branch-scoped draft/posted journal headers and journal lines.
+- Branch-scoped draft/posted journals and lines.
 - Permissions: `accounting.journals.view/create/edit/post`.
-- Draft lines reference same-branch active postable accounts only.
-- Every line contains exactly one positive debit or credit side.
-- Posting requires at least two lines and exact `debit = credit > 0` server-side.
-- Posted journals are immutable through current mutation contract; reversal is reserved for 7.6.
-- Manual journal creation is idempotent and branch numbering is serialized.
-- Journal tables are SELECT-only to authenticated; mutations are RPC-only.
-- Private journal RPCs are non-executable by authenticated clients.
-- Journal-only users receive read-only account references without COA management rights.
+- Posting requires at least two lines and exact debit = credit > 0.
+- Tables SELECT-only to authenticated; mutations RPC-only.
 - Migration: `20260905184225_journal_entries_and_balanced_lines`.
-- Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no journal-specific WARN; fresh-DB unused-index INFO only.
-- Verify #317 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+- Verify #317 ✅.
 
-### 7.3 Expenses + Source-linked Posting 🚧 NEXT
-- Branch-scoped expense documents with independent permissions.
-- Expense account must be active/postable and type `expense`.
-- Offset account must be active/postable in the same branch.
-- Posting creates exactly one balanced journal linked to the expense source.
-- Posted expenses cannot be silently edited; reversal remains 7.6.
+### 7.3 Expenses + Source-linked Posting ✅
+- Branch-scoped expense documents.
+- Permissions: `accounting.expenses.view/create/edit/post`.
+- Expense account must be active/postable expense account; offset account must be same-branch active/postable.
+- Expense create is idempotent and branch numbering is serialized.
+- Posting is atomic and creates exactly one balanced posted journal with `source_type='expense'` and exact source id lineage.
+- Debit = expense account, credit = offset account.
+- Posted expense cannot be silently edited under current RPC contract; reversal is deferred to 7.6.
+- Expense table is SELECT-only to authenticated; mutations are RPC-only.
+- Private expense RPCs are non-executable by authenticated clients.
+- Migration: `20260905184632_expenses_and_source_linked_posting`.
+- Security Advisor: only existing leaked-password Auth warning.
+- Performance Advisor: no expense-specific WARN; fresh-DB unused-index INFO only.
+- Verify #329 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+
+### 7.4 Cash/Bank Treasury Accounts + Movements 🚧 NEXT
+- Treasury accounts are branch-scoped and linked to active postable `asset` COA accounts.
+- Types: cash / bank.
+- Treasury balance is ledger-derived; no editable balance column.
+- Treasury movement must retain treasury-account and accounting-journal lineage.
+- A manual treasury in/out movement must create one balanced journal atomically against a counter-account.
+- Treasury remains separate from POS cashier drawer operational balance.
 - Direct table writes remain blocked.
 
-### 7.4 Cash/Bank Treasury Accounts + Movements ⏳
 ### 7.5 Automatic Operational Source Links ⏳
 ### 7.6 Idempotent Posting + Reversal Rules ⏳
 ### 7.7 Accounting Statements Contracts ⏳
@@ -86,12 +78,11 @@ Accounting rules:
 - Branch-scoped accounting records unless an explicit global accounting object is defined.
 - Posted journals are immutable; corrections use reversal, never silent edits.
 - Every journal must balance debit = credit server-side before posting.
-- No direct frontend journal-line writes for posted entries.
-- Source posting must be idempotent and retain source lineage.
-- Treasury movements must preserve cash/bank account lineage and branch isolation.
+- Source posting is idempotent and retains source lineage.
+- Treasury movements preserve cash/bank account lineage and branch isolation.
 - Permissions remain granular and permission-first.
 
-Immediate target: **7.3 Expenses + Source-linked Posting**.
+Immediate target: **7.4 Cash/Bank Treasury Accounts + Movements**.
 
 ## Batch 8 — Reports & Central Printing ⏳ QUEUED
 One table-first reports page with filters/totals/custom columns/Excel/print, plus centralized Kitchen/Receipt/Shift close/Day close/Report printing.
@@ -107,9 +98,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–6: ✅ CLOSED.
-- Batch 7.1–7.2: ✅ CLOSED.
-- Immediate target: **7.3 Expenses + Source-linked Posting**.
-- Verified implementation HEAD before this log update: `278d990ab4103a3ad9a505f28d93d548335aadf5`.
+- Batch 7.1–7.3: ✅ CLOSED.
+- Immediate target: **7.4 Cash/Bank Treasury Accounts + Movements**.
+- Verified implementation HEAD before this log update: `5f221bd23c9037159067778030061d5cc46afbd4`.
 - `main` untouched.
 
 ## Hardening backlog
