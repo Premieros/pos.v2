@@ -26,6 +26,8 @@ jobs:
           node-version: 22
       - name: Install
         run: npm install --ignore-scripts
+      - name: Batch 5 regression
+        run: npm run test:batch5
       - name: Typecheck
         run: npm run typecheck
       - name: Build
