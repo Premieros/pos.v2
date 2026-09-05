@@ -20,6 +20,8 @@ const migrationChecks = [
   ['supabase/migrations/20260905163626_pos_table_transfer_and_merge_contract.sql', ['pos.order.transfer', 'transfer_order_table', 'merge_dine_in_orders', "status='merged'"]],
   ['supabase/migrations/20260905164257_receipt_first_print_and_reprint_contract.sql', ['pos.receipt.print', 'pos.receipt.reprint', 'register_first_receipt_print', 'register_receipt_reprint']],
   ['supabase/migrations/20260905164722_customer_display_read_only_projection.sql', ['get_customer_display_projection', 'pos.view']],
+  ['supabase/migrations/20260905165322_harden_return_refund_table_grants.sql', ['revoke all on table public.order_returns from authenticated', 'grant select on table public.refunds to authenticated']],
+  ['supabase/migrations/20260905165401_harden_split_bill_table_grants.sql', ['revoke all on table public.order_bill_splits from authenticated', 'grant select on table public.order_bill_split_lines to authenticated']],
 ]
 
 for (const [path, snippets] of migrationChecks) requireText(path, snippets)
