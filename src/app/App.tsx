@@ -3,6 +3,7 @@ import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
 import { CatalogPage } from '../modules/catalog/CatalogPage'
 import { InventoryPage } from '../modules/inventory/InventoryPage'
+import { WastePage } from '../modules/inventory/WastePage'
 import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
@@ -29,6 +30,7 @@ export function App() {
   const showKitchen = can('kitchen.view') || can('kitchen.manage')
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
+  const showWaste = can('inventory.waste')
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
@@ -51,6 +53,7 @@ export function App() {
           {showKitchen ? <a href="#kds-section">المطبخ KDS</a> : null}
           {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
           {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
+          {showWaste ? <a href="#waste-section">مركز الهالك</a> : null}
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
@@ -81,6 +84,7 @@ export function App() {
         {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
         {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
         {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
+        {showWaste ? <section id="waste-section" className="app-section-anchor"><WastePage /></section> : null}
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
