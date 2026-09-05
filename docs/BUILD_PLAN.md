@@ -29,94 +29,53 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 5 verification baseline
-- Transfer/Merge #151 ✅
-- Receipt/Reprint #163 ✅
-- Customer Display #175 ✅
-- Final Batch 5 regression #189 ✅
-- Batch 5 regression guard remains mandatory in Verify.
-
 ## Batch 6 — Procurement & Stock Control
+- 6.1 Suppliers ✅ — Verify #201
+- 6.2 Purchase Documents + Lines ✅ — Verify #219
+- 6.3 Purchase Receive → Inventory ✅ — Verify #233
+- 6.4 Purchase Workflow + Cost History ✅ — Verify #245
+- 6.5 Formal Waste Documents ✅ — Verify #259
 
-### 6.1 Suppliers ✅
-- Branch-scoped suppliers.
-- `procurement.view` / `procurement.suppliers.manage`.
-- SELECT-only authenticated table access; RPC-only mutations.
-- Migration: `20260905165620_supplier_foundation`.
-- Verify #201 ✅.
-
-### 6.2 Purchase Documents + Lines ✅
-- Branch-scoped purchase headers linked to real suppliers.
-- Lines linked to real branch `inventory_items`.
-- Server totals; draft-only line edits.
-- Permissions: `procurement.purchases.view/create/edit/receive`.
-- SELECT-only authenticated table grants; RPC-only mutations.
-- Reference reads do not grant management/mutation rights.
-- Duplicate permissive reference policies were merged after Advisor review.
-- Migrations:
-  - `20260905165954_purchase_documents_and_lines`
-  - `20260905172328_purchase_reference_read_policies`
-  - `20260905172555_merge_purchase_reference_select_policies`
-- Verify #219 ✅.
-
-### 6.3 Purchase Receive → Warehouse Inventory ✅
-- Real active same-branch warehouse mandatory.
-- `procurement.purchases.receive` independent from manual `inventory.receive`.
-- Partial receipts supported and cumulative quantity protected.
-- Accepted quantities write the existing `stock_movements` ledger atomically.
-- Receipt history preserves exact stock-movement lineage.
-- Receipt tables SELECT-only; mutation RPC-only.
-- Composite branch FKs enforce receipt lineage.
-- Migrations:
-  - `20260905173029_purchase_atomic_receiving`
-  - `20260905173238_purchase_receipt_lineage_and_indexes`
-  - `20260905173541_purchase_receipt_order_line_covering_index`
-- Verify #233 ✅.
-
-### 6.4 Purchase Workflow + Cost History ✅
-- Independent `procurement.purchases.submit` / `procurement.purchases.cancel`.
-- Submit requires at least one line.
-- Cancel requires reason and is blocked after receipt history.
-- Receiving requires submitted/partially_received.
-- Status transitions are audited.
-- Cost history derives from accepted receipt lines only via `security_invoker` view.
-- Migration: `20260905173904_purchase_workflow_and_cost_history`.
-- Verify #245 ✅.
-
-### 6.5 Formal Waste Documents ✅
-- Formal `waste_documents` + `waste_document_lines` with real branch warehouse/item references.
-- `inventory.waste` remains the only functional permission for the workspace and commands.
-- Authenticated table access is SELECT-only; mutations are RPC-only.
-- Private functions are non-executable by authenticated clients.
-- Posting is idempotent and writes the existing `stock_movements` ledger using `movement_type='waste'`.
-- Insufficient stock fails closed; balances are never directly edited.
-- Waste line preserves exact stock movement reference.
-- RLS init-plan warning fixed forward-only.
-- Migrations:
-  - `20260905175458_formal_waste_documents`
-  - `20260905175540_waste_rls_initplan_hardening`
+### 6.6 Stock Count Sessions + Variance ✅
+- Branch/warehouse-scoped count sessions and real inventory-item lines.
+- System quantity snapshot is captured server-side when an item is counted.
+- Counted quantity must be zero or positive.
+- Variance is generated server-side as `counted_quantity - system_quantity`.
+- Re-count refreshes the snapshot and actual quantity atomically.
+- Submit requires at least one line and fails closed if stock changed since any snapshot.
+- Submit freezes the session as `pending_approval`.
+- No stock movement or balance change occurs in 6.6.
+- Count-only users receive read-only warehouse/item references without setup/mutation rights.
+- Count tables are SELECT-only to authenticated; all writes are RPC-only.
+- Private count RPCs are not executable by authenticated clients.
+- Migration: `20260905181306_stock_count_sessions_and_variance`.
 - Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no waste-specific WARN after hardening; fresh-DB unused-index INFO only.
-- Verify #259 ✅ — Batch 5 regression / Typecheck / Build / Pages Deploy.
+- Performance Advisor: no count-specific WARN; fresh-DB unused-index INFO only.
+- Verify #271 ✅ — Batch 5 regression / Typecheck / Build / Pages Deploy.
 
-### 6.6 Stock Count Sessions + Variance 🚧 NEXT
-- Count sessions are branch + warehouse scoped.
-- Actual quantities and system snapshots are recorded per inventory item.
-- Variance is server-derived.
-- Submission freezes the count for review.
-- 6.6 must not post stock adjustment before Approval Center 6.7.
+### 6.7 Approval Center 🚧 NEXT
+- Independent approval permissions.
+- No self-approval unless explicit self-review permission exists.
+- Approved count variance posts `count_adjustment` movements atomically.
+- Rejected counts never affect stock.
+- Reviewer must see exact branch/warehouse/item variance context.
 
-### 6.7 Approval Center ⏳
 ### 6.8 Batch 6 Regression + Advisors + Verify ⏳
 
 ## Current checkpoint
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD: `c1a353b718562a26cf136eaeb398a4d58924b167`.
-- Batch 6.1–6.5 ✅
-- Immediate target: **6.6 Stock Count Sessions + Variance**.
+- Verified implementation HEAD: `48cb39226aeed66dd99f943a46f1dfbbf5405beb`.
+- Batch 6.1–6.6 ✅
+- Immediate target: **6.7 Approval Center**.
 - `main` untouched.
+
+## Remaining after Batch 6
+- Batch 7 — Accounting & Treasury.
+- Batch 8 — Reports & Central Printing.
+- Batch 9 — Administration, Offline & Final UX.
+- Batch 10 — Full Verification & Release Candidate.
 
 ## Hardening backlog
 - Enable Supabase Auth leaked-password protection before release.
