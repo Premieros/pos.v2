@@ -24,53 +24,72 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 4 — POS Operational Controls I ✅ CLOSED
 - Batch 5 — POS Operational Controls II ✅ CLOSED
 - Batch 6 — Procurement & Stock Control ✅ CLOSED
-- Batch 7 — Accounting & Treasury 🚧 CURRENT
-- Batch 8 — Reports & Central Printing ⏳ QUEUED
+- Batch 7 — Accounting & Treasury ✅ CLOSED
+- Batch 8 — Reports & Central Printing 🚧 CURRENT
 - Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 7 — Accounting & Treasury 🚧 CURRENT
+## Batch 7 — Accounting & Treasury ✅ CLOSED
 - 7.1 Chart of Accounts ✅ — Verify #305
 - 7.2 Journal Entries + Balanced Lines ✅ — Verify #317
 - 7.3 Expenses + Source-linked Posting ✅ — Verify #329
+- 7.4 Cash/Bank Treasury Accounts + Movements ✅ — Verify #343
+- 7.5 Automatic Operational Source Links ✅ — Verify #361
+- 7.6 Idempotent Posting + Reversal Rules ✅ — Verify #371
+- 7.7 Accounting Statements Contracts ✅ — Verify #391
+- 7.8 Batch 7 Regression + Advisors + Verify ✅ — Verify #399
 
-### 7.4 Cash/Bank Treasury Accounts + Movements ✅
-- Branch-scoped cash/bank treasury accounts linked one-to-one to active postable asset COA accounts.
-- Permissions: `treasury.view`, `treasury.accounts.manage`, `treasury.movements.create`.
-- Ledger-derived `treasury_balances` view uses `security_invoker=true`; no editable balance column.
-- Manual treasury movement is idempotent and creates one balanced posted journal atomically with exact movement lineage.
-- Incoming: debit treasury asset / credit counter account. Outgoing: debit counter / credit treasury asset.
-- Outgoing movement cannot exceed ledger-derived balance.
-- Concurrent outgoing movements are serialized by locking the treasury account before balance validation.
-- Treasury remains separate from POS cashier drawer operational balances.
-- Treasury tables are SELECT-only to authenticated; mutations are RPC-only; private RPCs are non-executable.
-- Migrations: `20260905185108_treasury_accounts_and_movements`, `20260905185128_treasury_movement_concurrency_hardening`.
-- Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no treasury-specific WARN; fresh-DB unused-index INFO only.
-- Verify #343 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+### Batch 7 closure contract
+- COA is branch-scoped and permission-first.
+- Journal posting is server-balanced and posted journals remain immutable.
+- Expense posting creates exact source-linked balanced journals.
+- Treasury cash/bank accounts are separate from POS cashier drawer balances and derive balances from immutable movements.
+- POS sales and purchase receipts create idempotent accounting source postings when mapping is configured; missing setup remains visible in a retryable queue without breaking operational flow.
+- Refunds create dedicated reverse-effect accounting journals; original sale journals are not mutated.
+- Posted journal correction uses a separate reversal journal with swapped debit/credit, reason, idempotency and explicit original/reversal lineage.
+- Accounting statements are read-only from posted journals: Trial Balance, General Ledger, Income Statement and Balance Sheet.
+- Statement-only users obtain account references through a dedicated statement permission and do not require COA management permission.
+- Authenticated direct table grants for sensitive Batch 7 tables are SELECT-only.
+- Live DB audit: 18/18 required Batch 7 permissions present; sensitive accounting tables audited SELECT-only; matching `app_private` accounting/treasury/statement functions executable by authenticated = 0.
+- Security Advisor: only the known Supabase Auth leaked-password-protection warning remains.
+- Performance Advisor: no material Batch 7 issue; fresh-database unused-index INFO only.
+- Repository regression guards: Batch 5 ✅ / Batch 6 ✅ / Batch 7 ✅.
 
-### 7.5 Automatic Operational Source Links 🚧 NEXT
-- Branch accounting mappings define which COA accounts receive operational postings.
-- Closed/paid POS sales post from real payment composition, not role/UI assumptions.
-- Accepted purchase receipts post from actual accepted receipt quantities and stored receipt cost.
-- Every source is idempotent and keeps exact `source_type/source_id` journal lineage.
-- Source posting never modifies the operational document itself except through explicitly designed linkage if required.
-- Missing accounting mapping fails closed with a guided configuration prerequisite.
+## Batch 8 — Reports & Central Printing 🚧 CURRENT
 
-### 7.6 Idempotent Posting + Reversal Rules ⏳
-### 7.7 Accounting Statements Contracts ⏳
-### 7.8 Batch 7 Regression + Advisors + Verify ⏳
+### 8.1 Unified Reports Contract 🚧 NEXT
+- One professional table-first Reports workspace, not duplicated report icons/pages.
+- Permission-first, branch-scoped and server-authoritative data projections.
+- Filters: branch scope, date range, payment method, employee, product, order type and relevant source-specific filters.
+- Totals and clear empty/loading/error/unauthorized states.
+- No charts in the canonical reports workspace.
 
-Accounting rules:
-- Posted journals are immutable; corrections use reversal, never silent edits.
-- Every journal balances server-side.
-- Source posting is idempotent and preserves lineage.
-- Permissions remain granular and permission-first.
+### 8.2 Sales & Operations Reports ⏳
+- Sales summary / detailed invoices.
+- Sales by payment / employee / product / order type.
+- Returns/refunds/voids/discounts.
+- Cashier and shift performance.
 
-Immediate target: **7.5 Automatic Operational Source Links**.
+### 8.3 Procurement, Inventory & Cost Reports ⏳
+- Purchases and suppliers.
+- Inventory balances/movements.
+- Component consumption / stock alerts / counts / waste.
+- Purchase cost history and relevant cost projections.
 
-## Batch 8 — Reports & Central Printing ⏳ QUEUED
-One table-first reports page with filters/totals/custom columns/Excel/print, plus centralized Kitchen/Receipt/Shift close/Day close/Report printing.
+### 8.4 Accounting Reports Integration ⏳
+- Integrate Trial Balance, General Ledger, Income Statement and Balance Sheet into the central reports experience without duplicating accounting contracts.
+
+### 8.5 Custom Columns + Excel Export ⏳
+- User-selectable report columns.
+- Excel export based on the same filtered result and totals.
+
+### 8.6 Central Printing ⏳
+- Centralized print workflows for Kitchen, receipts/reprints, shift close, day close and reports.
+- Permission-aware reprint behavior; receipt immutable snapshot contract remains authoritative.
+
+### 8.7 Batch 8 Regression + Advisors + Verify ⏳
+
+Immediate target: **8.1 Unified Reports Contract**.
 
 ## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
@@ -82,10 +101,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Batches 1–6: ✅ CLOSED.
-- Batch 7.1–7.4: ✅ CLOSED.
-- Immediate target: **7.5 Automatic Operational Source Links**.
-- Verified implementation HEAD before this log update: `e5a6702ce9f369d9ebd614ff65ba0015f56c0b22`.
+- Batches 1–7: ✅ CLOSED.
+- Immediate target: **8.1 Unified Reports Contract**.
+- Verified Batch 7 implementation HEAD before this log update: `fefc1b8fa9f331b0483bdba0b160738a9b254203` — Verify #399 ✅.
 - `main` untouched.
 
 ## Hardening backlog
@@ -94,4 +112,4 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Keep credentials outside client/repository history.
 
 ## Final release gate
-No `development` → `main` merge until Batches 7–10 are ✅, security hardening is ✅, no known P0/P1 regression remains, and explicit release approval is given.
+No `development` → `main` merge until Batches 8–10 are ✅, security hardening is ✅, no known P0/P1 regression remains, and explicit release approval is given.
