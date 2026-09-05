@@ -35,12 +35,11 @@ Preview: `https://premieros.github.io/pos.v2/`
 ### 10.1 Repository / Build / Contract Verification ✅
 - Added `scripts/verify-release-candidate.mjs` and independent `.github/workflows/release-guard.yml`.
 - Release guard verifies the locked Supabase identity, required regression guards/migrations, public frontend environment contract, key module integration, and scans TS/TSX source against broad `pos.sell`, role-label authorization and service-role leakage.
-- Standard Verify and Release Guard both green on the RC preparation branch.
-- Three legacy migration filenames were found with timestamps different from the versions recorded by Supabase while carrying the same named contracts. Repository filenames were aligned to the production migration versions **without changing SQL or executing DDL**:
+- Three legacy migration filenames were aligned to the production migration versions without changing SQL or executing DDL:
   - `20260905132049_bootstrap_first_super_admin_and_branch.sql`
   - `20260905132455_scoped_user_permission_management.sql`
   - `20260905132922_harden_bootstrap_security_definer_scope.sql`
-- Latest verified pre-log implementation HEAD: `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
+- Migration alignment HEAD: `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
 - Release Guard #13 ✅.
 - Verify #573 ✅ — Batch 5/6/7/8/9 regression, Typecheck, Build and Pages Deploy all green.
 
@@ -62,16 +61,18 @@ No production test identities/data were created merely to simulate cross-branch 
 ### 10.4 Release Candidate / Final Advisors / Deploy ✅
 - Final Security Advisor: no schema/code security finding; only Supabase Auth platform warning **Leaked Password Protection Disabled** remains.
 - Final Performance Advisor: `unused_index` INFO only on the current low/fresh workload; no material performance finding.
-- Release Guard #13 ✅ on `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
-- Verify #573 + Pages Deploy ✅ on `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
-- This log commit is documentation-only; its resulting Verify/Release Guard must remain green before the RC HEAD is considered final.
+- Final RC documentation HEAD before this update: `df11f9ce22e18ef36ce56a11262c77cd8ccbd092`.
+- Release Guard #15 ✅ on the final RC documentation state.
+- Verify #575 ✅ — Batch 5/6/7/8/9 regression, Typecheck, Build and Pages Deploy all green.
+- Pages Deploy ✅.
 
 ## Current checkpoint
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–10: ✅ CLOSED.
-- Release Candidate: ✅ READY pending final documentation-only CI confirmation.
+- Release Candidate: ✅ READY.
+- Final verified RC documentation state: `df11f9ce22e18ef36ce56a11262c77cd8ccbd092` — Release Guard #15 ✅ / Verify #575 ✅ / Deploy ✅.
 - `main`: untouched.
 
 ## Known external hardening item
@@ -81,4 +82,4 @@ https://supabase.com/docs/guides/auth/password-security#password-strength-and-le
 Unused-index INFO should be reviewed after realistic production workload, not silenced by deleting useful indexes during RC.
 
 ## Final release gate
-**Do not merge `development` → `main` without explicit user approval.** Release requires the final documentation-only Verify/Release Guard to be green and the leaked-password-protection platform setting to be enabled or explicitly accepted as an external dependency.
+**Do not merge `development` → `main` without explicit user approval.** Release requires the leaked-password-protection platform setting to be enabled or explicitly accepted as an external dependency.
