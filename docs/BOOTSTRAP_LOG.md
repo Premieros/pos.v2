@@ -10,51 +10,40 @@
 - Supabase project URL: `https://scpovyrqmsbiduanykod.supabase.co`
 - Database identity rule: only this Supabase project may be used by POS.V2.
 
-## Current bootstrap state — 2026-09-05
+## Bootstrap completion — 2026-09-05
 
-- ✅ Hidden immutable `super_admin` system role exists.
-- ✅ `super_admin` automatically owns all defined permissions.
-- ✅ Super Admin platform assignment is stored only in `app_private.platform_role_assignments`.
-- ✅ One-time bootstrap RPC exists for first Super Admin + first branch.
-- ✅ Bootstrap implementation is protected inside `app_private`; exposed wrapper is security-invoker.
-- ✅ Public signup is not used for normal user administration.
-- ✅ GitHub Pages development deployment is operational from `development` after successful Verify.
-- ⏳ First Supabase Auth user has **not been created yet**.
-- ⏳ Therefore the first Super Admin assignment and first branch bootstrap have **not executed yet**.
+- Auth user email: `sayed3la2@gmail.com`
+- Auth user UUID: `71dcc9f6-03f3-4ab6-b50e-8684414b03f0`
+- Profile created by supported Auth lifecycle: ✅
+- Profile active: ✅
+- Initial branch code: `MAIN`
+- Initial branch Arabic name: `الفرع الرئيسي`
+- Initial branch English name: `Main Branch`
+- Initial branch UUID: `e214755b-bfe4-4bf5-b3a8-5bdf333a2ca1`
+- User branch access granted: ✅
+- Hidden immutable `super_admin` platform assignment stored in `app_private.platform_role_assignments`: ✅
+- Super Admin permissions: `45 / 45` ✅
+- Bootstrap one-time guard is now closed by state: `1 auth user / 1 branch / 1 platform assignment` ✅
+- Verified at: `2026-09-05 14:40:45 UTC`
 
-## Initial Auth user creation rule
+## Security verification after bootstrap
 
-The first Auth user must be created through a trusted Supabase Admin/Auth path. Do **not** manually insert into `auth.users`, `auth.identities`, or password hash columns.
+Supabase Security Advisor was run after the bootstrap.
 
-Reason: direct SQL insertion bypasses the supported Supabase Auth lifecycle and can leave an invalid or partially-created identity.
+- Database/RLS/security-definer findings related to the bootstrap: no new bootstrap-specific finding observed.
+- Current Auth warning: **Leaked Password Protection Disabled**.
+- Remediation reference: Supabase Auth password security / leaked password protection.
 
-The currently connected Supabase tooling exposes SQL/database administration but does not expose an Admin Auth `createUser` action. Therefore initial Auth user creation remains a one-time trusted dashboard/admin operation.
-
-After that user exists, POS.V2 must immediately run the existing one-time bootstrap flow to:
-
-1. create the first branch;
-2. grant that user access to the branch;
-3. assign the private hidden `super_admin` platform role;
-4. permanently close the first-bootstrap path by its one-time conditions.
+This Auth warning does not invalidate the bootstrap, but it remains a hardening task before production release.
 
 ## Credential logging policy
 
-- Email / user UUID may be logged after creation for auditability.
-- Password must never be committed to GitHub or written into this file.
-- Password is known only to the account owner and may be reset through Supabase Auth if lost.
-- No service-role or database credentials may appear in repository history.
+- Password is intentionally **not recorded** here or anywhere in GitHub.
+- Password is known only to the account owner and should be reset through Supabase Auth if lost.
+- No service-role key, database password, access token, or private credential may appear in repository history.
 
-## Pending completion record
+## Operational result
 
-When the first user is created and bootstrap succeeds, replace this section with:
+The published development application now has a valid first login identity and an initialized platform scope. The first user is the protected Super Admin and has access to the initial `MAIN` branch.
 
-- Auth user email: `<email>`
-- Auth user UUID: `<uuid>`
-- Profile created: ✅
-- First branch ID/code: `<branch>`
-- Private Super Admin assignment: ✅
-- Bootstrap re-run rejected: ✅
-- Security Advisor after bootstrap: ✅ / findings
-- Completed at: `<timestamp>`
-
-Until that record is completed, the platform architecture is ready but there is no login account available for the published site.
+Future users must be created through the normal trusted user-administration path; the first-user bootstrap must not be used again.
