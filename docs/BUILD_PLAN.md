@@ -12,103 +12,73 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Normal users require branch access + effective permission.
 - Public business tables use RLS.
 - Critical mutations are server-authoritative atomic commands.
-- Accepted migrations are forward-only.
+- Accepted database changes are forward-only.
 - Never weaken RLS/tests to make failures pass.
 - Missing prerequisites use guided setup.
-- No merge to `main` before final release gate and explicit approval.
+- No merge to `main` before explicit release approval.
 
 ## Batch status
 - Batches 1–9 ✅ CLOSED
-- Batch 10 — Full Verification & Release Candidate 🚧 CURRENT
-
-## Batch 8 ✅ CLOSED
-Reports, accounting integration, custom columns/Excel, central printing and Batch 8 regression are closed. Final Verify #483 ✅.
+- Batch 10 — Full Verification & Release Candidate ✅ CLOSED
+- Release state: **RC READY — awaiting explicit approval; `main` untouched**
 
 ## Batch 9 — Administration, Offline & Final UX ✅ CLOSED
+- 9.1 Administration Workspace ✅ — Verify #497.
+- 9.2 Guided Setup / Prerequisite Routing ✅ — Verify #511.
+- 9.3 Offline Critical Close + Print Resilience ✅ — Verify #527.
+- 9.4 RTL/LTR + Responsive App Shell ✅ — Verify #537.
+- 9.5 Final Visual System ✅ — Verify #545.
+- 9.6 Batch 9 Regression / Advisors / Verify ✅ — Verify #553.
 
-### 9.1 Administration Workspace ✅
-- Permission-first branch/warehouse/user/role/permission administration.
-- Protected Super Admin remains private and un-targetable.
-- Role templates cannot grant permissions the administrator does not hold.
-- Migrations: `20260905201332_administration_workspace_contract`, `20260905201828_harden_administration_public_wrappers`.
-- Public RPCs are SECURITY INVOKER; sensitive implementation is private.
-- Verify #497 ✅.
+## Batch 10 — Full Verification & Release Candidate ✅ CLOSED
 
-### 9.2 Guided Setup / Prerequisite Routing ✅
-- Fresh bootstrap is separated from “authenticated user has no accessible branch”.
-- POS guides missing shift/warehouse/products to the exact allowed setup action instead of raw DB errors.
-- Multi-branch users have explicit branch switching.
-- Migration: `20260905202048_guided_initial_setup_state`.
-- Verify #511 ✅.
+### 10.1 Repository / Build / Contract Verification ✅
+- Added `scripts/verify-release-candidate.mjs` and independent `.github/workflows/release-guard.yml`.
+- Release guard verifies the locked Supabase identity, required regression guards/migrations, public frontend environment contract, key module integration, and scans TS/TSX source against broad `pos.sell`, role-label authorization and service-role leakage.
+- Standard Verify and Release Guard both green on the RC preparation branch.
+- Three legacy migration filenames were found with timestamps different from the versions recorded by Supabase while carrying the same named contracts. Repository filenames were aligned to the production migration versions **without changing SQL or executing DDL**:
+  - `20260905132049_bootstrap_first_super_admin_and_branch.sql`
+  - `20260905132455_scoped_user_permission_management.sql`
+  - `20260905132922_harden_bootstrap_security_definer_scope.sql`
+- Latest verified pre-log implementation HEAD: `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
+- Release Guard #13 ✅.
+- Verify #573 ✅ — Batch 5/6/7/8/9 regression, Typecheck, Build and Pages Deploy all green.
 
-### 9.3 Offline Critical Close + Print Resilience ✅
-- Idempotent server-authoritative shift close with private command log and public SECURITY INVOKER wrapper.
-- Migration: `20260905202507_idempotent_shift_close_for_offline_queue`.
-- Offline queue is user+branch scoped and retries reuse one immutable idempotency key.
-- Pending close printing is explicitly non-final until server confirmation.
-- Cached day-summary printing is read-only and explicitly non-final.
-- Verify #527 ✅.
+### 10.2 Live Database Security & Permission Verification ✅
+Read-only audit against the locked production project confirmed:
+- every `public` base table has RLS enabled;
+- no live `public` function is `SECURITY DEFINER`;
+- reviewed sensitive operational tables are authenticated `SELECT`-only;
+- `app_private.platform_role_assignments` has no authenticated table privileges;
+- protected `super_admin` is `is_system=true`, `is_hidden=true`, `is_immutable=true`.
+No production test identities/data were created merely to simulate cross-branch denial; fail-closed behavior remains covered by the established RLS/permission contracts and regression guards.
 
-### 9.4 RTL/LTR + Responsive App Shell ✅
-- Arabic RTL / English LTR direction-aware shell.
-- Sidebar right for Arabic and left for English.
-- Collapsible desktop sidebar and real mobile drawer with overlay.
-- Touch/scroll/overflow hardening.
-- Verify #537 ✅.
+### 10.3 Operational Integration Verification ✅
+- Structural lineage verified across Kitchen/order items, stock movements, purchase receipts, waste, stock count, split payments, table merge, expenses and accounting source postings.
+- Kitchen lineage uses `kitchen_ticket_items.order_item_id` with composite branch FK to `order_items`, not a separate `source_order_item_id` column.
+- Corrected live RPC audit verified **21/21 critical public operational RPCs exist and are SECURITY INVOKER**, covering Kitchen, payments, close, discounts, voids, return/refund flow, split bill/payment, transfer/merge, receipts, procurement, waste, count/approval, accounting and reports.
+- Offline shift close retains the idempotent server-authoritative retry contract.
 
-### 9.5 Final Visual System ✅
-- iOS-inspired glass surfaces applied after contracts stabilized.
-- Shared `StatePanel` for loading/error/empty/unauthorized presentation.
-- Reduced-motion and focus-visible support preserved.
-- Verify #545 ✅.
-
-### 9.6 Batch 9 Regression + Advisors + Verify ✅
-- Added `scripts/verify-batch9.mjs` and CI gate.
-- First guard run #551 correctly failed on a false shell marker only; no application regression was identified.
-- Guard corrected to validate the real `data-mobile-nav="open"` responsive contract.
-- Verify #553 ✅ — Batch 5/6/7/8/9 regression, Typecheck, Build and Pages Deploy all green.
-- Security Advisor: only known leaked-password-protection Auth warning.
-- Performance Advisor: unused-index INFO only.
-
-## Batch 10 — Full Verification & Release Candidate 🚧 CURRENT
-
-### 10.1 Repository / Build / Contract Verification 🚧 NEXT
-- Run all regression guards together plus Typecheck and production Build.
-- Validate database identity lock and migration parity.
-- Add final repository release-candidate guard without weakening earlier guards.
-
-### 10.2 Live Database Security & Permission Verification ⏳
-- RLS presence and public grant audit for business tables.
-- Public RPC wrapper / private implementation audit for sensitive operations.
-- Protected Super Admin privacy and non-targetability checks.
-- Cross-branch and missing-permission fail-closed verification where safely testable.
-
-### 10.3 Operational Integration Verification ⏳
-- Verify critical flow contracts across catalog, inventory, shift, POS, Kitchen, payment, return/refund, split, transfer/merge, receipt, procurement, waste/count/approval, accounting, reports and printing.
-- Verify stock and accounting source lineage remains explicit and non-duplicating.
-- Verify offline close retry contract is idempotent.
-
-### 10.4 Release Candidate / Final Advisors / Deploy ⏳
-- Final Security and Performance Advisors.
-- Final Verify + Pages Deploy.
-- Record release-candidate HEAD and known non-code platform hardening item.
-- Do not merge to `main` without explicit user approval.
-
-Immediate target: **10.1 Repository / Build / Contract Verification**.
+### 10.4 Release Candidate / Final Advisors / Deploy ✅
+- Final Security Advisor: no schema/code security finding; only Supabase Auth platform warning **Leaked Password Protection Disabled** remains.
+- Final Performance Advisor: `unused_index` INFO only on the current low/fresh workload; no material performance finding.
+- Release Guard #13 ✅ on `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
+- Verify #573 + Pages Deploy ✅ on `07cd298cc8da43aedd8d8029a915f26eea12e4b6`.
+- This log commit is documentation-only; its resulting Verify/Release Guard must remain green before the RC HEAD is considered final.
 
 ## Current checkpoint
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Batches 1–9: ✅ CLOSED.
-- Batch 10: 🚧 CURRENT.
-- Verified implementation HEAD before this log update: `28563c54ae8a6d161a0b5fc2b417d6c4203fe57b` — Verify #553 ✅.
-- `main` untouched.
+- Batches 1–10: ✅ CLOSED.
+- Release Candidate: ✅ READY pending final documentation-only CI confirmation.
+- `main`: untouched.
 
-## Hardening backlog
-- Enable Supabase Auth leaked-password protection before release: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
-- Review unused-index INFO only after realistic workload.
-- Keep credentials outside client/repository history.
+## Known external hardening item
+Enable Supabase Auth leaked-password protection before production release, or explicitly accept it as an external platform-setting dependency:
+https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+Unused-index INFO should be reviewed after realistic production workload, not silenced by deleting useful indexes during RC.
 
 ## Final release gate
-No `development` → `main` merge until Batch 10 is ✅, security hardening is ✅ or explicitly accepted as a platform setting dependency, no known P0/P1 regression remains, and explicit release approval is given.
+**Do not merge `development` → `main` without explicit user approval.** Release requires the final documentation-only Verify/Release Guard to be green and the leaked-password-protection platform setting to be enabled or explicitly accepted as an external dependency.
