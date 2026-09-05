@@ -29,46 +29,27 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 7 — Accounting & Treasury ✅ CLOSED
-- 7.1 Chart of Accounts ✅ — Verify #305
-- 7.2 Journal Entries + Balanced Lines ✅ — Verify #317
-- 7.3 Expenses + Source-linked Posting ✅ — Verify #329
-- 7.4 Cash/Bank Treasury Accounts + Movements ✅ — Verify #343
-- 7.5 Automatic Operational Source Links ✅ — Verify #361
-- 7.6 Idempotent Posting + Reversal Rules ✅ — Verify #371
-- 7.7 Accounting Statements Contracts ✅ — Verify #391
-- 7.8 Batch 7 Regression + Advisors + Verify ✅ — Verify #399
-
-### Batch 7 closure contract
-- COA is branch-scoped and permission-first.
-- Journal posting is server-balanced and posted journals remain immutable.
-- Expense posting creates exact source-linked balanced journals.
-- Treasury cash/bank accounts are separate from POS cashier drawer balances and derive balances from immutable movements.
-- POS sales and purchase receipts create idempotent accounting source postings when mapping is configured; missing setup remains visible in a retryable queue without breaking operational flow.
-- Refunds create dedicated reverse-effect accounting journals; original sale journals are not mutated.
-- Posted journal correction uses a separate reversal journal with swapped debit/credit, reason, idempotency and explicit original/reversal lineage.
-- Accounting statements are read-only from posted journals: Trial Balance, General Ledger, Income Statement and Balance Sheet.
-- Statement-only users obtain account references through a dedicated statement permission and do not require COA management permission.
-- Authenticated direct table grants for sensitive Batch 7 tables are SELECT-only.
-- Live DB audit: 18/18 required Batch 7 permissions present; sensitive accounting tables audited SELECT-only; matching `app_private` accounting/treasury/statement functions executable by authenticated = 0.
-- Security Advisor: only the known Supabase Auth leaked-password-protection warning remains.
-- Performance Advisor: no material Batch 7 issue; fresh-database unused-index INFO only.
-- Repository regression guards: Batch 5 ✅ / Batch 6 ✅ / Batch 7 ✅.
-
 ## Batch 8 — Reports & Central Printing 🚧 CURRENT
 
-### 8.1 Unified Reports Contract 🚧 NEXT
+### 8.1 Unified Reports Contract ✅
 - One professional table-first Reports workspace, not duplicated report icons/pages.
-- Permission-first, branch-scoped and server-authoritative data projections.
-- Filters: branch scope, date range, payment method, employee, product, order type and relevant source-specific filters.
-- Totals and clear empty/loading/error/unauthorized states.
-- No charts in the canonical reports workspace.
+- Permission-first with `reports.view`, branch-scoped server-side access assertion and no role-label checks.
+- Shared filters: date range, payment method, employee, product and order type.
+- Product and employee options come from the real authorized branch through a dedicated read-only RPC.
+- No charts and no fake report rows; report bodies remain explicit future contracts until 8.2–8.4.
+- Responsive RTL-first report selector/result workspace integrated into the app shell under `التقارير`.
+- Migration: `20260905192644_unified_reports_foundation`.
+- Security Advisor: only the known leaked-password-protection Auth warning.
+- Performance Advisor: no report-specific material finding; fresh-DB unused-index INFO only.
+- Live audit: `reports.view` exists; private report functions are non-executable by authenticated; public filter RPC is executable.
+- Verify #411 ✅ — Batch 5/6/7 regression, Typecheck, Build and Pages Deploy.
 
-### 8.2 Sales & Operations Reports ⏳
+### 8.2 Sales & Operations Reports 🚧 NEXT
 - Sales summary / detailed invoices.
 - Sales by payment / employee / product / order type.
 - Returns/refunds/voids/discounts.
 - Cashier and shift performance.
+- All projections remain read-only, branch-scoped and consume the unified filter contract.
 
 ### 8.3 Procurement, Inventory & Cost Reports ⏳
 - Purchases and suppliers.
@@ -89,7 +70,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 8.7 Batch 8 Regression + Advisors + Verify ⏳
 
-Immediate target: **8.1 Unified Reports Contract**.
+Immediate target: **8.2 Sales & Operations Reports**.
 
 ## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
@@ -102,8 +83,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–7: ✅ CLOSED.
-- Immediate target: **8.1 Unified Reports Contract**.
-- Verified Batch 7 implementation HEAD before this log update: `fefc1b8fa9f331b0483bdba0b160738a9b254203` — Verify #399 ✅.
+- Batch 8.1: ✅ CLOSED — Verify #411.
+- Immediate target: **8.2 Sales & Operations Reports**.
+- Verified implementation HEAD before this log update: `adf02788244098bd460210501d4623899587e6b3`.
 - `main` untouched.
 
 ## Hardening backlog
