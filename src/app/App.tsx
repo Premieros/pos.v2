@@ -15,6 +15,7 @@ import { WastePage } from '../modules/inventory/WastePage'
 import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
+import { PrintingCenterPage } from '../modules/printing/PrintingCenterPage'
 import { PurchasesPage } from '../modules/procurement/PurchasesPage'
 import { SuppliersPage } from '../modules/procurement/SuppliersPage'
 import { ReportsPage } from '../modules/reports/ReportsPage'
@@ -52,6 +53,7 @@ export function App() {
   const showStatements = can('accounting.statements.view')
   const showReports = can('reports.view')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
+  const showPrinting = can('pos.receipt.print') || can('pos.receipt.reprint') || showKitchen || can('shifts.view') || can('shifts.manage') || showReports
 
   return (
     <main className="app-shell" dir="rtl">
@@ -70,6 +72,7 @@ export function App() {
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
           {showReports ? <a href="#reports-section">التقارير</a> : null}
+          {showPrinting ? <a href="#printing-section">مركز الطباعة</a> : null}
           {showAccounting ? <a href="#accounting-section">دليل الحسابات</a> : null}
           {showJournals ? <a href="#journals-section">القيود اليومية</a> : null}
           {showExpenses ? <a href="#expenses-section">المصروفات</a> : null}
@@ -94,6 +97,7 @@ export function App() {
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
         {showReports ? <section id="reports-section" className="app-section-anchor"><ReportsPage /></section> : null}
+        {showPrinting ? <section id="printing-section" className="app-section-anchor"><PrintingCenterPage /></section> : null}
         {showAccounting ? <section id="accounting-section" className="app-section-anchor"><ChartOfAccountsPage /></section> : null}
         {showJournals ? <section id="journals-section" className="app-section-anchor"><JournalPage /></section> : null}
         {showExpenses ? <section id="expenses-section" className="app-section-anchor"><ExpensesPage /></section> : null}
