@@ -21,7 +21,7 @@ export function App() {
       <section className="card" aria-labelledby="app-title">
         <p className="eyebrow">POS.V2</p>
         <h1 id="app-title">الأساس التشغيلي جاهز</h1>
-        <p>الفرع الحالي: <strong>{currentBranch.nameAr}</strong></p>
+        <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
         <p>تم تثبيت Auth وBranch Context وPermission Context. الخطوة التالية هي إدارة المستخدمين والصلاحيات ثم الكتالوج.</p>
       </section>
     </main>
