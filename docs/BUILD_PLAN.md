@@ -18,57 +18,44 @@ Preview: `https://premieros.github.io/pos.v2/`
 - No merge to `main` before final release gate and explicit approval.
 
 ## Batch status
-- Batch 1 — Platform Foundation ✅ CLOSED
-- Batch 2 — Catalog, Inventory & Shift Foundation ✅ CLOSED
-- Batch 3 — POS Core, Kitchen & Payments ✅ CLOSED
-- Batch 4 — POS Operational Controls I ✅ CLOSED
-- Batch 5 — POS Operational Controls II ✅ CLOSED
-- Batch 6 — Procurement & Stock Control ✅ CLOSED
-- Batch 7 — Accounting & Treasury ✅ CLOSED
-- Batch 8 — Reports & Central Printing ✅ CLOSED
+- Batches 1–8 ✅ CLOSED
 - Batch 9 — Administration, Offline & Final UX 🚧 CURRENT
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 8 — Reports & Central Printing ✅ CLOSED
-- 8.1 Unified Reports ✅ — Verify #411.
-- 8.2 Sales & Operations Reports ✅ — Verify #421.
-- 8.3 Procurement, Inventory & Cost Reports ✅ — Verify #433.
-- 8.4 Accounting Reports Integration ✅ — Verify #441.
-- 8.5 Custom Columns + Excel Export ✅ — Verify #453.
-- 8.6 Central Printing ✅.
-- 8.7 Batch 8 Regression / Advisors / Verify ✅ — Verify #483, HEAD `276dffb71c9ed7030c942f8a414dc76600373976`.
+## Batch 8 ✅ CLOSED
+Reports, accounting integration, custom columns/Excel, central printing and Batch 8 regression are closed. Final Verify #483 ✅.
 
 ## Batch 9 — Administration, Offline & Final UX 🚧 CURRENT
 
 ### 9.1 Administration Workspace ✅
-- Added permission-first administration workspace for branch, warehouses, ordinary users, branch access, ordinary role templates and direct permission overrides.
-- Protected platform Super Admin membership remains private, is excluded from administrative snapshots and cannot be targeted by branch/user mutations.
-- Role-template create/update blocks privilege escalation: administrators cannot place a permission they do not effectively hold into a role.
-- New migrations:
-  - `20260905201332_administration_workspace_contract`
-  - `20260905201828_harden_administration_public_wrappers`
-- Public administration RPCs are `SECURITY INVOKER`; sensitive implementation lives under `app_private` with explicit guards.
-- Live audit confirmed public wrappers are invoker and protected helpers are not directly executable.
-- Verify #497 ✅ — Batch 5/6/7/8 regressions, Typecheck, Build and Pages Deploy.
-- Security Advisor after hardening: only known leaked-password-protection Auth warning.
-- Performance Advisor: unused-index INFO only.
+- Permission-first branch/warehouse/user/role/permission administration.
+- Protected Super Admin remains private and un-targetable.
+- Role templates cannot grant permissions the administrator does not hold.
+- Migrations: `20260905201332_administration_workspace_contract`, `20260905201828_harden_administration_public_wrappers`.
+- Public RPCs are SECURITY INVOKER; sensitive implementation is private.
+- Verify #497 ✅; Advisors: only known Auth leaked-password warning + unused-index INFO.
 
 ### 9.2 Guided Setup / Prerequisite Routing ✅
-- Fresh-system bootstrap is now distinguished from an already initialized system where the signed-in user simply lacks branch access; bootstrap is never offered again in that case.
-- Migration `20260905202048_guided_initial_setup_state` provides the safe initialization-state contract through an invoker public wrapper and private implementation.
-- POS prerequisites now surface a guided workspace before the sale flow for missing own shift, active warehouse or sale product.
-- Where the user has the necessary setup permission, the warning contains a direct route to the exact setup section; otherwise it explains that authorized administration is required instead of exposing a raw database error.
-- Multi-branch authorized users now get an explicit current-branch selector in the app header.
-- Verify #511 ✅ — Batch 5/6/7/8 regressions, Typecheck, Build and Pages Deploy.
-- Security Advisor: only known leaked-password-protection Auth warning.
+- Fresh bootstrap is separated from “authenticated user has no accessible branch”.
+- POS guides missing shift/warehouse/products to the exact allowed setup action instead of raw DB errors.
+- Multi-branch users have explicit branch switching.
+- Migration: `20260905202048_guided_initial_setup_state`.
+- Verify #511 ✅; Advisors unchanged.
+
+### 9.3 Offline Critical Close + Print Resilience ✅
+- Added idempotent server-authoritative shift close with private command log and public SECURITY INVOKER wrapper.
+- Migration: `20260905202507_idempotent_shift_close_for_offline_queue`.
+- Offline shift close stores a user+branch-scoped local pending intent with one immutable idempotency key; retries reuse the same key and cannot silently double-close.
+- Pending close receipt is explicitly marked “awaiting server confirmation” and never presented as final close.
+- Opening shifts and drawer financial movements remain online-only rather than inventing unsafe local postings.
+- Day summary caches only an already-authorized report snapshot. Offline printing is clearly labeled cached Snapshot, not a final day-close/accounting posting because no day-close mutation contract exists.
+- Receipt/reprint still requires server confirmation so print-event audit cannot be bypassed offline.
+- Live audit: public `close_shift_idempotent` is SECURITY INVOKER; private implementation is definer; authenticated has no table privileges on private command log.
+- Verify #527 ✅ — B5/B6/B7/B8 regressions, Typecheck, Build and Pages Deploy.
+- Security Advisor: only known leaked-password-protection warning.
 - Performance Advisor: unused-index INFO only.
 
-### 9.3 Offline Critical Close + Print Resilience 🚧 NEXT
-- Offline-capable shift/day close capture and printing where contractually safe.
-- Explicit queued/retry state for operations requiring server confirmation; no silent double-posting.
-- Server remains authoritative for final close posting and idempotency.
-
-### 9.4 RTL/LTR + Responsive App Shell ⏳
+### 9.4 RTL/LTR + Responsive App Shell 🚧 NEXT
 - Arabic RTL primary and English LTR secondary.
 - Sidebar right in Arabic / left in English, collapsible desktop and mobile drawer.
 - Touch-friendly spacing and resilient overflow/scroll behavior.
@@ -79,7 +66,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 9.6 Batch 9 Regression + Advisors + Verify ⏳
 
-Immediate target: **9.3 Offline Critical Close + Print Resilience**.
+Immediate target: **9.4 RTL/LTR + Responsive App Shell**.
 
 ## Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cross-branch denial, offline retry, Advisors and release candidate.
@@ -89,9 +76,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–8: ✅ CLOSED.
-- Batch 9.1–9.2: ✅ CLOSED.
-- Immediate target: **9.3 Offline Critical Close + Print Resilience**.
-- Verified implementation HEAD before this log update: `85560f7cafb44c4dd20763d454dd0963a6f48c18` — Verify #511 ✅.
+- Batch 9.1–9.3: ✅ CLOSED.
+- Immediate target: **9.4 RTL/LTR + Responsive App Shell**.
+- Verified implementation HEAD before this log update: `6f1cb34fa50513cbc442226b6e7c4027296778fb` — Verify #527 ✅.
 - `main` untouched.
 
 ## Hardening backlog
