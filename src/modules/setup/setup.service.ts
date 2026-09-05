@@ -1,5 +1,17 @@
 import { supabase } from '../../lib/supabase/client'
 
+export type InitialSetupState = {
+  branch_count: number
+  platform_assignment_count: number
+  bootstrap_available: boolean
+}
+
+export async function getInitialSetupState(): Promise<InitialSetupState> {
+  const { data, error } = await supabase.rpc('get_initial_setup_state')
+  if (error) throw error
+  return data as InitialSetupState
+}
+
 export async function bootstrapFirstSuperAdmin(input: {
   branchCode: string
   branchNameAr: string
