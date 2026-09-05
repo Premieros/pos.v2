@@ -20,6 +20,7 @@ import {
   resumePosOrder,
   sendOrderToKitchen,
   setPosOrderItemQuantity,
+  voidPosOrder,
   type DiningTable,
   type PosOrder,
   type PosOrderItem,
@@ -55,6 +56,7 @@ export function PosPage() {
   const canCreate = can('pos.order.create')
   const canEdit = can('pos.order.edit')
   const canCancel = can('pos.order.cancel')
+  const canVoid = can('pos.order.void')
   const canSendKitchen = can('pos.send_kitchen')
   const canPay = can('pos.payment.take')
   const canClose = can('pos.order.close')
@@ -172,6 +174,7 @@ export function PosPage() {
 
   const editable = selectedOrder && ['created', 'held', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
   const cancellable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
+  const voidable = selectedOrder && ['sent_to_kitchen', 'preparing', 'ready'].includes(selectedOrder.status) && payments.length === 0
   const kitchenSendable = selectedOrder && ['created', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
   const paymentReady = selectedOrder && ['ready', 'partially_paid'].includes(selectedOrder.status)
 
@@ -287,7 +290,8 @@ export function PosPage() {
               <div className="pos-actions">
                 {canEdit && selectedOrder.status === 'created' ? <button type="button" onClick={() => void runAction(() => holdPosOrder(selectedOrder.id))}>Hold</button> : null}
                 {canEdit && selectedOrder.status === 'held' ? <button type="button" onClick={() => void runAction(() => resumePosOrder(selectedOrder.id))}>Resume</button> : null}
-                {canCancel && cancellable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
+                {canCancel && cancellable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء قبل المطبخ'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
+                {canVoid && voidable ? <button type="button" onClick={() => { const reason = window.prompt('سبب إلغاء الطلب بعد المطبخ (Void)'); if (reason) void runAction(async () => { await voidPosOrder(selectedOrder.id, reason) }) }}>Void بعد المطبخ</button> : null}
 
                 {canSendKitchen && kitchenSendable ? (
                   <div className="kitchen-send-controls">
