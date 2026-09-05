@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
 import { AccountingReportsPanel } from './AccountingReportsPanel'
+import { OperationalReportResult, type ReportColumn } from './OperationalReportResult'
 import {
   getProcurementInventoryReport,
   getPurchaseCostHistoryReport,
@@ -16,7 +17,6 @@ import {
 import './reports.css'
 
 type ReportKey = SalesOperationsReportKey | ProcurementInventoryReportKey | 'costs' | 'accounting'
-type Column = { key: string; label: string; kind?: 'money' | 'number' | 'date' | 'boolean' | 'text' }
 
 const reports: Array<{ key: ReportKey; title: string; description: string; batch: string }> = [
   { key: 'sales', title: 'ملخص المبيعات', description: 'إجماليات البيع حسب الفترة والفلاتر.', batch: '8.2' },
@@ -33,7 +33,7 @@ const reports: Array<{ key: ReportKey; title: string; description: string; batch
   { key: 'accounting', title: 'التقارير المحاسبية', description: 'ميزان المراجعة ودفتر الأستاذ والقوائم المالية.', batch: '8.4' },
 ]
 
-const columnsByReport: Partial<Record<ReportKey, Column[]>> = {
+const columnsByReport: Partial<Record<ReportKey, ReportColumn[]>> = {
   sales: [{ key: 'metric', label: 'المؤشر' }, { key: 'value', label: 'القيمة', kind: 'money' }],
   invoices: [
     { key: 'order_number', label: 'الفاتورة' }, { key: 'created_at', label: 'التاريخ', kind: 'date' }, { key: 'order_type', label: 'نوع الطلب' }, { key: 'status', label: 'الحالة' }, { key: 'employee', label: 'الموظف' },
@@ -48,19 +48,16 @@ const columnsByReport: Partial<Record<ReportKey, Column[]>> = {
     { key: 'payments_total', label: 'التحصيل', kind: 'money' }, { key: 'refunds_total', label: 'المرتجعات', kind: 'money' }, { key: 'expected_cash', label: 'النقد المتوقع', kind: 'money' }, { key: 'actual_cash', label: 'النقد الفعلي', kind: 'money' }, { key: 'cash_difference', label: 'الفرق', kind: 'money' },
   ],
   purchases: [
-    { key: 'purchase_number', label: 'أمر الشراء' }, { key: 'created_at', label: 'التاريخ', kind: 'date' }, { key: 'supplier', label: 'المورد' }, { key: 'status', label: 'الحالة' }, { key: 'ordered_quantity', label: 'الكمية المطلوبة', kind: 'number' },
-    { key: 'received_quantity', label: 'الكمية المستلمة', kind: 'number' }, { key: 'total', label: 'قيمة الأمر', kind: 'money' }, { key: 'received_value', label: 'قيمة المستلم', kind: 'money' },
+    { key: 'purchase_number', label: 'أمر الشراء' }, { key: 'created_at', label: 'التاريخ', kind: 'date' }, { key: 'supplier', label: 'المورد' }, { key: 'status', label: 'الحالة' }, { key: 'ordered_quantity', label: 'الكمية المطلوبة', kind: 'number' }, { key: 'received_quantity', label: 'الكمية المستلمة', kind: 'number' }, { key: 'total', label: 'قيمة الأمر', kind: 'money' }, { key: 'received_value', label: 'قيمة المستلم', kind: 'money' },
   ],
   inventory: [
-    { key: 'code', label: 'الكود' }, { key: 'item', label: 'الصنف' }, { key: 'warehouse', label: 'المخزن' }, { key: 'base_unit', label: 'الوحدة' }, { key: 'balance', label: 'الرصيد الحالي', kind: 'number' },
-    { key: 'minimum_level', label: 'الحد الأدنى', kind: 'number' }, { key: 'below_minimum', label: 'منخفض', kind: 'boolean' }, { key: 'inbound', label: 'الوارد بالفترة', kind: 'number' }, { key: 'outbound', label: 'الصادر بالفترة', kind: 'number' },
+    { key: 'code', label: 'الكود' }, { key: 'item', label: 'الصنف' }, { key: 'warehouse', label: 'المخزن' }, { key: 'base_unit', label: 'الوحدة' }, { key: 'balance', label: 'الرصيد الحالي', kind: 'number' }, { key: 'minimum_level', label: 'الحد الأدنى', kind: 'number' }, { key: 'below_minimum', label: 'منخفض', kind: 'boolean' }, { key: 'inbound', label: 'الوارد بالفترة', kind: 'number' }, { key: 'outbound', label: 'الصادر بالفترة', kind: 'number' },
   ],
   waste: [
     { key: 'event_at', label: 'التاريخ', kind: 'date' }, { key: 'status', label: 'الحالة' }, { key: 'warehouse', label: 'المخزن' }, { key: 'code', label: 'الكود' }, { key: 'item', label: 'الصنف' }, { key: 'quantity', label: 'الكمية', kind: 'number' }, { key: 'base_unit', label: 'الوحدة' }, { key: 'reason', label: 'السبب' }, { key: 'note', label: 'ملاحظة' },
   ],
   costs: [
-    { key: 'received_at', label: 'تاريخ الاستلام', kind: 'date' }, { key: 'purchase_number', label: 'أمر الشراء' }, { key: 'supplier', label: 'المورد' }, { key: 'warehouse', label: 'المخزن' }, { key: 'code', label: 'الكود' }, { key: 'item', label: 'الصنف' },
-    { key: 'quantity', label: 'الكمية', kind: 'number' }, { key: 'base_unit', label: 'الوحدة' }, { key: 'unit_cost', label: 'تكلفة الوحدة', kind: 'money' }, { key: 'total_cost', label: 'إجمالي التكلفة', kind: 'money' },
+    { key: 'received_at', label: 'تاريخ الاستلام', kind: 'date' }, { key: 'purchase_number', label: 'أمر الشراء' }, { key: 'supplier', label: 'المورد' }, { key: 'warehouse', label: 'المخزن' }, { key: 'code', label: 'الكود' }, { key: 'item', label: 'الصنف' }, { key: 'quantity', label: 'الكمية', kind: 'number' }, { key: 'base_unit', label: 'الوحدة' }, { key: 'unit_cost', label: 'تكلفة الوحدة', kind: 'money' }, { key: 'total_cost', label: 'إجمالي التكلفة', kind: 'money' },
   ],
 }
 
@@ -76,16 +73,10 @@ function isSalesOperationsReport(key: ReportKey): key is SalesOperationsReportKe
 function isProcurementInventoryReport(key: ReportKey): key is ProcurementInventoryReportKey { return ['purchases', 'inventory', 'waste'].includes(key) }
 function isOperationalReport(key: ReportKey) { return isSalesOperationsReport(key) || isProcurementInventoryReport(key) || key === 'costs' }
 
-function formatValue(value: unknown, kind: Column['kind'] = 'text') {
-  if (value === null || value === undefined || value === '') return '—'
-  if (kind === 'date') { const date = new Date(String(value)); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('ar-EG') }
-  if (kind === 'money') { const number = Number(value); return Number.isFinite(number) ? number.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(value) }
-  if (kind === 'number') { const number = Number(value); return Number.isFinite(number) ? number.toLocaleString('ar-EG', { maximumFractionDigits: 4 }) : String(value) }
-  if (kind === 'boolean') return value ? 'نعم' : 'لا'
-  const labels: Record<string, string> = { cash: 'كاش', card: 'بطاقة', dine_in: 'صالة', take_away: 'تيك أواي', drive_thru: 'درايف ثرو', delivery: 'دليفري', quick: 'سريع', return: 'مرتجع', refund: 'استرداد', void: 'إلغاء بعد المطبخ', discount: 'خصم', draft: 'مسودة', submitted: 'مرسل', partially_received: 'استلام جزئي', received: 'مستلم', cancelled: 'ملغي', posted: 'مرحّل', open: 'مفتوحة', closed: 'مغلقة' }
-  return labels[String(value)] ?? String(value)
+function filterLabel(value: string) {
+  const labels: Record<string, string> = { cash: 'كاش', card: 'بطاقة', dine_in: 'صالة', take_away: 'تيك أواي', drive_thru: 'درايف ثرو', delivery: 'دليفري', quick: 'سريع' }
+  return labels[value] ?? value
 }
-function totalKind(key: string): Column['kind'] { return ['order_count', 'invoice_count', 'payment_count', 'quantity', 'distinct_products', 'event_count', 'shift_count', 'purchase_count', 'ordered_quantity', 'received_quantity', 'item_rows', 'balance', 'inbound', 'outbound', 'low_stock_count', 'line_count', 'receipt_line_count'].includes(key) ? 'number' : 'money' }
 
 export function ReportsPage() {
   const { currentBranchId, currentBranch } = useBranch()
@@ -99,7 +90,7 @@ export function ReportsPage() {
   const [data, setData] = useState<ReportData | null>(null)
   const canView = can('reports.view')
   const selected = useMemo(() => reports.find((report) => report.key === selectedReport) ?? reports[0], [selectedReport])
-  const columns = columnsByReport[selectedReport] ?? []
+  const columns = useMemo(() => columnsByReport[selectedReport] ?? [], [selectedReport])
 
   useEffect(() => {
     if (!currentBranchId || !canView) return
@@ -124,14 +115,14 @@ export function ReportsPage() {
 
   return (
     <section className="workspace-card reports-workspace" aria-labelledby="reports-title">
-      <div className="workspace-heading"><div><p className="eyebrow">Reports</p><h2 id="reports-title">مركز التقارير</h2><p>صفحة واحدة بدون رسوم بيانية؛ فلاتر موحدة، جداول واضحة وإجماليات حقيقية من قاعدة البيانات.</p></div><span>{currentBranch?.name_ar ?? 'الفرع الحالي'}</span></div>
+      <div className="workspace-heading"><div><p className="eyebrow">Reports</p><h2 id="reports-title">مركز التقارير</h2><p>صفحة واحدة بدون رسوم بيانية؛ فلاتر موحدة، أعمدة مخصصة، إجماليات وتصدير Excel من نفس النتيجة.</p></div><span>{currentBranch?.name_ar ?? 'الفرع الحالي'}</span></div>
       <div className="reports-filter-bar">
         <label>من<input type="date" value={filters.fromDate} onChange={(event) => setFilter('fromDate', event.target.value)} /></label>
         <label>إلى<input type="date" value={filters.toDate} onChange={(event) => setFilter('toDate', event.target.value)} /></label>
-        <label>طريقة الدفع<select value={filters.paymentMethod} onChange={(event) => setFilter('paymentMethod', event.target.value as ReportFilters['paymentMethod'])}><option value="">الكل</option>{options.payment_methods.map((method) => <option key={method} value={method}>{method === 'cash' ? 'كاش' : 'بطاقة'}</option>)}</select></label>
+        <label>طريقة الدفع<select value={filters.paymentMethod} onChange={(event) => setFilter('paymentMethod', event.target.value as ReportFilters['paymentMethod'])}><option value="">الكل</option>{options.payment_methods.map((method) => <option key={method} value={method}>{filterLabel(method)}</option>)}</select></label>
         <label>الموظف<select value={filters.employeeId} onChange={(event) => setFilter('employeeId', event.target.value)}><option value="">الكل</option>{options.employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.display_name}</option>)}</select></label>
         <label>المنتج<select value={filters.productId} onChange={(event) => setFilter('productId', event.target.value)}><option value="">الكل</option>{options.products.map((product) => <option key={product.id} value={product.id}>{product.name_ar}{product.sku ? ` — ${product.sku}` : ''}</option>)}</select></label>
-        <label>نوع الطلب<select value={filters.orderType} onChange={(event) => setFilter('orderType', event.target.value as ReportFilters['orderType'])}><option value="">الكل</option><option value="dine_in">صالة</option><option value="take_away">تيك أواي</option><option value="drive_thru">درايف ثرو</option><option value="delivery">دليفري</option><option value="quick">سريع</option></select></label>
+        <label>نوع الطلب<select value={filters.orderType} onChange={(event) => setFilter('orderType', event.target.value as ReportFilters['orderType'])}><option value="">الكل</option>{options.order_types.map((type) => <option key={type} value={type}>{filterLabel(type)}</option>)}</select></label>
         <button type="button" onClick={() => setFilters(initialFilters)}>إعادة الضبط</button>
       </div>
       {optionsLoading ? <p>جارٍ تحميل خيارات الفلاتر…</p> : null}
@@ -140,9 +131,9 @@ export function ReportsPage() {
         <aside className="report-selector" aria-label="أنواع التقارير">{reports.map((report) => <button key={report.key} type="button" className={selectedReport === report.key ? 'active' : ''} onClick={() => setSelectedReport(report.key)}><strong>{report.title}</strong><small>{report.description}</small></button>)}</aside>
         <div className="report-result-card">
           <div className="report-result-heading"><div><h3>{selected.title}</h3><p>{selected.description}</p></div><span>العقد: Batch {selected.batch}</span></div>
-          <div className="report-filter-summary" aria-label="الفلاتر المطبقة"><span>{filters.fromDate} ← {filters.toDate}</span>{filters.paymentMethod ? <span>الدفع: {formatValue(filters.paymentMethod)}</span> : null}{filters.employeeId ? <span>موظف محدد</span> : null}{filters.productId ? <span>منتج محدد</span> : null}{filters.orderType ? <span>نوع الطلب: {formatValue(filters.orderType)}</span> : null}</div>
+          <div className="report-filter-summary" aria-label="الفلاتر المطبقة"><span>{filters.fromDate} ← {filters.toDate}</span>{filters.paymentMethod ? <span>الدفع: {filterLabel(filters.paymentMethod)}</span> : null}{filters.employeeId ? <span>موظف محدد</span> : null}{filters.productId ? <span>منتج محدد</span> : null}{filters.orderType ? <span>نوع الطلب: {filterLabel(filters.orderType)}</span> : null}</div>
           {selectedReport === 'accounting' ? <AccountingReportsPanel branchId={currentBranchId} fromDate={filters.fromDate} toDate={filters.toDate} /> : null}
-          {isOperationalReport(selectedReport) ? <>{reportLoading ? <div className="report-contract-placeholder"><strong>جارٍ تحميل التقرير…</strong></div> : null}{!reportLoading && data ? <><div className="report-totals" aria-label="إجماليات التقرير">{Object.entries(data.totals).map(([key, value]) => <article key={key}><small>{totalLabels[key] ?? key}</small><strong>{formatValue(value, totalKind(key))}</strong></article>)}</div>{data.rows.length === 0 ? <div className="report-contract-placeholder"><strong>لا توجد بيانات مطابقة.</strong><p>غيّر الفترة أو الفلاتر لعرض نتائج أخرى.</p></div> : <div className="report-table-wrap"><table className="report-table"><thead><tr>{columns.map((column) => <th key={column.key}>{column.label}</th>)}</tr></thead><tbody>{data.rows.map((row, index) => <tr key={`${selectedReport}-${index}`}>{columns.map((column) => <td key={column.key}>{formatValue(row[column.key], column.kind)}</td>)}</tr>)}</tbody></table></div>}<p className="report-generated-at">آخر توليد: {formatValue(data.generated_at, 'date')}</p></> : null}</> : null}
+          {isOperationalReport(selectedReport) ? <OperationalReportResult reportKey={selectedReport} reportTitle={selected.title} fromDate={filters.fromDate} toDate={filters.toDate} columns={columns} totalLabels={totalLabels} data={data} loading={reportLoading} /> : null}
         </div>
       </div>
     </section>
