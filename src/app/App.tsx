@@ -1,3 +1,4 @@
+import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
@@ -33,6 +34,7 @@ export function App() {
   const showInventory = can('inventory.view')
   const showWaste = can('inventory.waste')
   const showCounts = can('inventory.count')
+  const showApprovals = can('approvals.view') || can('approvals.review')
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
@@ -57,6 +59,7 @@ export function App() {
           {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
           {showWaste ? <a href="#waste-section">مركز الهالك</a> : null}
           {showCounts ? <a href="#count-section">جلسات الجرد</a> : null}
+          {showApprovals ? <a href="#approvals-section">مركز الموافقات</a> : null}
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
@@ -89,6 +92,7 @@ export function App() {
         {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
         {showWaste ? <section id="waste-section" className="app-section-anchor"><WastePage /></section> : null}
         {showCounts ? <section id="count-section" className="app-section-anchor"><StockCountPage /></section> : null}
+        {showApprovals ? <section id="approvals-section" className="app-section-anchor"><ApprovalCenterPage /></section> : null}
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
