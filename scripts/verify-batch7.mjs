@@ -15,7 +15,7 @@ function requireText(path, snippets) {
 const migrations = [
   ['supabase/migrations/20260905183814_chart_of_accounts_foundation.sql', ['accounting.coa.view', 'accounting.coa.manage', 'create_account']],
   ['supabase/migrations/20260905184225_journal_entries_and_balanced_lines.sql', ['accounting.journals.view', 'accounting.journals.post', 'journal_entries', 'journal_lines']],
-  ['supabase/migrations/20260905184632_expenses_and_source_linked_posting.sql', ['accounting.expenses.view', 'expense_documents', "source_type='expense'"]],
+  ['supabase/migrations/20260905184632_expenses_and_source_linked_posting.sql', ['accounting.expenses.view', 'expense_documents', 'post_expense_document_internal', "'expense',v_expense.id"]],
   ['supabase/migrations/20260905185108_treasury_accounts_and_movements.sql', ['treasury.view', 'treasury_accounts', 'treasury_movements']],
   ['supabase/migrations/20260905185128_treasury_movement_concurrency_hardening.sql', ['for update', 'treasury']],
   ['supabase/migrations/20260905185715_automatic_operational_accounting_source_links.sql', ['accounting.posting.view', 'accounting_posting_mappings', 'accounting_source_postings']],
