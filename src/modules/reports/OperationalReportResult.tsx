@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReportData } from './report.service'
 import { exportRowsToExcel } from './excelExport'
+import { printCurrentReport } from './reportPrint'
 
 export type ReportColumn = { key: string; label: string; kind?: 'money' | 'number' | 'date' | 'boolean' | 'text' }
 
@@ -67,7 +68,7 @@ export function OperationalReportResult({ reportKey, reportTitle, fromDate, toDa
 
   return (
     <>
-      <div className="report-actions">
+      <div className="report-actions report-screen-only">
         <details className="report-column-picker">
           <summary>الأعمدة ({visibleColumns.length}/{columns.length})</summary>
           <div className="report-column-options">
@@ -75,6 +76,7 @@ export function OperationalReportResult({ reportKey, reportTitle, fromDate, toDa
           </div>
         </details>
         <button type="button" onClick={exportExcel} disabled={visibleColumns.length === 0}>تصدير Excel</button>
+        <button type="button" onClick={printCurrentReport}>طباعة التقرير</button>
       </div>
 
       <div className="report-totals" aria-label="إجماليات التقرير">
