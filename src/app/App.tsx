@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
 import { ExpensesPage } from '../modules/accounting/ExpensesPage'
 import { JournalPage } from '../modules/accounting/JournalPage'
@@ -33,8 +34,19 @@ export function App() {
   const { branches, currentBranch, setCurrentBranchId, loading: branchLoading, error: branchError } = useBranch()
   const { can, loading: permissionLoading } = usePermissions()
   const { locale, dir, collapsed, mobileOpen, setLocale, setCollapsed, setMobileOpen } = useShellPreferences()
+  const [activeHref, setActiveHref] = useState(() => window.location.hash || '#overview')
   const isArabic = locale === 'ar'
   const t = (ar: string, en: string) => isArabic ? ar : en
+
+  useEffect(() => {
+    const syncLocation = () => setActiveHref(window.location.hash || '#overview')
+    window.addEventListener('hashchange', syncLocation)
+    window.addEventListener('popstate', syncLocation)
+    return () => {
+      window.removeEventListener('hashchange', syncLocation)
+      window.removeEventListener('popstate', syncLocation)
+    }
+  }, [])
 
   if (authLoading) return <main className="shell" dir={dir}><p>{t('جارٍ تحميل الجلسة…', 'Loading session…')}</p></main>
   if (!user) return <LoginPage />
@@ -88,7 +100,44 @@ export function App() {
     { href: '#shifts-section', icon: '◷', ar: 'الورديات والدرج', en: 'Shifts & Drawer', visible: showShifts },
   ]
 
+  const visibleNavItems = navItems.filter((item) => item.visible)
+  const activeItem = visibleNavItems.find((item) => item.href === activeHref) ?? visibleNavItems[0]
+  const currentHref = activeItem?.href ?? '#overview'
   const branchName = isArabic ? currentBranch.name_ar : (currentBranch.name_en || currentBranch.name_ar)
+
+  const navigate = (href: string) => {
+    if (window.location.hash !== href) window.history.pushState(null, '', href)
+    setActiveHref(href)
+    setMobileOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const renderWorkspace = () => {
+    switch (currentHref) {
+      case '#pos-section': return <><GuidedSetupBanner /><PosPage /></>
+      case '#returns-section': return <ReturnPanel />
+      case '#kds-section': return <KdsPage />
+      case '#catalog-section': return <CatalogPage />
+      case '#inventory-section': return <InventoryPage />
+      case '#waste-section': return <WastePage />
+      case '#count-section': return <StockCountPage />
+      case '#approvals-section': return <ApprovalCenterPage />
+      case '#suppliers-section': return <SuppliersPage />
+      case '#purchases-section': return <PurchasesPage />
+      case '#reports-section': return <ReportsPage />
+      case '#printing-section': return <PrintingCenterPage />
+      case '#admin-section': return <AdminPage />
+      case '#accounting-section': return <ChartOfAccountsPage />
+      case '#journals-section': return <JournalPage />
+      case '#expenses-section': return <ExpensesPage />
+      case '#treasury-section': return <TreasuryPage />
+      case '#posting-section': return <PostingCenterPage />
+      case '#statements-section': return <StatementsPage />
+      case '#shifts-section': return <ShiftsPage />
+      default:
+        return <section className="card status-card"><h2>{t('النظام جاهز للعمل', 'System ready')}</h2><p>{t('اختر أي قسم من القائمة الجانبية لفتحه في مساحة عمل مستقلة.', 'Choose a module from the sidebar to open it in its own workspace.')}</p></section>
+    }
+  }
 
   return (
     <main className="app-shell" dir={dir} data-locale={locale} data-sidebar-collapsed={collapsed ? 'true' : 'false'} data-mobile-nav={mobileOpen ? 'open' : 'closed'}>
@@ -103,8 +152,15 @@ export function App() {
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.filter((item) => item.visible).map((item) => (
-            <a key={item.href} href={item.href} title={isArabic ? item.ar : item.en} onClick={() => setMobileOpen(false)}>
+          {visibleNavItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={currentHref === item.href ? 'active' : undefined}
+              aria-current={currentHref === item.href ? 'page' : undefined}
+              title={isArabic ? item.ar : item.en}
+              onClick={(event) => { event.preventDefault(); navigate(item.href) }}
+            >
               <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
               <span className="sidebar-nav-label">{isArabic ? item.ar : item.en}</span>
             </a>
@@ -125,35 +181,17 @@ export function App() {
       </aside>
 
       <div className="app-content">
-        <header className="app-header" id="overview">
-          <div><p className="eyebrow">POS.V2</p><h1>{t('نظام التشغيل', 'Operations')}</h1><p>{t('الفرع الحالي:', 'Current branch:')} <strong>{branchName}</strong></p></div>
+        <header className="app-header">
+          <div><p className="eyebrow">POS.V2</p><h1>{isArabic ? activeItem.ar : activeItem.en}</h1><p>{t('الفرع الحالي:', 'Current branch:')} <strong>{branchName}</strong></p></div>
           <div className="header-controls">
             {branches.length > 1 ? <label className="branch-switcher">{t('تغيير الفرع', 'Switch branch')}<select value={currentBranch.id} onChange={(event) => setCurrentBranchId(event.target.value)}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{isArabic ? branch.name_ar : (branch.name_en || branch.name_ar)} — {branch.code}</option>)}</select></label> : null}
             <div className="header-locale-switch"><button type="button" className={locale === 'ar' ? 'active' : ''} onClick={() => setLocale('ar')}>AR</button><button type="button" className={locale === 'en' ? 'active' : ''} onClick={() => setLocale('en')}>EN</button></div>
           </div>
         </header>
-        <section className="card status-card"><h2>{t('الأساس التشغيلي جاهز', 'Operational foundation ready')}</h2><p>{t('الموديولات مستقلة بعقود صريحة وتُعرض حسب الصلاحيات الفعلية.', 'Modules remain contract-isolated and are displayed by effective permissions.')}</p></section>
-        {showPos ? <GuidedSetupBanner /> : null}
-        {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
-        {showReturns ? <section id="returns-section" className="app-section-anchor"><ReturnPanel /></section> : null}
-        {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
-        {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
-        {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
-        {showWaste ? <section id="waste-section" className="app-section-anchor"><WastePage /></section> : null}
-        {showCounts ? <section id="count-section" className="app-section-anchor"><StockCountPage /></section> : null}
-        {showApprovals ? <section id="approvals-section" className="app-section-anchor"><ApprovalCenterPage /></section> : null}
-        {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
-        {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
-        {showReports ? <section id="reports-section" className="app-section-anchor"><ReportsPage /></section> : null}
-        {showPrinting ? <section id="printing-section" className="app-section-anchor"><PrintingCenterPage /></section> : null}
-        {showAdmin ? <section id="admin-section" className="app-section-anchor"><AdminPage /></section> : null}
-        {showAccounting ? <section id="accounting-section" className="app-section-anchor"><ChartOfAccountsPage /></section> : null}
-        {showJournals ? <section id="journals-section" className="app-section-anchor"><JournalPage /></section> : null}
-        {showExpenses ? <section id="expenses-section" className="app-section-anchor"><ExpensesPage /></section> : null}
-        {showTreasury ? <section id="treasury-section" className="app-section-anchor"><TreasuryPage /></section> : null}
-        {showPosting ? <section id="posting-section" className="app-section-anchor"><PostingCenterPage /></section> : null}
-        {showStatements ? <section id="statements-section" className="app-section-anchor"><StatementsPage /></section> : null}
-        {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
+
+        <section key={currentHref} className="app-view" aria-label={isArabic ? activeItem.ar : activeItem.en}>
+          {renderWorkspace()}
+        </section>
       </div>
     </main>
   )
