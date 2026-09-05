@@ -8,6 +8,7 @@ import './styles/global.css'
 import './styles/shell.css'
 import './styles/kitchen.css'
 import './styles/payments.css'
+import './styles/final-ui.css'
 
 const root = document.getElementById('root')
 
