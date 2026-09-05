@@ -3,6 +3,7 @@ import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
 import {
   getProcurementInventoryReport,
+  getPurchaseCostHistoryReport,
   getReportFilterOptions,
   getSalesOperationsReport,
   type ProcurementInventoryReportKey,
@@ -13,7 +14,7 @@ import {
 } from './report.service'
 import './reports.css'
 
-type ReportKey = SalesOperationsReportKey | ProcurementInventoryReportKey | 'accounting'
+type ReportKey = SalesOperationsReportKey | ProcurementInventoryReportKey | 'costs' | 'accounting'
 type Column = { key: string; label: string; kind?: 'money' | 'number' | 'date' | 'boolean' | 'text' }
 
 const reports: Array<{ key: ReportKey; title: string; description: string; batch: string }> = [
@@ -27,6 +28,7 @@ const reports: Array<{ key: ReportKey; title: string; description: string; batch
   { key: 'purchases', title: 'المشتريات والموردون', description: 'أوامر الشراء والاستلامات والقيمة المستلمة.', batch: '8.3' },
   { key: 'inventory', title: 'المخزون والحركات', description: 'الرصيد الحالي والوارد والصادر وحد إعادة الطلب.', batch: '8.3' },
   { key: 'waste', title: 'الهالك', description: 'تفاصيل مستندات الهالك والكميات والمخازن.', batch: '8.3' },
+  { key: 'costs', title: 'سجل تكلفة الشراء', description: 'التكلفة التاريخية الفعلية لكل استلام وصنف.', batch: '8.3' },
   { key: 'accounting', title: 'التقارير المحاسبية', description: 'ميزان المراجعة ودفتر الأستاذ والقوائم المالية.', batch: '8.4' },
 ]
 
@@ -117,6 +119,18 @@ const columnsByReport: Partial<Record<ReportKey, Column[]>> = {
     { key: 'reason', label: 'السبب' },
     { key: 'note', label: 'ملاحظة' },
   ],
+  costs: [
+    { key: 'received_at', label: 'تاريخ الاستلام', kind: 'date' },
+    { key: 'purchase_number', label: 'أمر الشراء' },
+    { key: 'supplier', label: 'المورد' },
+    { key: 'warehouse', label: 'المخزن' },
+    { key: 'code', label: 'الكود' },
+    { key: 'item', label: 'الصنف' },
+    { key: 'quantity', label: 'الكمية', kind: 'number' },
+    { key: 'base_unit', label: 'الوحدة' },
+    { key: 'unit_cost', label: 'تكلفة الوحدة', kind: 'money' },
+    { key: 'total_cost', label: 'إجمالي التكلفة', kind: 'money' },
+  ],
 }
 
 const totalLabels: Record<string, string> = {
@@ -124,6 +138,7 @@ const totalLabels: Record<string, string> = {
   invoice_count: 'عدد الفواتير', total: 'الإجمالي', net: 'الصافي', payment_count: 'عدد الدفعات', amount: 'القيمة', quantity: 'الكمية', distinct_products: 'عدد المنتجات', event_count: 'عدد الحركات',
   shift_count: 'عدد الورديات', payments_total: 'إجمالي التحصيل', refunds_total: 'إجمالي المرتجعات', cash_difference: 'إجمالي فرق النقدية',
   purchase_count: 'عدد أوامر الشراء', received_value: 'قيمة المستلم', ordered_quantity: 'الكمية المطلوبة', received_quantity: 'الكمية المستلمة', item_rows: 'عدد أرصدة الأصناف', balance: 'إجمالي الرصيد', inbound: 'الوارد', outbound: 'الصادر', low_stock_count: 'أصناف تحت الحد الأدنى', line_count: 'عدد بنود الهالك',
+  receipt_line_count: 'عدد بنود الاستلام', total_cost: 'إجمالي تكلفة الشراء', weighted_avg_cost: 'متوسط التكلفة المرجح',
 }
 
 function monthStart() { const date = new Date(); date.setDate(1); return date.toISOString().slice(0, 10) }
@@ -137,20 +152,20 @@ function isSalesOperationsReport(key: ReportKey): key is SalesOperationsReportKe
 function isProcurementInventoryReport(key: ReportKey): key is ProcurementInventoryReportKey {
   return ['purchases', 'inventory', 'waste'].includes(key)
 }
-function isLiveReport(key: ReportKey) { return isSalesOperationsReport(key) || isProcurementInventoryReport(key) }
+function isLiveReport(key: ReportKey) { return isSalesOperationsReport(key) || isProcurementInventoryReport(key) || key === 'costs' }
 
 function formatValue(value: unknown, kind: Column['kind'] = 'text') {
   if (value === null || value === undefined || value === '') return '—'
   if (kind === 'date') { const date = new Date(String(value)); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('ar-EG') }
   if (kind === 'money') { const number = Number(value); return Number.isFinite(number) ? number.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(value) }
-  if (kind === 'number') { const number = Number(value); return Number.isFinite(number) ? number.toLocaleString('ar-EG', { maximumFractionDigits: 3 }) : String(value) }
+  if (kind === 'number') { const number = Number(value); return Number.isFinite(number) ? number.toLocaleString('ar-EG', { maximumFractionDigits: 4 }) : String(value) }
   if (kind === 'boolean') return value ? 'نعم' : 'لا'
   const labels: Record<string, string> = { cash: 'كاش', card: 'بطاقة', dine_in: 'صالة', take_away: 'تيك أواي', drive_thru: 'درايف ثرو', delivery: 'دليفري', quick: 'سريع', return: 'مرتجع', refund: 'استرداد', void: 'إلغاء بعد المطبخ', discount: 'خصم', draft: 'مسودة', submitted: 'مرسل', partially_received: 'استلام جزئي', received: 'مستلم', cancelled: 'ملغي', posted: 'مرحّل', open: 'مفتوحة', closed: 'مغلقة' }
   return labels[String(value)] ?? String(value)
 }
 
 function totalKind(key: string): Column['kind'] {
-  return ['order_count', 'invoice_count', 'payment_count', 'quantity', 'distinct_products', 'event_count', 'shift_count', 'purchase_count', 'ordered_quantity', 'received_quantity', 'item_rows', 'balance', 'inbound', 'outbound', 'low_stock_count', 'line_count'].includes(key) ? 'number' : 'money'
+  return ['order_count', 'invoice_count', 'payment_count', 'quantity', 'distinct_products', 'event_count', 'shift_count', 'purchase_count', 'ordered_quantity', 'received_quantity', 'item_rows', 'balance', 'inbound', 'outbound', 'low_stock_count', 'line_count', 'receipt_line_count'].includes(key) ? 'number' : 'money'
 }
 
 export function ReportsPage() {
@@ -180,7 +195,9 @@ export function ReportsPage() {
     setReportLoading(true); setError(null)
     const request = isSalesOperationsReport(selectedReport)
       ? getSalesOperationsReport(currentBranchId, selectedReport, filters)
-      : getProcurementInventoryReport(currentBranchId, selectedReport, filters)
+      : isProcurementInventoryReport(selectedReport)
+        ? getProcurementInventoryReport(currentBranchId, selectedReport, filters)
+        : getPurchaseCostHistoryReport(currentBranchId, filters)
     void request.then(setData).catch((cause) => setError(cause instanceof Error ? cause.message : 'تعذر تحميل بيانات التقرير')).finally(() => setReportLoading(false))
   }, [currentBranchId, canView, selectedReport, filters])
 
