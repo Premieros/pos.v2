@@ -1,0 +1,5 @@
+create index idx_accounting_mapping_sales_revenue on public.accounting_posting_mappings(sales_revenue_account_id,branch_id) where sales_revenue_account_id is not null;
+create index idx_accounting_mapping_sales_cash on public.accounting_posting_mappings(sales_cash_account_id,branch_id) where sales_cash_account_id is not null;
+create index idx_accounting_mapping_sales_card on public.accounting_posting_mappings(sales_card_account_id,branch_id) where sales_card_account_id is not null;
+create index idx_accounting_mapping_purchase_inventory on public.accounting_posting_mappings(purchase_inventory_account_id,branch_id) where purchase_inventory_account_id is not null;
+create index idx_accounting_mapping_purchase_payable on public.accounting_posting_mappings(purchase_payable_account_id,branch_id) where purchase_payable_account_id is not null;
