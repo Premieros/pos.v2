@@ -91,6 +91,7 @@ export function PosPage() {
   useEffect(() => { void refreshItems(selectedOrderId) }, [selectedOrderId])
 
   if (!branchId || !canView) return null
+  const activeBranchId = branchId
 
   async function runAction(action: () => Promise<void>) {
     setError(null)
@@ -109,7 +110,7 @@ export function PosPage() {
     const diningTableId = String(data.get('diningTableId') ?? '') || null
     const guestCount = Number(data.get('guestCount') ?? 1)
     await runAction(async () => {
-      const id = await createPosOrder({ branchId, orderType, diningTableId, guestCount })
+      const id = await createPosOrder({ branchId: activeBranchId, orderType, diningTableId, guestCount })
       setSelectedOrderId(id)
       form.reset()
     })
@@ -119,7 +120,7 @@ export function PosPage() {
     const data = new FormData(form)
     await runAction(async () => {
       await createDiningTable({
-        branchId,
+        branchId: activeBranchId,
         code: String(data.get('code') ?? ''),
         name: String(data.get('name') ?? ''),
         capacity: Number(data.get('capacity') ?? 4),
