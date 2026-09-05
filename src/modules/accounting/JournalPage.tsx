@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
 import { listAccounts, type Account } from './account.service'
-import { addJournalLine, createJournalEntry, listJournalEntries, listJournalLines, postJournalEntry, removeJournalLine, type JournalEntry, type JournalLine } from './journal.service'
+import { addJournalLine, createJournalEntry, listJournalEntries, listJournalLines, postJournalEntry, removeJournalLine, reverseJournalEntry, type JournalEntry, type JournalLine } from './journal.service'
 import './accounting.css'
 
 export function JournalPage() {
@@ -14,11 +14,13 @@ export function JournalPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reversalReason, setReversalReason] = useState('')
 
-  const canView = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post')
+  const canView = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post') || can('accounting.journals.reverse')
   const canCreate = can('accounting.journals.create')
   const canEdit = can('accounting.journals.edit')
   const canPost = can('accounting.journals.post')
+  const canReverse = can('accounting.journals.reverse')
   const selected = entries.find((entry) => entry.id === selectedId) ?? null
 
   async function refreshEntries() {
@@ -116,13 +118,26 @@ export function JournalPage() {
     }
   }
 
+  async function handleReverse() {
+    if (!selected || !reversalReason.trim()) return
+    setError(null)
+    try {
+      const reversalId = await reverseJournalEntry(selected.id, reversalReason)
+      setReversalReason('')
+      await refreshEntries()
+      setSelectedId(reversalId)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر عكس القيد')
+    }
+  }
+
   return (
     <section className="workspace-card accounting-workspace" aria-labelledby="journals-title">
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">Accounting</p>
           <h2 id="journals-title">القيود اليومية</h2>
-          <p>إنشاء قيد مسودة، إضافة بنود مدينة ودائنة، ثم ترحيله فقط عندما يكون متوازنًا.</p>
+          <p>إنشاء وترحيل القيود المتوازنة، وتصحيح القيود المرحلة بعكس محاسبي مستقل دون تعديل الأصل.</p>
         </div>
         <span>{entries.filter((entry) => entry.status === 'draft').length} مسودة</span>
       </div>
@@ -146,7 +161,7 @@ export function JournalPage() {
               <strong>#{entry.entry_number}</strong>
               <span>{entry.entry_date}</span>
               <small>{entry.memo || 'بدون بيان'}</small>
-              <em>{entry.status === 'draft' ? 'مسودة' : entry.status === 'posted' ? 'مرحّل' : 'معكوس'}</em>
+              <em>{entry.status === 'draft' ? 'مسودة' : 'مرحّل'}</em>
             </button>
           ))}
           {!loading && !entries.length ? <p className="muted-text">لا توجد قيود بعد.</p> : null}
@@ -182,6 +197,13 @@ export function JournalPage() {
               </div>
 
               {selected.status === 'draft' && canPost ? <button className="journal-post-button" type="button" onClick={() => void handlePost()} disabled={lines.length < 2 || totals.debit <= 0 || totals.debit !== totals.credit}>ترحيل القيد المتوازن</button> : null}
+
+              {selected.status === 'posted' && canReverse && selected.source_type !== 'journal_reversal' ? (
+                <div className="journal-reversal-box">
+                  <input value={reversalReason} onChange={(event) => setReversalReason(event.target.value)} placeholder="سبب العكس المحاسبي" />
+                  <button type="button" onClick={() => void handleReverse()} disabled={!reversalReason.trim()}>إنشاء قيد عكسي</button>
+                </div>
+              ) : null}
             </>
           )}
         </div>
