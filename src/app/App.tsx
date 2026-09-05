@@ -1,6 +1,7 @@
 import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
 import { ExpensesPage } from '../modules/accounting/ExpensesPage'
 import { JournalPage } from '../modules/accounting/JournalPage'
+import { PostingCenterPage } from '../modules/accounting/PostingCenterPage'
 import { TreasuryPage } from '../modules/accounting/TreasuryPage'
 import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
@@ -45,6 +46,7 @@ export function App() {
   const showJournals = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post')
   const showExpenses = can('accounting.expenses.view') || can('accounting.expenses.create') || can('accounting.expenses.edit') || can('accounting.expenses.post')
   const showTreasury = can('treasury.view') || can('treasury.accounts.manage') || can('treasury.movements.create')
+  const showPosting = can('accounting.posting.view') || can('accounting.posting.manage') || can('accounting.posting.retry')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -67,11 +69,11 @@ export function App() {
           {showJournals ? <a href="#journals-section">القيود اليومية</a> : null}
           {showExpenses ? <a href="#expenses-section">المصروفات</a> : null}
           {showTreasury ? <a href="#treasury-section">الخزينة والبنوك</a> : null}
+          {showPosting ? <a href="#posting-section">ربط المحاسبة</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
         <div className="sidebar-footer"><span>الفرع الحالي</span><strong>{currentBranch.code}</strong></div>
       </aside>
-
       <div className="app-content">
         <header className="app-header" id="overview"><div><p className="eyebrow">POS.V2</p><h1>نظام التشغيل</h1><p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p></div></header>
         <section className="card status-card"><h2>الأساس التشغيلي جاهز</h2><p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p></section>
@@ -89,6 +91,7 @@ export function App() {
         {showJournals ? <section id="journals-section" className="app-section-anchor"><JournalPage /></section> : null}
         {showExpenses ? <section id="expenses-section" className="app-section-anchor"><ExpensesPage /></section> : null}
         {showTreasury ? <section id="treasury-section" className="app-section-anchor"><TreasuryPage /></section> : null}
+        {showPosting ? <section id="posting-section" className="app-section-anchor"><PostingCenterPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
