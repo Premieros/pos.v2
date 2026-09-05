@@ -22,11 +22,21 @@ A domain operation must never depend on component location, screen layout, role 
 Define database/RPC/domain contracts before UI integration. Sensitive financial and inventory calculations are server authoritative.
 
 ## 5. Permission First — mandatory
-Authorization requires both branch access and an effective permission. No feature, route, button, RPC, policy or business action may be authorized by a role name.
+Authorization requires an effective permission for every feature/action. No route, button, RPC, policy or business action may be authorized by a role-name check.
 
-Roles are optional permission templates only. A user may receive permissions directly without any role. Explicit per-user `revoke` overrides direct grants and role-template grants.
+Roles are permission templates. A normal user may receive permissions directly without any role. Explicit per-user `revoke` overrides direct grants and normal role-template grants.
 
-There is no role-based implicit bypass. Elevated users receive their authority through actual permission records and pass the same authorization resolver as every other user.
+### Super Admin system role
+`super_admin` is the one protected platform role. It is a hidden, immutable system role and is never exposed in normal role/user management surfaces.
+
+- It owns every defined permission.
+- Every newly created permission is automatically attached to it.
+- Its row, permission membership and platform assignment cannot be edited or deleted by authenticated application users.
+- Its platform assignment is stored only in the private `app_private` schema.
+- A Super Admin has platform-wide branch access.
+- Application authorization code still asks for the required permission (for example `pos.payment.take`), never `role == super_admin`.
+
+This means Super Admin receives full authority through actual permissions while feature code remains permission-first and role-name agnostic.
 
 ## 6. RLS is mandatory
 Every table exposed through the Data API must have RLS enabled and narrowly scoped policies. Never weaken RLS to make a test pass.
