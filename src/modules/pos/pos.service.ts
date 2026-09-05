@@ -94,6 +94,12 @@ export async function listPosWarehouses(branchId: string): Promise<PosWarehouse[
   return (data ?? []) as PosWarehouse[]
 }
 
+export async function countKitchenQueue(branchId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('count_kitchen_queue', { p_branch_id: branchId })
+  if (error) throw error
+  return Number(data ?? 0)
+}
+
 export async function listDiningTables(branchId: string): Promise<DiningTable[]> {
   const { data, error } = await supabase
     .from('dining_tables')
