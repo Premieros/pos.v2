@@ -52,15 +52,19 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Private report functions are non-executable by authenticated; public wrappers remain permission/branch guarded.
 - Security Advisor: only known leaked-password-protection Auth warning.
 - Performance Advisor: unused-index INFO only; no material report-specific finding.
-- Verify #433 ✅ — regressions / Typecheck / Build / Pages Deploy.
+- Verify #433 ✅.
 
-### 8.4 Accounting Reports Integration 🚧 NEXT
-- Integrate Trial Balance, General Ledger, Income Statement and Balance Sheet into the central reports experience.
-- Reuse the existing Batch 7 read-only statement RPCs and `accounting.statements.view`; do not duplicate accounting calculations or weaken permissions.
+### 8.4 Accounting Reports Integration ✅
+- Central Reports workspace now includes Trial Balance, General Ledger, Income Statement and Balance Sheet.
+- Reuses existing Batch 7 statement services/RPCs; no accounting calculation was duplicated or replaced.
+- Accounting reports still require `accounting.statements.view`; `reports.view` alone does not grant financial-statement access.
+- General Ledger keeps explicit account selection through the existing statement account reference RPC.
+- Verify #441 ✅ — regressions / Typecheck / Build / Pages Deploy.
 
-### 8.5 Custom Columns + Excel Export ⏳
+### 8.5 Custom Columns + Excel Export 🚧 NEXT
 - User-selectable report columns.
 - Excel export based on the same filtered result and totals.
+- Export must not bypass report/accounting permissions or refetch a broader dataset than what is displayed.
 
 ### 8.6 Central Printing ⏳
 - Centralized print workflows for Kitchen, receipts/reprints, shift close, day close and reports.
@@ -68,7 +72,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 8.7 Batch 8 Regression + Advisors + Verify ⏳
 
-Immediate target: **8.4 Accounting Reports Integration**.
+Immediate target: **8.5 Custom Columns + Excel Export**.
 
 ## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
 Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
@@ -81,9 +85,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–7: ✅ CLOSED.
-- Batch 8.1–8.3: ✅ CLOSED.
-- Immediate target: **8.4 Accounting Reports Integration**.
-- Verified implementation HEAD before this log update: `a1313bec2a020173fa082fd51f4c4adb6224bc09` — Verify #433 ✅.
+- Batch 8.1–8.4: ✅ CLOSED.
+- Immediate target: **8.5 Custom Columns + Excel Export**.
+- Verified implementation HEAD before this log update: `bf394a3e275f71f37d202ecfce1c64f9c6e8f68d` — Verify #441 ✅.
 - `main` untouched.
 
 ## Hardening backlog
