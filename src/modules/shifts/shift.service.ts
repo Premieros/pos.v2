@@ -38,13 +38,14 @@ export async function recordCashMovement(input: { shiftId: string; branchId: str
   if (error) throw error
 }
 
-export async function closeShift(input: { shiftId: string; branchId: string; actualCash: number; note?: string }) {
-  const { data, error } = await supabase.rpc('close_shift', {
+export async function closeShift(input: { shiftId: string; branchId: string; actualCash: number; note?: string; idempotencyKey?: string }) {
+  const { data, error } = await supabase.rpc('close_shift_idempotent', {
     p_shift_id: input.shiftId,
     p_branch_id: input.branchId,
     p_actual_cash: input.actualCash,
     p_note: input.note ?? null,
+    p_idempotency_key: input.idempotencyKey ?? crypto.randomUUID(),
   })
   if (error) throw error
-  return data
+  return data as Shift
 }
