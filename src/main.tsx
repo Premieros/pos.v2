@@ -5,6 +5,7 @@ import { AuthProvider } from './modules/auth/AuthProvider'
 import { BranchProvider } from './modules/branches/BranchProvider'
 import { PermissionProvider } from './modules/permissions/PermissionProvider'
 import './styles/global.css'
+import './styles/shell.css'
 import './styles/kitchen.css'
 import './styles/payments.css'
 
