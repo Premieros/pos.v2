@@ -3,6 +3,8 @@ import { listKitchenTickets, type KitchenTicket } from '../kitchen/kitchen.servi
 import { getSalesOperationsReport, type ReportData, type ReportFilters } from '../reports/report.service'
 import { listShifts, type Shift } from '../shifts/shift.service'
 
+const DAY_CACHE_PREFIX = 'pos.v2.day-summary.v1'
+
 export type PrintableOrder = {
   id: string
   order_number: number
@@ -10,6 +12,17 @@ export type PrintableOrder = {
   status: string
   total: number
   created_at: string
+}
+
+export type CachedDaySummary = {
+  branchId: string
+  date: string
+  cachedAt: string
+  data: ReportData
+}
+
+function dayCacheKey(branchId: string, date: string) {
+  return `${DAY_CACHE_PREFIX}:${branchId}:${date}`
 }
 
 export async function listPrintableOrders(branchId: string): Promise<PrintableOrder[]> {
@@ -32,6 +45,18 @@ export async function listPrintableShifts(branchId: string): Promise<Shift[]> {
   return listShifts(branchId)
 }
 
+export function getCachedDaySummary(branchId: string, date: string): CachedDaySummary | null {
+  try {
+    const raw = localStorage.getItem(dayCacheKey(branchId, date))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CachedDaySummary
+    if (parsed.branchId !== branchId || parsed.date !== date || !parsed.data) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
 export async function getDaySummary(branchId: string, date: string): Promise<ReportData> {
   const filters: ReportFilters = {
     fromDate: date,
@@ -41,5 +66,8 @@ export async function getDaySummary(branchId: string, date: string): Promise<Rep
     productId: '',
     orderType: '',
   }
-  return getSalesOperationsReport(branchId, 'sales', filters)
+  const data = await getSalesOperationsReport(branchId, 'sales', filters)
+  const cached: CachedDaySummary = { branchId, date, cachedAt: new Date().toISOString(), data }
+  localStorage.setItem(dayCacheKey(branchId, date), JSON.stringify(cached))
+  return data
 }
