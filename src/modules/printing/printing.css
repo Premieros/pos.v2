@@ -14,9 +14,9 @@
 .central-print-line strong { white-space:nowrap; }
 @media (max-width:640px) { .printing-form { grid-template-columns:1fr; } }
 @media print {
-  body * { visibility:hidden !important; }
-  .central-print-root, .central-print-root * { visibility:visible !important; }
-  .central-print-root { display:block !important; position:absolute; inset:0; margin:0; background:#fff; }
-  .central-print-paper { margin:0 auto; box-shadow:none; }
+  body.central-print-mode * { visibility:hidden !important; }
+  body.central-print-mode .central-print-root, body.central-print-mode .central-print-root * { visibility:visible !important; }
+  body.central-print-mode .central-print-root { display:block !important; position:absolute; inset:0; margin:0; background:#fff; }
+  body.central-print-mode .central-print-paper { margin:0 auto; box-shadow:none; }
   @page { margin:0; }
 }
