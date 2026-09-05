@@ -6,6 +6,7 @@ import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
+import { ReturnPanel } from '../modules/returns/ReturnPanel'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 import { ShiftsPage } from '../modules/shifts/ShiftsPage'
 
@@ -22,6 +23,7 @@ export function App() {
   if (permissionLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الصلاحيات…</p></main>
 
   const showPos = can('pos.view')
+  const showReturns = can('pos.order.return') && can('pos.payment.refund')
   const showKitchen = can('kitchen.view') || can('kitchen.manage')
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
@@ -41,6 +43,7 @@ export function App() {
         <nav className="sidebar-nav">
           <a href="#overview">الرئيسية</a>
           {showPos ? <a href="#pos-section">شاشة البيع</a> : null}
+          {showReturns ? <a href="#returns-section">المرتجعات</a> : null}
           {showKitchen ? <a href="#kds-section">المطبخ KDS</a> : null}
           {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
           {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
@@ -68,6 +71,7 @@ export function App() {
         </section>
 
         {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
+        {showReturns ? <section id="returns-section" className="app-section-anchor"><ReturnPanel /></section> : null}
         {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
         {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
         {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
