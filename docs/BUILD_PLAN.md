@@ -46,70 +46,78 @@ Verification: Discounts #97 ✅ · Cancel/Void #107 ✅ · Return/Refund #121 �
 ## Batch 5 — POS Operational Controls II ✅ CLOSED
 
 Completed:
-- Table Transfer: same-branch active free table, `pos.order.transfer`, audit/idempotency.
-- Table Merge: same branch/shift, no revenue duplication, source retained as `merged`, payment/split/return/discount conflicts fail closed.
-- Receipt first print: `pos.receipt.print`, authoritative immutable snapshot, server registration/idempotency.
-- Receipt reprint: `pos.receipt.reprint`, reason + actor + sequence audit, original snapshot only.
-- Customer Display: read-only server projection, `pos.view`, no admin/user/permission secrets, no write authority, external display refresh every 2 seconds.
-- CI regression guard: `npm run test:batch5` is mandatory in Verify before Typecheck/Build.
-
-Batch 5 migrations:
-- `20260905163626_pos_table_transfer_and_merge_contract`
-- `20260905164017_order_table_actions_table_indexes`
-- `20260905164257_receipt_first_print_and_reprint_contract`
-- `20260905164722_customer_display_read_only_projection`
-- `20260905165322_harden_return_refund_table_grants`
-- `20260905165401_harden_split_bill_table_grants`
-
-Batch 5 security regression findings fixed:
-- Return/Refund tables had broad authenticated table grants despite SELECT-only RLS; hardened to SELECT only.
-- Split Bill tables had the same broad grants; hardened to SELECT only.
-- Payments, allocations, discounts, void audit, return/refund, split, table actions and receipt tables now expose SELECT-only table privileges to authenticated clients; writes stay behind RPC contracts.
-- Private operational internal functions remain non-executable by `authenticated`; public wrappers remain executable and permission-check server-side.
-
-DB contract audit on locked project:
-- Required fine-grained Batch 5/POS permissions: 15 / 15 ✅
-- Required public operational RPCs: 13 / 13 ✅
-- Required Batch 5 audit/return/receipt tables: RLS enabled ✅
-- Sensitive operational tables audited: authenticated grants SELECT-only ✅
-- Security Advisor: only Supabase Auth leaked-password-protection warning remains.
-- Performance Advisor: no missing-FK regression; remaining notices are fresh-DB `unused_index` INFO.
+- Table Transfer / Merge with atomic server contracts and no revenue duplication.
+- Receipt first-print / Reprint with immutable authoritative snapshot and separate permissions.
+- Read-only Customer Display projection/window.
+- Batch 5 CI regression guard before Typecheck/Build.
+- Return/Refund and Split Bill direct table grants hardened to SELECT-only.
 
 Verification:
-- Table Transfer/Merge #151 ✅
+- Transfer/Merge #151 ✅
 - Receipt/Reprint #163 ✅
 - Customer Display #175 ✅
-- Final Batch 5 regression Verify #189 ✅ — Batch 5 regression / Typecheck / Build / GitHub Pages Deploy all green.
-
-Known deferred UX boundary:
-- Closed-order historical receipt discovery will live in Batch 8 centralized Printing/Receipt history; backend reprint already supports closed orders.
+- Final Batch 5 #189 ✅
+- DB audit: 15/15 required permissions, 13/13 required RPCs, RLS on required tables, sensitive operational tables SELECT-only for authenticated.
+- Security Advisor: only leaked-password-protection Auth warning remains.
+- Performance: no missing-FK regression; fresh-DB unused-index INFO only.
 
 ---
 
 ## Batch 6 — Procurement & Stock Control 🚧 CURRENT
 
-Execution order:
-1. Suppliers 🚧 NEXT
-2. Purchase documents + lines ⏳
-3. Purchase receive -> warehouse inventory atomically ⏳
-4. Purchase workflow + cost history ⏳
-5. Formal waste documents ⏳
-6. Stock count sessions + variance ⏳
-7. Approval center for sensitive inventory operations ⏳
-8. Batch 6 regression + Advisors + Verify ⏳
+### 6.1 Suppliers ✅
+
+Completed contract:
+- New permissions: `procurement.view` and `procurement.suppliers.manage`.
+- Suppliers are branch-scoped with unique supplier code per branch and optional unique tax number per branch.
+- RLS SELECT requires accessible branch plus procurement view/manage permission.
+- `authenticated` has SELECT-only table access; create/update are RPC-only.
+- `create_supplier` and `update_supplier` are server-authoritative; private internals are not executable by authenticated clients.
+- Supplier audit fields track creator/updater and timestamps.
+- Permission-aware Supplier workspace added to the RTL sidebar.
+- UI supports create, list, activate/deactivate; no role-name checks and no direct writes.
+
+Migration:
+- `20260905165620_supplier_foundation`
+
+Verification:
+- Security Advisor: no Supplier-specific security issue; existing Auth warning only.
+- Performance Advisor: no missing-FK warning; Supplier notices are unused-index INFO on fresh DB.
+- Verify #201 ✅ — Batch 5 regression / Typecheck / Build / GitHub Pages Deploy all green.
+
+### 6.2 Purchase documents + lines 🚧 NEXT
+Required:
+- Branch-scoped purchase header with supplier and explicit lifecycle.
+- Real inventory-item purchase lines; no product-name-only fake lines.
+- Draft editing only before receipt/closure.
+- Server-calculated totals.
+- Granular create/edit/view/receive permissions.
+- No direct client table writes.
+
+### 6.3 Purchase receive -> warehouse inventory atomically ⏳
+- Real branch warehouse + items.
+- Idempotent receiving and cumulative quantity protection.
+- Existing inventory ledger only; never direct balance edits.
+
+### 6.4 Purchase workflow + cost history ⏳
+- Explicit statuses and accepted-receipt-derived cost history.
+
+### 6.5 Formal waste documents ⏳
+### 6.6 Stock count sessions + variance ⏳
+### 6.7 Approval center ⏳
+### 6.8 Batch 6 regression + Advisors + Verify ⏳
 
 Procurement/stock rules:
 - Every supplier/purchase document is branch-scoped.
-- Warehouse receipt must reference a real branch warehouse and real inventory items.
-- Purchase receipt writes the existing inventory ledger atomically; no direct balance edits.
-- Receiving must be idempotent and cannot double-receive the same quantity.
+- Warehouse receipt must reference real branch warehouse and inventory items.
+- Receiving is idempotent and cannot double-receive quantities.
 - Purchase lifecycle is explicit; no hidden status side effects.
-- Cost history derives from accepted purchase receipts, not UI state.
-- Waste/count documents use real warehouse + item references and server-authoritative movements.
-- Sensitive adjustments/count variances require granular permissions and later approval contract.
-- No self-approval unless an explicit permission is defined.
+- Cost history derives from accepted receipts.
+- Waste/counts use real warehouse/item references and server-authoritative movements.
+- Sensitive variance/adjustment operations require granular permissions and approval contracts.
+- No self-approval unless explicit permission is defined.
 
-Immediate target: **Supplier foundation + permissions + RLS + UI contract**.
+Immediate target: **Purchase documents + lines**.
 
 ## Batch 7 — Accounting & Treasury ⏳ QUEUED
 COA → journals/lines → expenses → cash/bank treasury → source links → idempotent posting → Trial Balance/Ledger/Income Statement/Balance Sheet/AR/AP aging.
@@ -130,11 +138,12 @@ Typecheck, Build, Unit, DB contract, RLS/permission, Integration, E2E, Advisors,
 - Locked database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD before this log update: `25c72f54b65c072eed3d4786d3a75afda1dc63db`.
-- Final Batch 5 Verify #189: ✅ regression / Typecheck / Build / Pages Deploy.
+- Verified implementation HEAD before this log update: `dfe7b65a5fb468d951441cf603b67bd54d85d98e`.
+- Supplier Verify #201: ✅ regression / Typecheck / Build / Pages Deploy.
 - Batches 1–5: ✅ CLOSED.
 - Batch 6: 🚧 CURRENT.
-- Immediate target: **Suppliers**.
+- Suppliers: ✅ CLOSED.
+- Immediate target: **Purchase documents + lines**.
 - `main` remains untouched.
 
 # Security / Hardening backlog
