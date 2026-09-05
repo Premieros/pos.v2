@@ -1,13 +1,14 @@
 import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
+import { CatalogPage } from '../modules/catalog/CatalogPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 
 export function App() {
   const { user, loading: authLoading } = useAuth()
   const { currentBranch, loading: branchLoading, error: branchError } = useBranch()
-  const { loading: permissionLoading } = usePermissions()
+  const { can, loading: permissionLoading } = usePermissions()
 
   if (authLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الجلسة…</p></main>
   if (!user) return <LoginPage />
@@ -17,13 +18,21 @@ export function App() {
   if (permissionLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الصلاحيات…</p></main>
 
   return (
-    <main className="shell" dir="rtl">
-      <section className="card" aria-labelledby="app-title">
-        <p className="eyebrow">POS.V2</p>
-        <h1 id="app-title">الأساس التشغيلي جاهز</h1>
-        <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
-        <p>تم تثبيت Auth وBranch Context وPermission Context. الخطوة التالية هي إدارة المستخدمين والصلاحيات ثم الكتالوج.</p>
+    <main className="app-shell" dir="rtl">
+      <header className="app-header">
+        <div>
+          <p className="eyebrow">POS.V2</p>
+          <h1>نظام التشغيل</h1>
+          <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
+        </div>
+      </header>
+
+      <section className="card status-card">
+        <h2>الأساس التشغيلي جاهز</h2>
+        <p>Auth وBranch Context وPermission Context تعمل بعقد موحد.</p>
       </section>
+
+      {can('catalog.view') || can('catalog.manage') ? <CatalogPage /> : null}
     </main>
   )
 }
