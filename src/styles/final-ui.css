@@ -29,7 +29,9 @@ body{
 }
 
 .app-shell{background:transparent}
-.app-content{gap:20px}
+.app-content{gap:20px;align-content:start}
+.app-view{min-width:0;display:grid;gap:18px;align-content:start;padding-block-end:28px}
+.app-view>*,.app-view>*>*{min-width:0}
 .app-section-anchor{min-width:0}
 
 .app-sidebar,
@@ -57,6 +59,15 @@ body{
   color:#0f172a;
   transform:translateY(-1px);
 }
+.sidebar-nav a.active,.sidebar-nav a[aria-current="page"]{
+  background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(99,102,241,.08));
+  border-color:rgba(37,99,235,.22);
+  color:#0f172a;
+  box-shadow:inset 3px 0 0 var(--ui-accent),0 6px 18px rgba(37,99,235,.06);
+}
+.app-shell[dir="rtl"] .sidebar-nav a.active,.app-shell[dir="rtl"] .sidebar-nav a[aria-current="page"]{
+  box-shadow:inset -3px 0 0 var(--ui-accent),0 6px 18px rgba(37,99,235,.06);
+}
 .sidebar-nav-icon{color:#475569}
 .sidebar-footer,.locale-switch,.header-locale-switch,.sidebar-collapse-button{
   border-color:var(--ui-border)!important;
@@ -72,17 +83,19 @@ body{
   position:sticky;
   inset-block-start:12px;
   z-index:28;
-  padding:18px 20px;
+  padding:16px 18px;
   border:1px solid var(--ui-border);
   border-radius:var(--ui-radius);
-  background:rgba(255,255,255,.76);
+  background:rgba(255,255,255,.88);
   box-shadow:0 12px 38px rgba(15,23,42,.06);
   backdrop-filter:blur(22px) saturate(135%);
   -webkit-backdrop-filter:blur(22px) saturate(135%);
+  overflow:hidden;
 }
-.app-header h1{font-size:clamp(1.8rem,3vw,2.45rem);margin-block-end:6px}
+.app-header>div{min-width:0}
+.app-header h1{font-size:clamp(1.55rem,2.4vw,2.15rem);margin-block-end:4px;line-height:1.2}
 .app-header p{margin-block:0}
-.eyebrow{color:var(--ui-accent);font-size:.77rem;text-transform:uppercase}
+.eyebrow{color:var(--ui-accent);font-size:.74rem;text-transform:uppercase;margin-block-end:4px}
 .workspace-heading h2,.app-header h1{letter-spacing:-.025em}
 .workspace-heading p,.app-header p,.muted-text{color:var(--ui-muted)}
 .status-card{border-inline-start:4px solid var(--ui-accent);padding-block:22px}
@@ -225,8 +238,10 @@ table tr:hover td,.report-table tbody tr:hover td{background:rgba(239,246,255,.5
 
 @media(max-width:640px){
   body{background:#f3f6fa}
-  .app-header{padding:14px}
+  .app-header{padding:13px 14px}
+  .app-header h1{font-size:1.5rem}
   .workspace-card,.card{box-shadow:0 10px 30px rgba(15,23,42,.06);backdrop-filter:blur(14px)}
   .state-panel{padding:14px}
   table th,table td,.report-table th,.report-table td{padding:10px 11px}
+  .app-view{gap:14px;padding-block-end:18px}
 }
