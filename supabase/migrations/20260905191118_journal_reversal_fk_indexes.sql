@@ -1,0 +1,2 @@
+create index if not exists idx_journal_reversals_original_branch on public.journal_reversals(original_journal_entry_id,branch_id);
+create index if not exists idx_journal_reversals_reversal_branch on public.journal_reversals(reversal_journal_entry_id,branch_id);
