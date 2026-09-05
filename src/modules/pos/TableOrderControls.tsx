@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import '../../styles/table-order.css'
 import { mergeDineInOrders, transferOrderTable, type DiningTable, type PosOrder } from './pos.service'
 
 type Props = {
