@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
-import { listInventoryItems, type InventoryItem } from '../inventory/inventory.service'
+import { listInventoryItems, listWarehouses, type InventoryItem, type Warehouse } from '../inventory/inventory.service'
 import { usePermissions } from '../permissions/usePermissions'
 import { listSuppliers, type Supplier } from './supplier.service'
 import {
@@ -8,6 +8,7 @@ import {
   createPurchaseOrder,
   listPurchaseOrderLines,
   listPurchaseOrders,
+  receivePurchaseOrder,
   removePurchaseOrderLine,
   updatePurchaseOrderLine,
   type PurchaseOrder,
@@ -30,6 +31,7 @@ export function PurchasesPage() {
   const [lines, setLines] = useState<PurchaseOrderLine[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +39,7 @@ export function PurchasesPage() {
   const canView = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.receive')
   const canCreate = can('procurement.purchases.create')
   const canEdit = can('procurement.purchases.edit')
+  const canReceive = can('procurement.purchases.receive')
   const branchId = currentBranchId
 
   const selectedOrder = useMemo(
@@ -46,6 +49,10 @@ export function PurchasesPage() {
 
   const supplierById = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier])), [suppliers])
   const inventoryById = useMemo(() => new Map(inventoryItems.map((item) => [item.id, item])), [inventoryItems])
+  const receivableLines = useMemo(
+    () => lines.filter((line) => line.received_quantity < line.ordered_quantity),
+    [lines],
+  )
 
   async function refreshOrders() {
     if (!branchId || !canView) return
@@ -56,12 +63,14 @@ export function PurchasesPage() {
 
   async function refreshReferences() {
     if (!branchId || !canView) return
-    const [nextSuppliers, nextItems] = await Promise.all([
+    const [nextSuppliers, nextItems, nextWarehouses] = await Promise.all([
       listSuppliers(branchId),
       listInventoryItems(branchId),
+      canReceive ? listWarehouses(branchId) : Promise.resolve([]),
     ])
     setSuppliers(nextSuppliers.filter((supplier) => supplier.is_active))
     setInventoryItems(nextItems.filter((item) => item.is_active))
+    setWarehouses(nextWarehouses.filter((warehouse) => warehouse.is_active))
   }
 
   async function refreshAll() {
@@ -77,7 +86,7 @@ export function PurchasesPage() {
     }
   }
 
-  useEffect(() => { void refreshAll() }, [branchId, canView])
+  useEffect(() => { void refreshAll() }, [branchId, canView, canReceive])
 
   useEffect(() => {
     if (!selectedOrderId) {
@@ -170,13 +179,48 @@ export function PurchasesPage() {
     }
   }
 
+  async function handleReceive(form: HTMLFormElement) {
+    if (!selectedOrder || selectedOrder.status === 'received' || selectedOrder.status === 'cancelled') return
+    const data = new FormData(form)
+    const warehouseId = String(data.get('warehouseId') ?? '')
+    const receiptLines = receivableLines.flatMap((line) => {
+      const quantity = Number(data.get(`receive:${line.id}`) ?? 0)
+      if (!Number.isFinite(quantity) || quantity <= 0) return []
+      return [{ lineId: line.id, quantity }]
+    })
+
+    if (!warehouseId) {
+      setError('اختر مخزن الاستلام.')
+      return
+    }
+    if (!receiptLines.length) {
+      setError('أدخل كمية استلام لبند واحد على الأقل.')
+      return
+    }
+
+    setError(null)
+    try {
+      await receivePurchaseOrder({
+        purchaseOrderId: selectedOrder.id,
+        warehouseId,
+        lines: receiptLines,
+        note: String(data.get('receiptNote') ?? ''),
+      })
+      form.reset()
+      setLines(await listPurchaseOrderLines(selectedOrder.id))
+      await refreshOrders()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر استلام أمر الشراء')
+    }
+  }
+
   return (
     <section className="workspace-card purchases-workspace" aria-labelledby="purchases-title">
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">Procurement</p>
           <h2 id="purchases-title">أوامر الشراء</h2>
-          <p>المورد، البنود، الكميات والتكلفة مرتبطة ببيانات الفرع الفعلية، والإجماليات تُحسب داخل قاعدة البيانات.</p>
+          <p>المورد، البنود، الكميات والتكلفة مرتبطة ببيانات الفرع الفعلية، والاستلام يكتب دفتر حركة المخزون ذريًا.</p>
         </div>
         <span>{orders.length} أمر شراء</span>
       </div>
@@ -197,6 +241,7 @@ export function PurchasesPage() {
 
       {!suppliers.length && canCreate ? <p className="muted-text">لا يوجد مورد نشط. أنشئ موردًا أولًا من قسم الموردين.</p> : null}
       {!inventoryItems.length && canEdit ? <p className="muted-text">لا توجد وحدات مخزون نشطة. أنشئ وحدة مخزون أولًا قبل إضافة البنود.</p> : null}
+      {!warehouses.length && canReceive ? <p className="muted-text">لا يوجد مخزن نشط في الفرع. أنشئ مخزنًا قبل تسجيل الاستلام.</p> : null}
 
       <div className="purchase-layout">
         <aside className="purchase-order-list" aria-label="أوامر الشراء">
@@ -263,6 +308,36 @@ export function PurchasesPage() {
                 })}
                 {!lines.length ? <p className="muted-text">لا توجد بنود في هذا الأمر بعد.</p> : null}
               </div>
+
+              {canReceive && selectedOrder.status !== 'received' && selectedOrder.status !== 'cancelled' && receivableLines.length ? (
+                <form className="purchase-receive-form" onSubmit={(event) => { event.preventDefault(); void handleReceive(event.currentTarget) }}>
+                  <div className="purchase-receive-heading">
+                    <div>
+                      <strong>استلام إلى المخزون</strong>
+                      <span>يمكن استلام جزء من الكمية؛ الخادم يمنع تجاوز المتبقي أو التكرار.</span>
+                    </div>
+                    <select name="warehouseId" required defaultValue="">
+                      <option value="" disabled>اختر مخزن الاستلام</option>
+                      {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_ar} — {warehouse.code}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="purchase-receive-lines">
+                    {receivableLines.map((line) => {
+                      const remaining = line.ordered_quantity - line.received_quantity
+                      return (
+                        <label key={line.id}>
+                          <span>{inventoryById.get(line.inventory_item_id)?.name_ar ?? line.inventory_item_id}</span>
+                          <small>المتبقي: {remaining}</small>
+                          <input name={`receive:${line.id}`} type="number" min="0" max={remaining} step="0.0001" placeholder="كمية الاستلام" />
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <input name="receiptNote" placeholder="ملاحظة الاستلام — اختياري" />
+                  <button type="submit" disabled={!warehouses.length}>تسجيل الاستلام ذريًا</button>
+                </form>
+              ) : null}
             </>
           ) : <p className="muted-text">اختر أمر شراء لعرض التفاصيل.</p>}
         </div>
