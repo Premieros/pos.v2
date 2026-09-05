@@ -32,6 +32,8 @@ jobs:
         run: npm run test:batch6
       - name: Batch 7 regression
         run: npm run test:batch7
+      - name: Batch 8 regression
+        run: npm run test:batch8
       - name: Typecheck
         run: npm run typecheck
       - name: Build
