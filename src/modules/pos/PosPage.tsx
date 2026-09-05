@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
+import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import {
@@ -57,6 +58,7 @@ export function PosPage() {
   const canSendKitchen = can('pos.send_kitchen')
   const canPay = can('pos.payment.take')
   const canClose = can('pos.order.close')
+  const canDiscount = can('pos.discount.apply')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
@@ -123,6 +125,12 @@ export function PosPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تنفيذ العملية')
     }
+  }
+
+  async function refreshOrderState() {
+    await refreshAll()
+    await refreshItems(selectedOrderId)
+    await refreshPayments()
   }
 
   async function handleCreateOrder(form: HTMLFormElement) {
@@ -300,6 +308,13 @@ export function PosPage() {
                   </div>
                 ) : null}
               </div>
+
+              <OrderDiscountControls
+                order={selectedOrder}
+                canApply={canDiscount}
+                paymentStarted={payments.length > 0 || ['partially_paid', 'paid', 'closed'].includes(selectedOrder.status)}
+                onChanged={refreshOrderState}
+              />
 
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
                 <div className="payment-card">
