@@ -5,6 +5,7 @@ import { CatalogPage } from '../modules/catalog/CatalogPage'
 import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
+import { ShiftsPage } from '../modules/shifts/ShiftsPage'
 
 export function App() {
   const { user, loading: authLoading } = useAuth()
@@ -35,6 +36,7 @@ export function App() {
 
       {can('catalog.view') || can('catalog.manage') ? <CatalogPage /> : null}
       {can('inventory.view') ? <InventoryPage /> : null}
+      {can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage') ? <ShiftsPage /> : null}
     </main>
   )
 }
