@@ -2,6 +2,7 @@ import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
 import { ExpensesPage } from '../modules/accounting/ExpensesPage'
 import { JournalPage } from '../modules/accounting/JournalPage'
 import { PostingCenterPage } from '../modules/accounting/PostingCenterPage'
+import { StatementsPage } from '../modules/accounting/StatementsPage'
 import { TreasuryPage } from '../modules/accounting/TreasuryPage'
 import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
@@ -43,10 +44,11 @@ export function App() {
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const showAccounting = can('accounting.coa.view') || can('accounting.coa.manage')
-  const showJournals = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post')
+  const showJournals = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post') || can('accounting.journals.reverse')
   const showExpenses = can('accounting.expenses.view') || can('accounting.expenses.create') || can('accounting.expenses.edit') || can('accounting.expenses.post')
   const showTreasury = can('treasury.view') || can('treasury.accounts.manage') || can('treasury.movements.create')
   const showPosting = can('accounting.posting.view') || can('accounting.posting.manage') || can('accounting.posting.retry')
+  const showStatements = can('accounting.statements.view')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -70,6 +72,7 @@ export function App() {
           {showExpenses ? <a href="#expenses-section">المصروفات</a> : null}
           {showTreasury ? <a href="#treasury-section">الخزينة والبنوك</a> : null}
           {showPosting ? <a href="#posting-section">ربط المحاسبة</a> : null}
+          {showStatements ? <a href="#statements-section">القوائم المالية</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
         <div className="sidebar-footer"><span>الفرع الحالي</span><strong>{currentBranch.code}</strong></div>
@@ -92,6 +95,7 @@ export function App() {
         {showExpenses ? <section id="expenses-section" className="app-section-anchor"><ExpensesPage /></section> : null}
         {showTreasury ? <section id="treasury-section" className="app-section-anchor"><TreasuryPage /></section> : null}
         {showPosting ? <section id="posting-section" className="app-section-anchor"><PostingCenterPage /></section> : null}
+        {showStatements ? <section id="statements-section" className="app-section-anchor"><StatementsPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
