@@ -1,24 +1,46 @@
 # Current Work Plan — POS.V2
 
-## Current phase: Foundation
+## Current phase: Kitchen / KDS
 
 ### Completed
-- New empty GitHub repository verified.
-- New Supabase project verified healthy and public schema verified empty before initialization.
-- Clean-room architecture adopted.
-- Development rules and system contract established.
-- Core identity/branch/permission migration created and applied.
-- Minimal React + TypeScript + Vite application scaffold created.
+- Clean-room repository and architecture foundation.
+- Supabase project identity locked to `scpovyrqmsbiduanykod` only.
+- Authentication foundation and profile trigger.
+- Hidden immutable Super Admin role and permission-first authorization model.
+- Branch context and effective permission resolver.
+- Scoped user/role/permission administration contracts.
+- Catalog foundation.
+- Inventory foundation, warehouse transfers, stock ledger and product/BOM mapping.
+- Shifts and cash drawer foundation.
+- POS Core.
+- Kitchen backend contract: delta tickets, sent quantities, inventory deduction/reversal and KDS state commands.
+- GitHub Verify pipeline.
+- GitHub Pages deployment from `development` after successful Verify.
 
-### Next gates
-1. Verify database migration and Supabase security/performance advisors.
-2. Add generated database types and environment-safe Supabase client integration.
-3. Implement Auth bootstrap and Super Admin bootstrap path.
-4. Implement branch context and effective permission resolver.
-5. Add automated tests/CI before Catalog or POS work.
+### Important bootstrap status
+- The one-time first Super Admin + first branch bootstrap mechanism is implemented and protected.
+- There is currently **no Supabase Auth user yet**, so the first Super Admin assignment has not executed.
+- The first Auth user must be created once through a trusted Supabase Admin/Auth path; direct SQL inserts into Auth tables are forbidden.
+- After that account exists, run the existing bootstrap immediately and record the result in `docs/BOOTSTRAP_LOG.md`.
+- Passwords and secrets must never be stored in repository files.
 
-## Build order
-Foundation -> Auth -> Branches/Permissions -> Catalog -> Inventory -> Shifts -> POS -> Kitchen -> Payments -> Operations -> Accounting -> Reports -> Printing/Offline -> Full E2E.
+### Current Kitchen / KDS gate
+1. Finish POS `Send to Kitchen / Send Changes` UI.
+2. Require/select warehouse and show guided prerequisite if missing.
+3. Add KDS service and KDS page.
+4. Add POS KDS counters and ticket actions: Start / Ready / Complete.
+5. Verify exact-once stock movement per delta and negative-delta reversal.
+6. Verify cross-branch KDS denial.
+7. Security + performance advisors clean.
+8. GitHub Verify green.
+
+### Next phases
+Payments -> POS operational completion -> Procurement -> Waste/Counts/Approvals -> Accounting/Treasury -> Reports -> Printing -> Offline critical operations -> Settings/UI finalization -> Full E2E -> Release.
+
+## Source of Truth
+- Canonical build ledger: `docs/BUILD_PLAN.md`
+- Initial platform bootstrap audit: `docs/BOOTSTRAP_LOG.md`
+- Database identity lock: `docs/DATABASE_IDENTITY_LOCK.md`
 
 ## Production rule
-No merge from `development` to `main` until the current phase passes its verification gate.
+No merge from `development` to `main` until the final release gate passes and release is explicitly approved.
