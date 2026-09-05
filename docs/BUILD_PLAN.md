@@ -72,41 +72,48 @@ Verification: #151 ✅ Typecheck / Build / Pages Deploy. Advisors: no phase-spec
 - Independent `pos.receipt.print`.
 - Only paid/closed order accepted server-side.
 - First print registered server-side and idempotent.
-- Immutable receipt snapshot captured from authoritative branch/order/items/completed-payments data.
-- A second first-print is rejected and redirected contractually to Reprint.
+- Immutable snapshot captured from authoritative branch/order/items/completed-payments data.
+- Repeated first-print is rejected contractually in favor of Reprint.
 
 ### 5.4 Receipt Reprint ✅
 - Independent `pos.receipt.reprint`.
 - Reason mandatory.
 - Actor/time/sequence/idempotency audit.
 - Reprint always uses the original immutable snapshot and never mutates the sale.
-- POS includes 80mm print layout and separate first-print/reprint actions.
+- POS includes 80mm first-print/reprint output.
 
 Migration:
 - `20260905164257_receipt_first_print_and_reprint_contract`
 
+Verification: #163 ✅ Typecheck / Build / Pages Deploy. Advisors: existing Auth warning only; no Receipt missing-FK warning.
+
+Known UX boundary: backend supports closed-order reprint, while historical discovery is deferred to the centralized Printing/Receipt history surface unless an earlier operational need is proven.
+
+### 5.5 Customer Display ✅
+- Server-authoritative `get_customer_display_projection` read-only RPC.
+- Requires authenticated `pos.view` in the order branch.
+- Projection includes only order state, customer-facing items, subtotal/discount/total and paid/remaining amounts.
+- No user, admin, role, permission or secret data is projected.
+- No Customer Display write RPC exists.
+- External customer window has no Supabase client; it receives read-only projection from the authenticated POS and refreshes every 2 seconds.
+
+Migration:
+- `20260905164722_customer_display_read_only_projection`
+
 Verification:
 - Security Advisor: only existing Supabase Auth leaked-password warning.
-- Performance Advisor: no missing-FK notice for Receipt; fresh-DB unused-index INFO only.
-- Verify #163 ✅ Typecheck / Build / GitHub Pages Deploy.
+- Performance Advisor: no new missing-FK warning; fresh-DB unused-index INFO only.
+- Verify #175 ✅ Typecheck / Build / GitHub Pages Deploy.
 
-Known UX boundary:
-- Backend supports reprint for `closed` orders. The current active-POS list drops closed orders, so closed-order historical reprint discovery belongs to the centralized Printing/Receipt history surface unless added earlier by a proven operational need.
-
-### 5.5 Customer Display 🚧 NEXT
+### 5.6 Batch 5 cashier regression 🚧 NEXT
 Required:
-- Server-authoritative read-only order/payment projection.
-- Branch and `pos.view` scope.
-- No write command or mutation authority.
-- No user/admin/permission secrets.
-- Customer-facing items, totals, payment progress and order state only.
+- Contract audit for POS Core, Kitchen, discounts, Void, Split Bill, payment, Return/Refund, transfer/merge, receipt/reprint and Customer Display.
+- Permission keys and RLS/grant surfaces verified against locked DB.
+- Cross-branch and missing-permission behavior fails closed by contract.
+- Repository regression guard added to Verify so Batch 5 contracts cannot silently disappear.
+- Final Security/Performance review + Verify/Build/Deploy green.
 
-### 5.6 Batch 5 cashier regression ⏳
-- Full lifecycle regression across POS Core, Kitchen, discounts, void, split, payments, return/refund, transfer/merge and receipt.
-- Cross-branch and missing-permission denial checks.
-- Final Advisors + Verify/Build/Deploy green.
-
-Status: 🚧 CURRENT — immediate target: **Customer Display**.
+Status: 🚧 CURRENT — immediate target: **Batch 5 cashier regression and closure**.
 
 ---
 
@@ -132,13 +139,11 @@ Typecheck, Build, Unit, DB contract, RLS/permissions, Integration, E2E smoke, Ad
 - Locked database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD before this log update: `13ac2e5801d50c5a14ea7ad11ace6dc32bb6fc4c`.
-- Verify #163: ✅ Typecheck / Build / GitHub Pages Deploy.
+- Verified implementation HEAD before this log update: `45ada261144e07f9b900d9afd7adee0baa666631`.
+- Verify #175: ✅ Typecheck / Build / GitHub Pages Deploy.
 - Batches 1–4: ✅ CLOSED.
-- Batch 5: 🚧 CURRENT.
-- Table Transfer / Merge: ✅ CLOSED.
-- Receipt first-print / Reprint: ✅ CLOSED.
-- Immediate target: **Customer Display**.
+- Batch 5 feature scope: Transfer/Merge ✅ · Receipt/Reprint ✅ · Customer Display ✅.
+- Immediate target: **Batch 5 cashier regression and closure**.
 - `main` remains untouched.
 
 # Security / Hardening backlog
