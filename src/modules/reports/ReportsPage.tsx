@@ -1,23 +1,111 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
-import { getReportFilterOptions, type ReportFilterOptions, type ReportFilters } from './report.service'
+import {
+  getReportFilterOptions,
+  getSalesOperationsReport,
+  type ReportData,
+  type ReportFilterOptions,
+  type ReportFilters,
+  type SalesOperationsReportKey,
+} from './report.service'
 import './reports.css'
 
-type ReportKey = 'sales' | 'invoices' | 'payments' | 'employees' | 'products' | 'returns' | 'purchases' | 'inventory' | 'waste' | 'accounting'
+type ReportKey = SalesOperationsReportKey | 'purchases' | 'inventory' | 'waste' | 'accounting'
+
+type Column = { key: string; label: string; kind?: 'money' | 'number' | 'date' | 'text' }
 
 const reports: Array<{ key: ReportKey; title: string; description: string; batch: string }> = [
   { key: 'sales', title: 'ملخص المبيعات', description: 'إجماليات البيع حسب الفترة والفلاتر.', batch: '8.2' },
-  { key: 'invoices', title: 'الفواتير التفصيلية', description: 'كل فاتورة وبنودها وحالتها ومدفوعاتها.', batch: '8.2' },
+  { key: 'invoices', title: 'الفواتير التفصيلية', description: 'كل فاتورة وحالتها ومدفوعاتها.', batch: '8.2' },
   { key: 'payments', title: 'المبيعات حسب طريقة الدفع', description: 'كاش / بطاقة مع الإجماليات.', batch: '8.2' },
   { key: 'employees', title: 'المبيعات حسب الموظف', description: 'أداء المبيعات والتحصيل حسب الموظف.', batch: '8.2' },
   { key: 'products', title: 'المبيعات حسب المنتج', description: 'الكميات والقيم لكل منتج.', batch: '8.2' },
   { key: 'returns', title: 'المرتجعات والخصومات والإلغاءات', description: 'حركات التحكم التشغيلي وأثرها المالي.', batch: '8.2' },
+  { key: 'cashiers', title: 'أداء الكاشير والورديات', description: 'التحصيل والفروقات النقدية حسب الوردية.', batch: '8.2' },
   { key: 'purchases', title: 'المشتريات والموردون', description: 'أوامر واستلامات وتكلفة شراء.', batch: '8.3' },
   { key: 'inventory', title: 'المخزون والحركات', description: 'أرصدة وحركات وجرد وتنبيهات.', batch: '8.3' },
   { key: 'waste', title: 'الهالك', description: 'مستندات الهالك وتأثير المخزون.', batch: '8.3' },
   { key: 'accounting', title: 'التقارير المحاسبية', description: 'ميزان المراجعة ودفتر الأستاذ والقوائم المالية.', batch: '8.4' },
 ]
+
+const columnsByReport: Partial<Record<ReportKey, Column[]>> = {
+  sales: [
+    { key: 'metric', label: 'المؤشر' },
+    { key: 'value', label: 'القيمة', kind: 'money' },
+  ],
+  invoices: [
+    { key: 'order_number', label: 'الفاتورة' },
+    { key: 'created_at', label: 'التاريخ', kind: 'date' },
+    { key: 'order_type', label: 'نوع الطلب' },
+    { key: 'status', label: 'الحالة' },
+    { key: 'employee', label: 'الموظف' },
+    { key: 'subtotal', label: 'قبل الخصم', kind: 'money' },
+    { key: 'discount', label: 'الخصم', kind: 'money' },
+    { key: 'total', label: 'الإجمالي', kind: 'money' },
+    { key: 'paid', label: 'المدفوع', kind: 'money' },
+    { key: 'refund', label: 'المسترد', kind: 'money' },
+    { key: 'net', label: 'الصافي', kind: 'money' },
+  ],
+  payments: [
+    { key: 'method', label: 'طريقة الدفع' },
+    { key: 'payment_count', label: 'عدد الدفعات', kind: 'number' },
+    { key: 'amount', label: 'القيمة', kind: 'money' },
+  ],
+  employees: [
+    { key: 'employee', label: 'الموظف' },
+    { key: 'order_count', label: 'الطلبات', kind: 'number' },
+    { key: 'gross_sales', label: 'إجمالي المبيعات', kind: 'money' },
+    { key: 'paid', label: 'التحصيل', kind: 'money' },
+  ],
+  products: [
+    { key: 'product', label: 'المنتج' },
+    { key: 'quantity', label: 'الكمية', kind: 'number' },
+    { key: 'order_count', label: 'الطلبات', kind: 'number' },
+    { key: 'gross_sales', label: 'المبيعات', kind: 'money' },
+  ],
+  returns: [
+    { key: 'event_at', label: 'التاريخ', kind: 'date' },
+    { key: 'event_type', label: 'النوع' },
+    { key: 'order_number', label: 'الفاتورة' },
+    { key: 'employee', label: 'الموظف' },
+    { key: 'reason', label: 'السبب' },
+    { key: 'amount', label: 'القيمة', kind: 'money' },
+  ],
+  cashiers: [
+    { key: 'employee', label: 'الكاشير' },
+    { key: 'status', label: 'الحالة' },
+    { key: 'opened_at', label: 'فتح الوردية', kind: 'date' },
+    { key: 'closed_at', label: 'إغلاق الوردية', kind: 'date' },
+    { key: 'opening_balance', label: 'رصيد الفتح', kind: 'money' },
+    { key: 'payments_total', label: 'التحصيل', kind: 'money' },
+    { key: 'refunds_total', label: 'المرتجعات', kind: 'money' },
+    { key: 'expected_cash', label: 'النقد المتوقع', kind: 'money' },
+    { key: 'actual_cash', label: 'النقد الفعلي', kind: 'money' },
+    { key: 'cash_difference', label: 'الفرق', kind: 'money' },
+  ],
+}
+
+const totalLabels: Record<string, string> = {
+  order_count: 'عدد الطلبات',
+  gross_sales: 'إجمالي المبيعات',
+  discounts: 'الخصومات',
+  paid: 'المدفوع',
+  refunds: 'المرتجعات',
+  net_collected: 'صافي التحصيل',
+  invoice_count: 'عدد الفواتير',
+  total: 'الإجمالي',
+  net: 'الصافي',
+  payment_count: 'عدد الدفعات',
+  amount: 'القيمة',
+  quantity: 'الكمية',
+  distinct_products: 'عدد المنتجات',
+  event_count: 'عدد الحركات',
+  shift_count: 'عدد الورديات',
+  payments_total: 'إجمالي التحصيل',
+  refunds_total: 'إجمالي المرتجعات',
+  cash_difference: 'إجمالي فرق النقدية',
+}
 
 function monthStart() {
   const date = new Date()
@@ -36,27 +124,84 @@ const initialFilters: ReportFilters = {
   orderType: '',
 }
 
+function isSalesOperationsReport(key: ReportKey): key is SalesOperationsReportKey {
+  return ['sales', 'invoices', 'payments', 'employees', 'products', 'returns', 'cashiers'].includes(key)
+}
+
+function formatValue(value: unknown, kind: Column['kind'] = 'text') {
+  if (value === null || value === undefined || value === '') return '—'
+  if (kind === 'date') {
+    const date = new Date(String(value))
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('ar-EG')
+  }
+  if (kind === 'money') {
+    const number = Number(value)
+    return Number.isFinite(number) ? number.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(value)
+  }
+  if (kind === 'number') {
+    const number = Number(value)
+    return Number.isFinite(number) ? number.toLocaleString('ar-EG', { maximumFractionDigits: 3 }) : String(value)
+  }
+  if (value === 'cash') return 'كاش'
+  if (value === 'card') return 'بطاقة'
+  if (value === 'dine_in') return 'صالة'
+  if (value === 'take_away') return 'تيك أواي'
+  if (value === 'drive_thru') return 'درايف ثرو'
+  if (value === 'delivery') return 'دليفري'
+  if (value === 'quick') return 'سريع'
+  if (value === 'return') return 'مرتجع'
+  if (value === 'refund') return 'استرداد'
+  if (value === 'void') return 'إلغاء بعد المطبخ'
+  if (value === 'discount') return 'خصم'
+  return String(value)
+}
+
+function totalKind(key: string): Column['kind'] {
+  return ['order_count', 'invoice_count', 'payment_count', 'quantity', 'distinct_products', 'event_count', 'shift_count'].includes(key) ? 'number' : 'money'
+}
+
 export function ReportsPage() {
   const { currentBranchId, currentBranch } = useBranch()
   const { can } = usePermissions()
   const [selectedReport, setSelectedReport] = useState<ReportKey>('sales')
   const [filters, setFilters] = useState<ReportFilters>(initialFilters)
   const [options, setOptions] = useState<ReportFilterOptions>({ products: [], employees: [], payment_methods: ['cash', 'card'], order_types: ['dine_in', 'take_away', 'drive_thru', 'delivery', 'quick'] })
-  const [loading, setLoading] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<ReportData | null>(null)
 
   const canView = can('reports.view')
   const selected = useMemo(() => reports.find((report) => report.key === selectedReport) ?? reports[0], [selectedReport])
+  const columns = columnsByReport[selectedReport] ?? []
 
   useEffect(() => {
     if (!currentBranchId || !canView) return
-    setLoading(true)
+    setOptionsLoading(true)
     setError(null)
     void getReportFilterOptions(currentBranchId)
       .then(setOptions)
       .catch((cause) => setError(cause instanceof Error ? cause.message : 'تعذر تحميل خيارات التقارير'))
-      .finally(() => setLoading(false))
+      .finally(() => setOptionsLoading(false))
   }, [currentBranchId, canView])
+
+  useEffect(() => {
+    if (!currentBranchId || !canView || !isSalesOperationsReport(selectedReport)) {
+      setData(null)
+      return
+    }
+    if (!filters.fromDate || !filters.toDate || filters.fromDate > filters.toDate) {
+      setData(null)
+      setError('نطاق التاريخ غير صالح')
+      return
+    }
+    setReportLoading(true)
+    setError(null)
+    void getSalesOperationsReport(currentBranchId, selectedReport, filters)
+      .then(setData)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : 'تعذر تحميل بيانات التقرير'))
+      .finally(() => setReportLoading(false))
+  }, [currentBranchId, canView, selectedReport, filters])
 
   if (!currentBranchId || !canView) return null
 
@@ -68,7 +213,7 @@ export function ReportsPage() {
         <div>
           <p className="eyebrow">Reports</p>
           <h2 id="reports-title">مركز التقارير</h2>
-          <p>صفحة واحدة بدون رسوم بيانية؛ فلاتر موحدة، جداول واضحة وإجماليات قابلة للتصدير والطباعة في المراحل التالية.</p>
+          <p>صفحة واحدة بدون رسوم بيانية؛ فلاتر موحدة، جداول واضحة وإجماليات حقيقية من قاعدة البيانات.</p>
         </div>
         <span>{currentBranch?.name_ar ?? 'الفرع الحالي'}</span>
       </div>
@@ -83,7 +228,7 @@ export function ReportsPage() {
         <button type="button" onClick={() => setFilters(initialFilters)}>إعادة الضبط</button>
       </div>
 
-      {loading ? <p>جارٍ تحميل خيارات الفلاتر…</p> : null}
+      {optionsLoading ? <p>جارٍ تحميل خيارات الفلاتر…</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
 
       <div className="reports-layout">
@@ -104,16 +249,46 @@ export function ReportsPage() {
 
           <div className="report-filter-summary" aria-label="الفلاتر المطبقة">
             <span>{filters.fromDate} ← {filters.toDate}</span>
-            {filters.paymentMethod ? <span>الدفع: {filters.paymentMethod}</span> : null}
+            {filters.paymentMethod ? <span>الدفع: {formatValue(filters.paymentMethod)}</span> : null}
             {filters.employeeId ? <span>موظف محدد</span> : null}
             {filters.productId ? <span>منتج محدد</span> : null}
-            {filters.orderType ? <span>نوع الطلب: {filters.orderType}</span> : null}
+            {filters.orderType ? <span>نوع الطلب: {formatValue(filters.orderType)}</span> : null}
           </div>
 
-          <div className="report-contract-placeholder">
-            <strong>الهيكل الموحد جاهز.</strong>
-            <p>تم تثبيت صلاحية التقارير، عزل الفرع، وخيارات الفلاتر الحقيقية من قاعدة البيانات. بيانات التقرير نفسها ستُوصل بعقود Read-only في 8.2–8.4 بدل عرض بيانات وهمية.</p>
-          </div>
+          {isSalesOperationsReport(selectedReport) ? (
+            <>
+              {reportLoading ? <div className="report-contract-placeholder"><strong>جارٍ تحميل التقرير…</strong></div> : null}
+              {!reportLoading && data ? (
+                <>
+                  <div className="report-totals" aria-label="إجماليات التقرير">
+                    {Object.entries(data.totals).map(([key, value]) => (
+                      <article key={key}><small>{totalLabels[key] ?? key}</small><strong>{formatValue(value, totalKind(key))}</strong></article>
+                    ))}
+                  </div>
+                  {data.rows.length === 0 ? (
+                    <div className="report-contract-placeholder"><strong>لا توجد بيانات مطابقة.</strong><p>غيّر الفترة أو الفلاتر لعرض نتائج أخرى.</p></div>
+                  ) : (
+                    <div className="report-table-wrap">
+                      <table className="report-table">
+                        <thead><tr>{columns.map((column) => <th key={column.key}>{column.label}</th>)}</tr></thead>
+                        <tbody>
+                          {data.rows.map((row, index) => (
+                            <tr key={`${selectedReport}-${index}`}>{columns.map((column) => <td key={column.key}>{formatValue(row[column.key], column.kind)}</td>)}</tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <p className="report-generated-at">آخر توليد: {formatValue(data.generated_at, 'date')}</p>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <div className="report-contract-placeholder">
+              <strong>هذا التقرير ضمن المرحلة التالية.</strong>
+              <p>الواجهة الموحدة والفلاتر جاهزة، وسيتم توصيل هذا المصدر بعقد Read-only في Batch {selected.batch} بدون بيانات وهمية.</p>
+            </div>
+          )}
         </div>
       </div>
     </section>
