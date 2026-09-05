@@ -21,12 +21,13 @@ import { PurchasesPage } from '../modules/procurement/PurchasesPage'
 import { SuppliersPage } from '../modules/procurement/SuppliersPage'
 import { ReportsPage } from '../modules/reports/ReportsPage'
 import { ReturnPanel } from '../modules/returns/ReturnPanel'
+import { GuidedSetupBanner } from '../modules/setup/GuidedSetupBanner'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 import { ShiftsPage } from '../modules/shifts/ShiftsPage'
 
 export function App() {
   const { user, loading: authLoading } = useAuth()
-  const { currentBranch, loading: branchLoading, error: branchError } = useBranch()
+  const { branches, currentBranch, setCurrentBranchId, loading: branchLoading, error: branchError } = useBranch()
   const { can, loading: permissionLoading } = usePermissions()
 
   if (authLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الجلسة…</p></main>
@@ -87,8 +88,12 @@ export function App() {
         <div className="sidebar-footer"><span>الفرع الحالي</span><strong>{currentBranch.code}</strong></div>
       </aside>
       <div className="app-content">
-        <header className="app-header" id="overview"><div><p className="eyebrow">POS.V2</p><h1>نظام التشغيل</h1><p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p></div></header>
+        <header className="app-header" id="overview">
+          <div><p className="eyebrow">POS.V2</p><h1>نظام التشغيل</h1><p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p></div>
+          {branches.length > 1 ? <label className="branch-switcher">تغيير الفرع<select value={currentBranch.id} onChange={(event) => setCurrentBranchId(event.target.value)}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name_ar} — {branch.code}</option>)}</select></label> : null}
+        </header>
         <section className="card status-card"><h2>الأساس التشغيلي جاهز</h2><p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p></section>
+        {showPos ? <GuidedSetupBanner /> : null}
         {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
         {showReturns ? <section id="returns-section" className="app-section-anchor"><ReturnPanel /></section> : null}
         {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
