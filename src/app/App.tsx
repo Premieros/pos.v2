@@ -1,6 +1,7 @@
 import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
 import { ExpensesPage } from '../modules/accounting/ExpensesPage'
 import { JournalPage } from '../modules/accounting/JournalPage'
+import { TreasuryPage } from '../modules/accounting/TreasuryPage'
 import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
@@ -43,19 +44,13 @@ export function App() {
   const showAccounting = can('accounting.coa.view') || can('accounting.coa.manage')
   const showJournals = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post')
   const showExpenses = can('accounting.expenses.view') || can('accounting.expenses.create') || can('accounting.expenses.edit') || can('accounting.expenses.post')
+  const showTreasury = can('treasury.view') || can('treasury.accounts.manage') || can('treasury.movements.create')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
     <main className="app-shell" dir="rtl">
       <aside className="app-sidebar" aria-label="أقسام النظام">
-        <div className="sidebar-brand">
-          <span className="sidebar-brand-mark">P</span>
-          <div>
-            <strong>POS.V2</strong>
-            <small>{currentBranch.name_ar}</small>
-          </div>
-        </div>
-
+        <div className="sidebar-brand"><span className="sidebar-brand-mark">P</span><div><strong>POS.V2</strong><small>{currentBranch.name_ar}</small></div></div>
         <nav className="sidebar-nav">
           <a href="#overview">الرئيسية</a>
           {showPos ? <a href="#pos-section">شاشة البيع</a> : null}
@@ -71,29 +66,15 @@ export function App() {
           {showAccounting ? <a href="#accounting-section">دليل الحسابات</a> : null}
           {showJournals ? <a href="#journals-section">القيود اليومية</a> : null}
           {showExpenses ? <a href="#expenses-section">المصروفات</a> : null}
+          {showTreasury ? <a href="#treasury-section">الخزينة والبنوك</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
-
-        <div className="sidebar-footer">
-          <span>الفرع الحالي</span>
-          <strong>{currentBranch.code}</strong>
-        </div>
+        <div className="sidebar-footer"><span>الفرع الحالي</span><strong>{currentBranch.code}</strong></div>
       </aside>
 
       <div className="app-content">
-        <header className="app-header" id="overview">
-          <div>
-            <p className="eyebrow">POS.V2</p>
-            <h1>نظام التشغيل</h1>
-            <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
-          </div>
-        </header>
-
-        <section className="card status-card">
-          <h2>الأساس التشغيلي جاهز</h2>
-          <p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p>
-        </section>
-
+        <header className="app-header" id="overview"><div><p className="eyebrow">POS.V2</p><h1>نظام التشغيل</h1><p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p></div></header>
+        <section className="card status-card"><h2>الأساس التشغيلي جاهز</h2><p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p></section>
         {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
         {showReturns ? <section id="returns-section" className="app-section-anchor"><ReturnPanel /></section> : null}
         {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
@@ -107,6 +88,7 @@ export function App() {
         {showAccounting ? <section id="accounting-section" className="app-section-anchor"><ChartOfAccountsPage /></section> : null}
         {showJournals ? <section id="journals-section" className="app-section-anchor"><JournalPage /></section> : null}
         {showExpenses ? <section id="expenses-section" className="app-section-anchor"><ExpensesPage /></section> : null}
+        {showTreasury ? <section id="treasury-section" className="app-section-anchor"><TreasuryPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
