@@ -17,14 +17,21 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Missing prerequisites use guided setup.
 - No merge to `main` before explicit release approval.
 - Persistent `DEMO` data must not be deleted without a new explicit user instruction.
+- `Premieros/johna-s` is a **read-only feature/UX reference only**. Never write to it, run its workflows, touch its Supabase, copy its code, migrations, CSS, hooks or services.
+- Feature parity means reproducing useful business capabilities cleanly inside POS.V2, not source parity.
 
-## Batch status
-- Batches 1–9 ✅ CLOSED
-- Batch 10 — Full Verification & Release Candidate ✅ CLOSED
-- Post-RC design polish + persistent full demo validation ✅ COMPLETE
-- Release state: **RC READY — awaiting explicit approval; `main` untouched**
+## Current product status
+- Batches 1–9 ✅ CLOSED historically.
+- Batch 10 — Full Verification & Release Candidate ✅ CLOSED historically.
+- Post-RC authenticated DEMO validation ✅ COMPLETE.
+- **Feature-parity review proved the product UI/UX and operational capability set are not yet Final.**
+- Release state is therefore reopened as: **PRODUCT COMPLETION IN PROGRESS**.
+- Canonical completion plan: `docs/FEATURE_PARITY_PLAN.md`.
+- Execution/audit log: `docs/FEATURE_PARITY_LOG.md`.
+- Current execution target: **Batch 11 → Batch 12 POS Fullscreen Rebuild**.
+- `main` remains untouched.
 
-## Batch 9 — Administration, Offline & Final UX ✅ CLOSED
+## Historical Batch 9 — Administration, Offline & Final UX ✅ CLOSED
 - 9.1 Administration Workspace ✅ — Verify #497.
 - 9.2 Guided Setup / Prerequisite Routing ✅ — Verify #511.
 - 9.3 Offline Critical Close + Print Resilience ✅ — Verify #527.
@@ -32,7 +39,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 - 9.5 Final Visual System ✅ — Verify #545.
 - 9.6 Batch 9 Regression / Advisors / Verify ✅ — Verify #553.
 
-## Batch 10 — Full Verification & Release Candidate ✅ CLOSED
+## Historical Batch 10 — Full Verification & Release Candidate ✅ CLOSED
 
 ### 10.1 Repository / Build / Contract Verification ✅
 - Added `scripts/verify-release-candidate.mjs` and independent `.github/workflows/release-guard.yml`.
@@ -65,78 +72,89 @@ Read-only audit against the locked production project confirmed:
 - Release Guard #15 ✅.
 - Verify #575 + Pages Deploy ✅.
 
-## Post-RC final design polish ✅
-- Final production visual polish applied in `src/styles/final-ui.css`.
-- Stronger glass hierarchy, clearer card/table/totals contrast, sticky desktop workspace header, improved product/POS selected states, consistent focus/touch states, scrollbar polish and responsive preservation.
-- Authorization and business logic remain outside the layout/CSS layer.
-- Implementation commit: `71cd6d08f3c27f445482decfd42c30e72e187545`.
+## Post-RC design and demo work — historical checkpoint
+- Persistent dedicated `DEMO` branch remains seeded and retained.
+- Authenticated application-path smoke exposed and fixed the invoker/private execute contract gap through forward-only migration `20260905212439_fix_invoker_wrapper_private_execute_contract.sql`.
+- Post-fix implementation commit `14269e5ed2ad110850069761d51e729cd3686bc4` passed CI #263, Release Guard #24 and Verify #584.
+- Subsequent shell work changed module navigation from stacked anchors to one active workspace at a time.
+- Subsequent POS/header visual work improved density but **does not constitute feature parity or final POS productization**.
 
-## Persistent full demo dataset ✅
-- Dedicated branch code `DEMO`: `فرع تجريبي كامل / Full Demo Branch`.
-- Existing `MAIN` branch was not used as the demo container.
-- Dataset is intentionally persistent and documented in `docs/DEMO_DATA_LOG.md`.
-- Coverage includes warehouses, categories, inventory/BOM, products, suppliers, dining tables, open/closed shifts, multiple POS lifecycle states, KDS, Cash/Card payments, return/refund, purchases/receipts/cost history, waste, stock count/approval, chart of accounts, balanced journals, expense and treasury.
-- Verified snapshot includes 7 products, 8 inventory items, 6 orders / 14 lines, 4 Kitchen tickets, 3 payments, 2 purchase orders, 1 receipt, 1 waste, 1 stock count + approval, 7 accounts, 3 balanced journals, 1 expense and 2 treasury accounts.
-- Demo data must remain until a future explicit cleanup request.
+## Product Completion Program — ACTIVE
 
-## Full authenticated application-path validation ✅
-The dedicated DEMO dataset was tested from the real application authorization context using PostgreSQL role `authenticated` and the real application user JWT subject, not only through maintenance access.
+### Batch 11 — Application Shell, Navigation & Workspace Architecture — CURRENT
+- real module/deep-link navigation;
+- compact global header;
+- grouped sidebar;
+- command/quick navigation;
+- online/offline + pending action indicators;
+- approvals/orders/KDS/low-stock indicators when authorized;
+- responsive + RTL/LTR verification.
 
-Read smoke passed for:
-- branch visibility and effective permissions;
-- unified report filter options;
-- sales/operations reports;
-- procurement/inventory and purchase-cost-history reports;
-- trial balance and balance sheet;
-- statement accounts;
-- administration snapshot;
-- customer display projection;
-- guided setup state.
+### Batch 12 — POS Fullscreen Rebuild — NEXT / HIGHEST PRIORITY
+- dedicated fullscreen POS shell;
+- compact POS top bar;
+- fast order-type/start workflow;
+- product catalog with categories, search, SKU/barcode, images and stock/availability;
+- cart/current-order UX;
+- item +/-/remove/void/sent states;
+- modifiers and notes;
+- kitchen first-send/delta-send UX;
+- active orders and queue panels;
+- floor/tables occupancy, transfer and merge;
+- discounts/split bill;
+- dedicated checkout/payment workspace;
+- Cash/Card/Split Tender and change calculation;
+- customer/delivery context;
+- receipt/customer display;
+- keyboard shortcuts and explicit offline boundaries.
 
-Mutation smoke passed inside an explicit transaction that was rolled back after verification:
-- supplier create;
-- POS order create + line + hold/resume;
-- purchase order + line;
-- waste document + line;
-- stock count + counted line;
-- journal + balanced journal lines.
+### Batch 13 — Catalog, Customers & Commercial Setup
+Products, categories, images, barcode, product wizard, modifiers, kitchen station/routing adaptation, customers/addresses and validated pricing/tax settings where required.
 
-## Regression discovered by demo testing and fixed ✅
-The authenticated smoke test found a real RPC contract gap: some public `SECURITY INVOKER` wrappers referenced `app_private` functions whose `EXECUTE` privilege had been revoked from `authenticated`, causing authorized frontend calls to fail at the internal function boundary.
+### Batch 14 — Operations Center
+Operational dashboard, productized KDS, takeaway/drive-thru/delivery queues, shift workspace and close summary/print.
 
-Forward-only fix:
-- `20260905212439_fix_invoker_wrapper_private_execute_contract.sql`
+### Batch 15 — Inventory, Costing & Procurement Completion
+Inventory center, ledger/transfers/low stock, valuation, costing/BOM/margin, waste, stock count/approval, procurement center, controlled import/export.
 
-The fix grants authenticated execution only to private function signatures that are actually referenced by public invoker wrappers. Internal functions retain their permission/branch assertions and `app_private` remains implementation-only rather than the frontend API contract.
+### Batch 16 — Accounting, Treasury & Reconciliation Productization
+Account tree, journal editor/history, expenses, treasury/banks, reconciliation and source-posting diagnostics.
 
-Post-fix authenticated read and mutation smoke tests passed.
-Post-fix implementation commit `14269e5ed2ad110850069761d51e729cd3686bc4`:
-- CI #263 ✅
-- Release Guard #24 ✅
-- Verify #584 ✅
-- Typecheck ✅
-- Build ✅
+### Batch 17 — Reports & Management Information
+Unified sales/operations, inventory/procurement/cost, accounting, audit, export/print and compact filter/table UX.
 
-Post-DDL Advisors:
-- Security: only known leaked-password-protection platform warning.
-- Performance: unused-index INFO only.
+### Batch 18 — Administration & System Control Center
+Branches, warehouses, users, branch access, role templates, direct permissions, protected Super Admin, settings, printing/POS/KDS preferences, diagnostics and controlled data management.
+
+### Batch 19 — Cross-Cutting Product Quality
+Keyboard/touch/accessibility, responsive/RTL QA, shared feedback states, confirmations, money/date formatting, safe optimistic UI, offline boundaries, print layouts and auditability.
+
+### Batch 20 — Full Feature-Parity Verification & Production Gate
+End-to-end operational/security/visual verification using retained DEMO data plus controlled rollback fixtures where needed.
+
+## Reference capability exclusions / translations
+- Do not restore legacy subscriptions unless explicitly reintroduced as a new product requirement.
+- Do not restore the old raw-material/manufacturing subsystem merely for parity.
+- Useful outcomes such as recipe/BOM cost, component consumption and waste are implemented through POS.V2's accepted product + inventory-item + `product_components` model.
+- No insecure role-label authorization, client-authoritative critical mutation, duplicated state model or unverified workaround may cross from the reference.
 
 ## Current checkpoint
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Batches 1–10: ✅ CLOSED.
-- Final design polish: ✅ COMPLETE.
+- Historical contracts/Batches 1–10: ✅ CLOSED.
 - Persistent full DEMO dataset: ✅ SEEDED AND RETAINED.
-- Authenticated application smoke: ✅ PASSED after RPC contract fix.
-- Release Candidate: ✅ READY pending only CI confirmation for the final documentation commits.
+- Feature parity program: 🔄 ACTIVE.
+- Current batch: **11**.
+- Immediate product focus: **12 — POS Fullscreen Rebuild**.
+- Release Candidate label: **withdrawn until Batches 11–20 pass**.
 - `main`: untouched.
 
 ## Known external hardening item
 Enable Supabase Auth leaked-password protection before production release, or explicitly accept it as an external platform-setting dependency:
 https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
 
-Unused-index INFO should be reviewed after realistic production workload, not silenced by deleting useful indexes during RC.
+Unused-index INFO should be reviewed after realistic production workload, not silenced by deleting useful indexes during product completion.
 
 ## Final release gate
-**Do not merge `development` → `main` without explicit user approval.** The persistent DEMO dataset is not cleanup-authorized. Release requires final documentation-only CI to remain green and the leaked-password-protection platform setting to be enabled or explicitly accepted as an external dependency.
+**Do not merge `development` → `main` without explicit user approval.** The persistent DEMO dataset is not cleanup-authorized. POS.V2 is not Final until Batches 11–20 and the full feature-parity/security/visual gate are green.
