@@ -21,26 +21,58 @@ export function App() {
   if (!currentBranch) return <InitialSetupPage />
   if (permissionLoading) return <main className="shell" dir="rtl"><p>جارٍ تحميل الصلاحيات…</p></main>
 
+  const showPos = can('pos.view')
+  const showKitchen = can('kitchen.view') || can('kitchen.manage')
+  const showCatalog = can('catalog.view') || can('catalog.manage')
+  const showInventory = can('inventory.view')
+  const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
+
   return (
     <main className="app-shell" dir="rtl">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">POS.V2</p>
-          <h1>نظام التشغيل</h1>
-          <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
+      <aside className="app-sidebar" aria-label="أقسام النظام">
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-mark">P</span>
+          <div>
+            <strong>POS.V2</strong>
+            <small>{currentBranch.name_ar}</small>
+          </div>
         </div>
-      </header>
 
-      <section className="card status-card">
-        <h2>الأساس التشغيلي جاهز</h2>
-        <p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p>
-      </section>
+        <nav className="sidebar-nav">
+          <a href="#overview">الرئيسية</a>
+          {showPos ? <a href="#pos-section">شاشة البيع</a> : null}
+          {showKitchen ? <a href="#kds-section">المطبخ KDS</a> : null}
+          {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
+          {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
+          {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
+        </nav>
 
-      {can('pos.view') ? <PosPage /> : null}
-      {can('kitchen.view') || can('kitchen.manage') ? <KdsPage /> : null}
-      {can('catalog.view') || can('catalog.manage') ? <CatalogPage /> : null}
-      {can('inventory.view') ? <InventoryPage /> : null}
-      {can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage') ? <ShiftsPage /> : null}
+        <div className="sidebar-footer">
+          <span>الفرع الحالي</span>
+          <strong>{currentBranch.code}</strong>
+        </div>
+      </aside>
+
+      <div className="app-content">
+        <header className="app-header" id="overview">
+          <div>
+            <p className="eyebrow">POS.V2</p>
+            <h1>نظام التشغيل</h1>
+            <p>الفرع الحالي: <strong>{currentBranch.name_ar}</strong></p>
+          </div>
+        </header>
+
+        <section className="card status-card">
+          <h2>الأساس التشغيلي جاهز</h2>
+          <p>Auth وBranch Context وPermission Context تعمل بعقد موحد، والموديولات مستقلة بعقود صريحة.</p>
+        </section>
+
+        {showPos ? <section id="pos-section" className="app-section-anchor"><PosPage /></section> : null}
+        {showKitchen ? <section id="kds-section" className="app-section-anchor"><KdsPage /></section> : null}
+        {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
+        {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
+        {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
+      </div>
     </main>
   )
 }
