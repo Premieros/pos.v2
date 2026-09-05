@@ -33,6 +33,19 @@ export type PurchaseReceiptLineInput = {
   quantity: number
 }
 
+export type PurchaseCostHistoryRow = {
+  branch_id: string
+  inventory_item_id: string
+  unit_cost: number
+  quantity: number
+  purchase_receipt_id: string
+  purchase_receipt_line_id: string
+  purchase_order_id: string
+  supplier_id: string
+  warehouse_id: string
+  received_at: string
+}
+
 export async function listPurchaseOrders(branchId: string): Promise<PurchaseOrder[]> {
   const { data, error } = await supabase
     .from('purchase_orders')
@@ -64,6 +77,22 @@ export async function listPurchaseOrderLines(purchaseOrderId: string): Promise<P
     unit_cost: Number(row.unit_cost),
     line_total: Number(row.line_total),
   })) as PurchaseOrderLine[]
+}
+
+export async function listPurchaseCostHistory(branchId: string, purchaseOrderId: string): Promise<PurchaseCostHistoryRow[]> {
+  const { data, error } = await supabase
+    .from('inventory_item_purchase_cost_history')
+    .select('branch_id, inventory_item_id, unit_cost, quantity, purchase_receipt_id, purchase_receipt_line_id, purchase_order_id, supplier_id, warehouse_id, received_at')
+    .eq('branch_id', branchId)
+    .eq('purchase_order_id', purchaseOrderId)
+    .order('received_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []).map((row) => ({
+    ...row,
+    unit_cost: Number(row.unit_cost),
+    quantity: Number(row.quantity),
+  })) as PurchaseCostHistoryRow[]
 }
 
 export async function createPurchaseOrder(input: {
@@ -115,6 +144,25 @@ export async function updatePurchaseOrderLine(input: {
 export async function removePurchaseOrderLine(lineId: string): Promise<void> {
   const { error } = await supabase.rpc('remove_purchase_order_line', { p_line_id: lineId })
   if (error) throw error
+}
+
+export async function submitPurchaseOrder(purchaseOrderId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('submit_purchase_order', {
+    p_purchase_order_id: purchaseOrderId,
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+export async function cancelPurchaseOrder(purchaseOrderId: string, reason: string): Promise<string> {
+  const { data, error } = await supabase.rpc('cancel_purchase_order', {
+    p_purchase_order_id: purchaseOrderId,
+    p_reason: reason,
+    p_idempotency_key: crypto.randomUUID(),
+  })
+  if (error) throw error
+  return data as string
 }
 
 export async function receivePurchaseOrder(input: {
