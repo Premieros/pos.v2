@@ -30,59 +30,44 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
 ## Batch 7 — Accounting & Treasury 🚧 CURRENT
+- 7.1 Chart of Accounts ✅ — Verify #305
+- 7.2 Journal Entries + Balanced Lines ✅ — Verify #317
+- 7.3 Expenses + Source-linked Posting ✅ — Verify #329
 
-### 7.1 Chart of Accounts ✅
-- Branch-scoped account hierarchy.
-- Permissions: `accounting.coa.view/manage`.
-- Migration: `20260905183814_chart_of_accounts_foundation`.
-- Verify #305 ✅.
-
-### 7.2 Journal Entries + Balanced Lines ✅
-- Branch-scoped draft/posted journals and lines.
-- Permissions: `accounting.journals.view/create/edit/post`.
-- Posting requires at least two lines and exact debit = credit > 0.
-- Tables SELECT-only to authenticated; mutations RPC-only.
-- Migration: `20260905184225_journal_entries_and_balanced_lines`.
-- Verify #317 ✅.
-
-### 7.3 Expenses + Source-linked Posting ✅
-- Branch-scoped expense documents.
-- Permissions: `accounting.expenses.view/create/edit/post`.
-- Expense account must be active/postable expense account; offset account must be same-branch active/postable.
-- Expense create is idempotent and branch numbering is serialized.
-- Posting is atomic and creates exactly one balanced posted journal with `source_type='expense'` and exact source id lineage.
-- Debit = expense account, credit = offset account.
-- Posted expense cannot be silently edited under current RPC contract; reversal is deferred to 7.6.
-- Expense table is SELECT-only to authenticated; mutations are RPC-only.
-- Private expense RPCs are non-executable by authenticated clients.
-- Migration: `20260905184632_expenses_and_source_linked_posting`.
+### 7.4 Cash/Bank Treasury Accounts + Movements ✅
+- Branch-scoped cash/bank treasury accounts linked one-to-one to active postable asset COA accounts.
+- Permissions: `treasury.view`, `treasury.accounts.manage`, `treasury.movements.create`.
+- Ledger-derived `treasury_balances` view uses `security_invoker=true`; no editable balance column.
+- Manual treasury movement is idempotent and creates one balanced posted journal atomically with exact movement lineage.
+- Incoming: debit treasury asset / credit counter account. Outgoing: debit counter / credit treasury asset.
+- Outgoing movement cannot exceed ledger-derived balance.
+- Concurrent outgoing movements are serialized by locking the treasury account before balance validation.
+- Treasury remains separate from POS cashier drawer operational balances.
+- Treasury tables are SELECT-only to authenticated; mutations are RPC-only; private RPCs are non-executable.
+- Migrations: `20260905185108_treasury_accounts_and_movements`, `20260905185128_treasury_movement_concurrency_hardening`.
 - Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no expense-specific WARN; fresh-DB unused-index INFO only.
-- Verify #329 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+- Performance Advisor: no treasury-specific WARN; fresh-DB unused-index INFO only.
+- Verify #343 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
 
-### 7.4 Cash/Bank Treasury Accounts + Movements 🚧 NEXT
-- Treasury accounts are branch-scoped and linked to active postable `asset` COA accounts.
-- Types: cash / bank.
-- Treasury balance is ledger-derived; no editable balance column.
-- Treasury movement must retain treasury-account and accounting-journal lineage.
-- A manual treasury in/out movement must create one balanced journal atomically against a counter-account.
-- Treasury remains separate from POS cashier drawer operational balance.
-- Direct table writes remain blocked.
+### 7.5 Automatic Operational Source Links 🚧 NEXT
+- Branch accounting mappings define which COA accounts receive operational postings.
+- Closed/paid POS sales post from real payment composition, not role/UI assumptions.
+- Accepted purchase receipts post from actual accepted receipt quantities and stored receipt cost.
+- Every source is idempotent and keeps exact `source_type/source_id` journal lineage.
+- Source posting never modifies the operational document itself except through explicitly designed linkage if required.
+- Missing accounting mapping fails closed with a guided configuration prerequisite.
 
-### 7.5 Automatic Operational Source Links ⏳
 ### 7.6 Idempotent Posting + Reversal Rules ⏳
 ### 7.7 Accounting Statements Contracts ⏳
 ### 7.8 Batch 7 Regression + Advisors + Verify ⏳
 
 Accounting rules:
-- Branch-scoped accounting records unless an explicit global accounting object is defined.
 - Posted journals are immutable; corrections use reversal, never silent edits.
-- Every journal must balance debit = credit server-side before posting.
-- Source posting is idempotent and retains source lineage.
-- Treasury movements preserve cash/bank account lineage and branch isolation.
+- Every journal balances server-side.
+- Source posting is idempotent and preserves lineage.
 - Permissions remain granular and permission-first.
 
-Immediate target: **7.4 Cash/Bank Treasury Accounts + Movements**.
+Immediate target: **7.5 Automatic Operational Source Links**.
 
 ## Batch 8 — Reports & Central Printing ⏳ QUEUED
 One table-first reports page with filters/totals/custom columns/Excel/print, plus centralized Kitchen/Receipt/Shift close/Day close/Report printing.
@@ -98,9 +83,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–6: ✅ CLOSED.
-- Batch 7.1–7.3: ✅ CLOSED.
-- Immediate target: **7.4 Cash/Bank Treasury Accounts + Movements**.
-- Verified implementation HEAD before this log update: `5f221bd23c9037159067778030061d5cc46afbd4`.
+- Batch 7.1–7.4: ✅ CLOSED.
+- Immediate target: **7.5 Automatic Operational Source Links**.
+- Verified implementation HEAD before this log update: `e5a6702ce9f369d9ebd614ff65ba0015f56c0b22`.
 - `main` untouched.
 
 ## Hardening backlog
