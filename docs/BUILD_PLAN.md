@@ -74,26 +74,38 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Verify #233 ✅.
 
 ### 6.4 Purchase Workflow + Cost History ✅
-- New independent permissions: `procurement.purchases.submit` / `procurement.purchases.cancel`.
-- Draft must contain at least one line before Submit.
-- Cancel is limited to draft/submitted, requires a reason, and is blocked once receipt history exists.
-- Receiving now requires submitted/partially_received state.
-- Every explicit/derived status transition is audited in `purchase_order_status_events`.
-- Status event table is SELECT-only to authenticated; private workflow RPCs are non-executable by authenticated clients.
-- Cost history view `inventory_item_purchase_cost_history` is `security_invoker=true` and derives only from accepted receipt lines.
-- Historical accepted receipt cost is not rewritten by later purchase state changes.
+- Independent `procurement.purchases.submit` / `procurement.purchases.cancel`.
+- Submit requires at least one line.
+- Cancel requires reason and is blocked after receipt history.
+- Receiving requires submitted/partially_received.
+- Status transitions are audited.
+- Cost history derives from accepted receipt lines only via `security_invoker` view.
 - Migration: `20260905173904_purchase_workflow_and_cost_history`.
+- Verify #245 ✅.
+
+### 6.5 Formal Waste Documents ✅
+- Formal `waste_documents` + `waste_document_lines` with real branch warehouse/item references.
+- `inventory.waste` remains the only functional permission for the workspace and commands.
+- Authenticated table access is SELECT-only; mutations are RPC-only.
+- Private functions are non-executable by authenticated clients.
+- Posting is idempotent and writes the existing `stock_movements` ledger using `movement_type='waste'`.
+- Insufficient stock fails closed; balances are never directly edited.
+- Waste line preserves exact stock movement reference.
+- RLS init-plan warning fixed forward-only.
+- Migrations:
+  - `20260905175458_formal_waste_documents`
+  - `20260905175540_waste_rls_initplan_hardening`
 - Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no phase-specific structural warning; fresh-DB unused-index INFO only.
-- Verify #245 ✅ — Batch 5 regression / Typecheck / Build / Pages Deploy.
+- Performance Advisor: no waste-specific WARN after hardening; fresh-DB unused-index INFO only.
+- Verify #259 ✅ — Batch 5 regression / Typecheck / Build / Pages Deploy.
 
-### 6.5 Formal Waste Documents 🚧 NEXT
-- Real branch warehouse + inventory item references.
-- Formal header/lines/audit instead of standalone movement UI.
-- Accepted waste must write existing stock ledger atomically and never directly edit balances.
-- `inventory.waste` remains independent.
+### 6.6 Stock Count Sessions + Variance 🚧 NEXT
+- Count sessions are branch + warehouse scoped.
+- Actual quantities and system snapshots are recorded per inventory item.
+- Variance is server-derived.
+- Submission freezes the count for review.
+- 6.6 must not post stock adjustment before Approval Center 6.7.
 
-### 6.6 Stock Count Sessions + Variance ⏳
 ### 6.7 Approval Center ⏳
 ### 6.8 Batch 6 Regression + Advisors + Verify ⏳
 
@@ -101,9 +113,9 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Verified implementation HEAD before this log update: `544e1157d12f487d9558a22e83f7cc94f324a4d9`.
-- Batch 6.1–6.4 ✅
-- Immediate target: **6.5 Formal Waste Documents**.
+- Verified implementation HEAD: `c1a353b718562a26cf136eaeb398a4d58924b167`.
+- Batch 6.1–6.5 ✅
+- Immediate target: **6.6 Stock Count Sessions + Variance**.
 - `main` untouched.
 
 ## Hardening backlog
