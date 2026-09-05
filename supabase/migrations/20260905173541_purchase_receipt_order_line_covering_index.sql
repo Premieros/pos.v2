@@ -1,0 +1,2 @@
+create index idx_purchase_receipt_lines_order_line_branch
+on public.purchase_receipt_lines(purchase_order_line_id, branch_id);
