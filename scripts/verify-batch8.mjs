@@ -24,7 +24,7 @@ requireText('.github/workflows/verify.yml', ['https://scpovyrqmsbiduanykod.supab
 requireText('src/modules/reports/ReportsPage.tsx', ['reports.view', 'OperationalReportResult', 'AccountingReportsPanel'])
 requireText('src/modules/reports/OperationalReportResult.tsx', ['exportRowsToExcel', 'printCurrentReport', 'visibleKeys'])
 requireText('src/modules/reports/AccountingReportsPanel.tsx', ['accounting.statements.view', 'getTrialBalance', 'getGeneralLedger', 'getIncomeStatement', 'getBalanceSheet', 'exportRowsToExcel', 'printCurrentReport'])
-requireText('src/modules/reports/excelExport.ts', ['Spreadsheet', 'application/vnd.ms-excel', 'totals'])
+requireText('src/modules/reports/excelExport.ts', ['urn:schemas-microsoft-com:office:spreadsheet', 'application/vnd.ms-excel', 'totals'])
 requireText('src/modules/printing/PrintingCenterPage.tsx', ['getReceiptPrintState', 'registerFirstReceiptPrint', 'registerReceiptReprint', 'listPrintableKitchenTickets', 'listPrintableShifts', 'getDaySummary'])
 requireText('src/app/App.tsx', ['PrintingCenterPage', "can('pos.receipt.print')", "can('pos.receipt.reprint')"])
 
