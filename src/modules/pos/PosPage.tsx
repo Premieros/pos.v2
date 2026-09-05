@@ -4,6 +4,7 @@ import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import { SplitBillControls } from '../splits/SplitBillControls'
+import { TableOrderControls } from './TableOrderControls'
 import {
   addPosOrderItem,
   cancelPosOrder,
@@ -64,6 +65,7 @@ export function PosPage() {
   const canClose = can('pos.order.close')
   const canDiscount = can('pos.discount.apply')
   const canSplit = can('pos.order.split')
+  const canTransfer = can('pos.order.transfer')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
@@ -331,6 +333,14 @@ export function PosPage() {
                 canPay={canPay}
                 onChanged={refreshOrderState}
                 onSplitStateChange={setHasBillSplits}
+              />
+
+              <TableOrderControls
+                order={selectedOrder}
+                orders={orders}
+                tables={tables}
+                canTransfer={canTransfer}
+                onChanged={refreshOrderState}
               />
 
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
