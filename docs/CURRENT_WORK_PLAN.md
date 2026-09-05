@@ -7,6 +7,11 @@
 - Supabase project identity locked to `scpovyrqmsbiduanykod` only.
 - Authentication foundation and profile trigger.
 - Hidden immutable Super Admin role and permission-first authorization model.
+- Initial Auth user created through supported Supabase Auth flow.
+- First platform bootstrap completed.
+- Initial branch `MAIN` created and assigned.
+- First user linked to the hidden immutable `super_admin` platform role.
+- Super Admin verified with `45 / 45` current permissions.
 - Branch context and effective permission resolver.
 - Scoped user/role/permission administration contracts.
 - Catalog foundation.
@@ -17,12 +22,19 @@
 - GitHub Verify pipeline.
 - GitHub Pages deployment from `development` after successful Verify.
 
-### Important bootstrap status
-- The one-time first Super Admin + first branch bootstrap mechanism is implemented and protected.
-- There is currently **no Supabase Auth user yet**, so the first Super Admin assignment has not executed.
-- The first Auth user must be created once through a trusted Supabase Admin/Auth path; direct SQL inserts into Auth tables are forbidden.
-- After that account exists, run the existing bootstrap immediately and record the result in `docs/BOOTSTRAP_LOG.md`.
-- Passwords and secrets must never be stored in repository files.
+### Bootstrap status
+- Initial platform bootstrap: ✅ complete.
+- Auth users: `1`.
+- Branches: `1`.
+- Platform Super Admin assignments: `1`.
+- Initial branch: `MAIN` / `الفرع الرئيسي` / `Main Branch`.
+- Password is intentionally not stored in GitHub.
+- One-time first-user bootstrap must not be used again.
+- Full audit record: `docs/BOOTSTRAP_LOG.md`.
+
+### Security note
+- Supabase Security Advisor after bootstrap reported one Auth hardening warning: **Leaked Password Protection Disabled**.
+- This remains a pre-release hardening item; no bootstrap-specific database security regression was observed.
 
 ### Current Kitchen / KDS gate
 1. Finish POS `Send to Kitchen / Send Changes` UI.
