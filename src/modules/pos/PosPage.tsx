@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
+import { CustomerDisplayControls } from '../customer-display/CustomerDisplayControls'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
@@ -308,11 +309,7 @@ export function PosPage() {
                       {!warehouses.length ? <option value="">لا يوجد مخزن</option> : null}
                       {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_ar}</option>)}
                     </select>
-                    <button
-                      type="button"
-                      disabled={!selectedWarehouseId || !hasKitchenDelta}
-                      onClick={() => void runAction(async () => { await sendOrderToKitchen(selectedOrder.id, selectedWarehouseId) })}
-                    >
+                    <button type="button" disabled={!selectedWarehouseId || !hasKitchenDelta} onClick={() => void runAction(async () => { await sendOrderToKitchen(selectedOrder.id, selectedWarehouseId) })}>
                       {hasBeenSent ? 'إرسال التغييرات' : 'إرسال للمطبخ'}
                     </button>
                     <span className={hasKitchenDelta ? 'pending-delta' : 'synced-delta'}>
@@ -338,15 +335,11 @@ export function PosPage() {
                 onSplitStateChange={setHasBillSplits}
               />
 
-              <TableOrderControls
-                order={selectedOrder}
-                orders={orders}
-                tables={tables}
-                canTransfer={canTransfer}
-                onChanged={refreshOrderState}
-              />
+              <TableOrderControls order={selectedOrder} orders={orders} tables={tables} canTransfer={canTransfer} onChanged={refreshOrderState} />
 
               <ReceiptControls order={selectedOrder} canPrint={canPrintReceipt} canReprint={canReprintReceipt} />
+
+              <CustomerDisplayControls order={selectedOrder} />
 
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
                 <div className="payment-card">
