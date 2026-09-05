@@ -49,21 +49,33 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Postable accounts cannot be used as parents; hierarchy cycles are rejected.
 - Permissions: `accounting.coa.view` / `accounting.coa.manage`.
 - Authenticated table access is SELECT-only; mutations are RPC-only.
-- Private create/update RPCs are not executable by authenticated clients.
 - Migration: `20260905183814_chart_of_accounts_foundation`.
+- Verify #305 ✅.
+
+### 7.2 Journal Entries + Balanced Lines ✅
+- Branch-scoped draft/posted journal headers and journal lines.
+- Permissions: `accounting.journals.view/create/edit/post`.
+- Draft lines reference same-branch active postable accounts only.
+- Every line contains exactly one positive debit or credit side.
+- Posting requires at least two lines and exact `debit = credit > 0` server-side.
+- Posted journals are immutable through current mutation contract; reversal is reserved for 7.6.
+- Manual journal creation is idempotent and branch numbering is serialized.
+- Journal tables are SELECT-only to authenticated; mutations are RPC-only.
+- Private journal RPCs are non-executable by authenticated clients.
+- Journal-only users receive read-only account references without COA management rights.
+- Migration: `20260905184225_journal_entries_and_balanced_lines`.
 - Security Advisor: only existing leaked-password Auth warning.
-- Performance Advisor: no accounting-specific WARN; fresh-DB unused-index INFO only.
-- Verify #305 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
+- Performance Advisor: no journal-specific WARN; fresh-DB unused-index INFO only.
+- Verify #317 ✅ — Batch 5 regression / Batch 6 regression / Typecheck / Build / Pages Deploy.
 
-### 7.2 Journal Entries + Balanced Lines 🚧 NEXT
-- Branch-scoped draft/posted journal entries.
-- Draft lines reference active postable accounts in the same branch.
-- Debit/credit values are server-validated.
-- Posting is blocked unless total debit equals total credit and is greater than zero.
-- Posted entries become immutable; reversal is deferred to 7.6.
-- Direct authenticated writes remain blocked.
+### 7.3 Expenses + Source-linked Posting 🚧 NEXT
+- Branch-scoped expense documents with independent permissions.
+- Expense account must be active/postable and type `expense`.
+- Offset account must be active/postable in the same branch.
+- Posting creates exactly one balanced journal linked to the expense source.
+- Posted expenses cannot be silently edited; reversal remains 7.6.
+- Direct table writes remain blocked.
 
-### 7.3 Expenses + Source-linked Posting ⏳
 ### 7.4 Cash/Bank Treasury Accounts + Movements ⏳
 ### 7.5 Automatic Operational Source Links ⏳
 ### 7.6 Idempotent Posting + Reversal Rules ⏳
@@ -79,7 +91,7 @@ Accounting rules:
 - Treasury movements must preserve cash/bank account lineage and branch isolation.
 - Permissions remain granular and permission-first.
 
-Immediate target: **7.2 Journal Entries + Balanced Lines**.
+Immediate target: **7.3 Expenses + Source-linked Posting**.
 
 ## Batch 8 — Reports & Central Printing ⏳ QUEUED
 One table-first reports page with filters/totals/custom columns/Excel/print, plus centralized Kitchen/Receipt/Shift close/Day close/Report printing.
@@ -95,9 +107,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–6: ✅ CLOSED.
-- Batch 7.1: ✅ CLOSED.
-- Immediate target: **7.2 Journal Entries + Balanced Lines**.
-- Verified implementation HEAD before this log update: `4c68817eced4795c87eebe53ea7763fde64925ea`.
+- Batch 7.1–7.2: ✅ CLOSED.
+- Immediate target: **7.3 Expenses + Source-linked Posting**.
+- Verified implementation HEAD before this log update: `278d990ab4103a3ad9a505f28d93d548335aadf5`.
 - `main` untouched.
 
 ## Hardening backlog
