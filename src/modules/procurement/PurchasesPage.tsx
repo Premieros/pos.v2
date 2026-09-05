@@ -94,6 +94,7 @@ export function PurchasesPage() {
   }, [selectedOrderId])
 
   if (!branchId || !canView) return null
+  const activeBranchId = branchId
 
   async function handleCreate(form: HTMLFormElement) {
     const data = new FormData(form)
@@ -102,7 +103,7 @@ export function PurchasesPage() {
     setError(null)
     try {
       const id = await createPurchaseOrder({
-        branchId,
+        branchId: activeBranchId,
         supplierId,
         notes: String(data.get('notes') ?? ''),
       })
