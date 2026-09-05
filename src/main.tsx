@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
 import { AuthProvider } from './modules/auth/AuthProvider'
 import { BranchProvider } from './modules/branches/BranchProvider'
+import { PermissionProvider } from './modules/permissions/PermissionProvider'
 import './styles/global.css'
 
 const root = document.getElementById('root')
@@ -13,7 +14,9 @@ createRoot(root).render(
   <StrictMode>
     <AuthProvider>
       <BranchProvider>
-        <App />
+        <PermissionProvider>
+          <App />
+        </PermissionProvider>
       </BranchProvider>
     </AuthProvider>
   </StrictMode>,
