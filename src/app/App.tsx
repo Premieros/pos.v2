@@ -6,6 +6,7 @@ import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
+import { PurchasesPage } from '../modules/procurement/PurchasesPage'
 import { SuppliersPage } from '../modules/procurement/SuppliersPage'
 import { ReturnPanel } from '../modules/returns/ReturnPanel'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
@@ -29,6 +30,7 @@ export function App() {
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
+  const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.receive')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -50,6 +52,7 @@ export function App() {
           {showCatalog ? <a href="#catalog-section">المنتجات والتصنيفات</a> : null}
           {showInventory ? <a href="#inventory-section">المخزون والمخازن</a> : null}
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
+          {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
 
@@ -79,6 +82,7 @@ export function App() {
         {showCatalog ? <section id="catalog-section" className="app-section-anchor"><CatalogPage /></section> : null}
         {showInventory ? <section id="inventory-section" className="app-section-anchor"><InventoryPage /></section> : null}
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
+        {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
