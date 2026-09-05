@@ -25,15 +25,14 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 5 — POS Operational Controls II ✅ CLOSED
 - Batch 6 — Procurement & Stock Control ✅ CLOSED
 - Batch 7 — Accounting & Treasury ✅ CLOSED
-- Batch 8 — Reports & Central Printing 🚧 CURRENT
-- Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
+- Batch 8 — Reports & Central Printing ✅ CLOSED
+- Batch 9 — Administration, Offline & Final UX 🚧 CURRENT
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
-## Batch 8 — Reports & Central Printing 🚧 CURRENT
+## Batch 8 — Reports & Central Printing ✅ CLOSED
 
 ### 8.1 Unified Reports Contract ✅
 - One table-first Reports workspace, `reports.view`, branch-scoped server access and shared date/payment/employee/product/order-type filters.
-- No charts or fake rows; responsive RTL-first UI.
 - Migration: `20260905192644_unified_reports_foundation`.
 - Verify #411 ✅.
 
@@ -48,28 +47,58 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Verify #433 ✅.
 
 ### 8.4 Accounting Reports Integration ✅
-- Trial Balance, General Ledger, Income Statement and Balance Sheet are integrated into the central workspace by reusing Batch 7 contracts.
+- Trial Balance, General Ledger, Income Statement and Balance Sheet reuse Batch 7 contracts.
 - `accounting.statements.view` remains mandatory for financial statements.
 - Verify #441 ✅.
 
 ### 8.5 Custom Columns + Excel Export ✅
-- Operational and accounting reports support per-report selectable visible columns.
-- Excel export uses the exact currently loaded filtered rows and the same selected columns; it does not refetch or widen scope.
-- Exports include a separate totals worksheet and preserve numeric values using dependency-free SpreadsheetML `.xls` generation.
-- Permission boundaries remain unchanged; accounting exports require the same statement permission as the displayed report.
-- Verify #453 ✅ — Batch 5/6/7 regression, Typecheck, Build and Pages Deploy.
+- Selectable report columns for operational and accounting reports.
+- Export uses only the currently loaded filtered rows and selected columns.
+- SpreadsheetML `.xls` export includes totals and preserves numeric values.
+- Verify #453 ✅.
 
-### 8.6 Central Printing 🚧 NEXT
-- Centralized print workflows for Kitchen, receipts/reprints, shift close, day close and reports.
-- Preserve immutable receipt snapshot and permission-aware reprint contracts.
-- Reuse existing Kitchen/Receipt/Shift commands and projections; do not duplicate business logic.
+### 8.6 Central Printing ✅
+- Central printing workspace for receipt first/reprint, Kitchen ticket, shift summary and day summary.
+- Receipt printing checks existing print state first; reprint requires `pos.receipt.reprint`, reason and immutable receipt snapshot reuse.
+- Kitchen/Shift/Day printing remains read-only and reuses existing authorized data contracts.
+- Reports can print the exact currently visible result/columns without refetching broader data.
 
-### 8.7 Batch 8 Regression + Advisors + Verify ⏳
+### 8.7 Batch 8 Regression + Advisors + Verify ✅
+- Added `scripts/verify-batch8.mjs` and workflow gate.
+- Corrected the Excel guard to validate the actual SpreadsheetML contract instead of a false marker.
+- Batch 5/6/7/8 regression ✅, Typecheck ✅, Build ✅, Pages Deploy ✅.
+- Verify #483 ✅ — HEAD `276dffb71c9ed7030c942f8a414dc76600373976`.
+- Security Advisor: only known leaked-password-protection Auth warning.
+- Performance Advisor: unused-index INFO only; no material Batch 8 finding.
 
-Immediate target: **8.6 Central Printing**.
+## Batch 9 — Administration, Offline & Final UX 🚧 CURRENT
 
-## Batch 9 — Administration, Offline & Final UX ⏳ QUEUED
-Branches/warehouses/users/effective permissions/settings/guided setup, offline critical close/printing, RTL/LTR/mobile/collapsible/touch/final glass UX.
+### 9.1 Administration Workspace 🚧 NEXT
+- Branches and warehouses administration using existing branch/warehouse contracts.
+- Users, branch access, effective permissions, role templates and direct grant/revoke controls without exposing protected Super Admin membership.
+- System settings workspace with permission-first visibility.
+- No role-label authorization in feature code.
+
+### 9.2 Guided Setup / Prerequisite Routing ⏳
+- Missing branch, warehouse, shift, catalog/inventory prerequisites route to the required setup action instead of raw database errors.
+- Keep business contracts independent from layout/navigation.
+
+### 9.3 Offline Critical Close + Print Resilience ⏳
+- Offline-capable shift/day close capture and printing where contractually safe.
+- Explicit queued/retry state for operations requiring server confirmation; no silent double-posting.
+
+### 9.4 RTL/LTR + Responsive App Shell ⏳
+- Arabic RTL primary and English LTR secondary.
+- Sidebar right in Arabic / left in English, collapsible desktop and mobile drawer.
+- Touch-friendly spacing and resilient overflow/scroll behavior.
+
+### 9.5 Final Visual System ⏳
+- Consistent iOS-inspired glass treatment after interaction/permission contracts are stable.
+- Shared loading/error/empty/unauthorized states.
+
+### 9.6 Batch 9 Regression + Advisors + Verify ⏳
+
+Immediate target: **9.1 Administration Workspace**.
 
 ## Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cross-branch denial, offline retry, Advisors and release candidate.
@@ -78,10 +107,10 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Database: `scpovyrqmsbiduanykod` ✅
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
-- Batches 1–7: ✅ CLOSED.
-- Batch 8.1–8.5: ✅ CLOSED.
-- Immediate target: **8.6 Central Printing**.
-- Verified implementation HEAD before this log update: `a1e37e7df8b54cd2f779c65a0b4235efa93939f0` — Verify #453 ✅.
+- Batches 1–8: ✅ CLOSED.
+- Batch 9: 🚧 CURRENT.
+- Immediate target: **9.1 Administration Workspace**.
+- Verified implementation HEAD before this log update: `276dffb71c9ed7030c942f8a414dc76600373976` — Verify #483 ✅.
 - `main` untouched.
 
 ## Hardening backlog
@@ -90,4 +119,4 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Keep credentials outside client/repository history.
 
 ## Final release gate
-No `development` → `main` merge until Batches 8–10 are ✅, security hardening is ✅, no known P0/P1 regression remains, and explicit release approval is given.
+No `development` → `main` merge until Batches 9–10 are ✅, security hardening is ✅, no known P0/P1 regression remains, and explicit release approval is given.
