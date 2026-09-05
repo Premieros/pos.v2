@@ -12,9 +12,10 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .65; }
 .shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .app-shell { min-height: 100vh; padding: 24px; display: grid; gap: 24px; align-content: start; }
-.app-header, .workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.app-header, .workspace-header, .workspace-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .card { width: min(680px, 100%); background: white; border: 1px solid #e5e7eb; border-radius: 24px; padding: 32px; box-shadow: 0 18px 60px rgb(15 23 42 / 0.08); }
-.status-card, .workspace, .compact-card { width: 100%; max-width: none; }
+.status-card, .workspace, .compact-card, .workspace-card { width: 100%; max-width: none; }
+.workspace-card { background: white; border: 1px solid #e5e7eb; border-radius: 24px; padding: 24px; box-shadow: 0 18px 60px rgb(15 23 42 / 0.06); }
 .compact-card { padding: 20px; border-radius: 18px; }
 .auth-card, .setup-card { width: min(520px, 100%); }
 .workspace { display: grid; gap: 18px; }
@@ -34,3 +35,47 @@ p { line-height: 1.8; }
 .form-stack input:focus, .compact-card input:focus, .compact-card select:focus { outline: 2px solid currentColor; outline-offset: 2px; }
 .form-stack button { min-height: 48px; border: 0; border-radius: 12px; padding: 0 18px; background: #111827; color: white; font-weight: 750; }
 .error-text { color: #991b1b; margin: 0; }
+
+.pos-workspace { display: grid; gap: 18px; }
+.pos-counters { display: flex; flex-wrap: wrap; gap: 8px; }
+.pos-counters span { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 999px; background: #f9fafb; }
+.prerequisite-card { padding: 16px; border: 1px solid #f59e0b; border-radius: 16px; background: #fffbeb; }
+.prerequisite-card p { margin-bottom: 0; }
+.pos-layout { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 16px; min-height: 620px; }
+.pos-orders-panel, .pos-main-panel { border: 1px solid #e5e7eb; border-radius: 18px; padding: 16px; min-width: 0; }
+.pos-orders-panel { background: #f9fafb; overflow: auto; max-height: 760px; }
+.pos-orders-panel .plain-list button { width: 100%; text-align: start; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: white; }
+.pos-orders-panel .plain-list .selected-row { outline: 2px solid currentColor; }
+.pos-main-panel { display: grid; grid-template-rows: auto auto auto minmax(220px, 1fr); gap: 14px; }
+.pos-create-order { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pos-create-order input, .pos-create-order select, .inline-form input, .inline-form select { min-height: 42px; border: 1px solid #d1d5db; border-radius: 10px; padding-inline: 10px; background: white; }
+.pos-create-order button, .inline-form button, .pos-actions button, .order-item-row button { min-height: 42px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.pos-table-setup { border: 1px dashed #d1d5db; border-radius: 14px; padding: 12px; }
+.pos-table-setup summary { cursor: pointer; font-weight: 700; }
+.inline-form { display: grid; gap: 10px; margin-top: 10px; }
+.active-order-card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
+.active-order-header { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.active-order-header p { margin: 0; }
+.order-items-list { display: grid; gap: 8px; }
+.order-item-row { display: grid; grid-template-columns: minmax(140px, 2fr) 90px 90px 100px auto; gap: 8px; align-items: center; border-bottom: 1px solid #f3f4f6; padding-block: 8px; }
+.order-item-row input { width: 100%; min-height: 38px; border: 1px solid #d1d5db; border-radius: 8px; padding-inline: 8px; }
+.pos-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pos-products-scroll { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; max-height: 420px; min-height: 220px; padding: 4px; align-content: start; }
+.product-tile { min-height: 92px; border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px; background: white; display: grid; gap: 8px; align-content: center; text-align: start; }
+.product-tile:hover:not(:disabled) { border-color: #9ca3af; }
+
+@media (max-width: 900px) {
+  .pos-layout { grid-template-columns: 1fr; }
+  .pos-orders-panel { max-height: 240px; }
+  .pos-create-order { grid-template-columns: 1fr 1fr; }
+  .order-item-row { grid-template-columns: 1fr 80px 80px; }
+  .order-item-row strong, .order-item-row button { grid-column: auto; }
+}
+
+@media (max-width: 560px) {
+  .app-shell { padding: 12px; }
+  .workspace-card { padding: 14px; }
+  .workspace-heading, .app-header { align-items: flex-start; flex-direction: column; }
+  .pos-create-order { grid-template-columns: 1fr; }
+  .pos-products-scroll { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
