@@ -3,6 +3,7 @@ import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
 import { CatalogPage } from '../modules/catalog/CatalogPage'
 import { InventoryPage } from '../modules/inventory/InventoryPage'
+import { KdsPage } from '../modules/kitchen/KdsPage'
 import { usePermissions } from '../modules/permissions/usePermissions'
 import { PosPage } from '../modules/pos/PosPage'
 import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
@@ -36,6 +37,7 @@ export function App() {
       </section>
 
       {can('pos.view') ? <PosPage /> : null}
+      {can('kitchen.view') || can('kitchen.manage') ? <KdsPage /> : null}
       {can('catalog.view') || can('catalog.manage') ? <CatalogPage /> : null}
       {can('inventory.view') ? <InventoryPage /> : null}
       {can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage') ? <ShiftsPage /> : null}
