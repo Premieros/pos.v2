@@ -1,53 +1,57 @@
 # Current Work Plan — POS.V2
 
-## Current phase: Kitchen / KDS
+## Current phase: POS Operational Completion
 
-### Completed
+### Completed ✅
 - Clean-room repository and architecture foundation.
-- Supabase project identity locked to `scpovyrqmsbiduanykod` only.
-- Authentication foundation and profile trigger.
-- Hidden immutable Super Admin role and permission-first authorization model.
-- Initial Auth user created through supported Supabase Auth flow.
-- First platform bootstrap completed.
-- Initial branch `MAIN` created and assigned.
-- First user linked to the hidden immutable `super_admin` platform role.
-- Super Admin verified with `45 / 45` current permissions.
-- Branch context and effective permission resolver.
-- Scoped user/role/permission administration contracts.
+- Database identity locked to Supabase project `scpovyrqmsbiduanykod` only.
+- Authentication foundation and first supported Auth user.
+- One-time first platform bootstrap completed.
+- Initial branch `MAIN` created.
+- Hidden immutable `super_admin` assignment completed and verified.
+- Super Admin owns all current permissions automatically.
+- Permission-first authorization and branch isolation.
+- User/role/direct-permission administration contracts.
 - Catalog foundation.
-- Inventory foundation, warehouse transfers, stock ledger and product/BOM mapping.
+- Inventory foundation, warehouse isolation, stock ledger, BOM and direct product mapping.
+- Atomic receipt / adjustment / waste / transfer commands.
 - Shifts and cash drawer foundation.
-- POS Core.
-- Kitchen backend contract: delta tickets, sent quantities, inventory deduction/reversal and KDS state commands.
-- GitHub Verify pipeline.
-- GitHub Pages deployment from `development` after successful Verify.
+- POS Core and all five order types.
+- Dining-table occupancy contract.
+- Kitchen / KDS backend + frontend.
+- Initial kitchen send + later delta-only sends.
+- Inventory deduction/reversal in the same kitchen transaction.
+- KDS Start / Ready / Complete workflow.
+- POS KDS counter and warehouse prerequisite guidance.
+- Payments foundation + POS payment UI.
+- Cash / Card.
+- Partial and split payments.
+- Server-authoritative remaining balance.
+- Cash payments update drawer movement atomically; card does not affect physical cash.
+- Fully-paid order close command.
+- Payment idempotency.
+- GitHub Verify pipeline and automatic GitHub Pages deployment from `development`.
 
-### Bootstrap status
-- Initial platform bootstrap: ✅ complete.
-- Auth users: `1`.
-- Branches: `1`.
-- Platform Super Admin assignments: `1`.
-- Initial branch: `MAIN` / `الفرع الرئيسي` / `Main Branch`.
-- Password is intentionally not stored in GitHub.
-- One-time first-user bootstrap must not be used again.
-- Full audit record: `docs/BOOTSTRAP_LOG.md`.
+### Latest verification
+- Kitchen Verify #64: frontend + Typecheck + Build + Deploy ✅
+- Payments Verify #79: Install + Typecheck + Build + GitHub Pages Deploy ✅
+- Supabase Security Advisor: no database/RLS regression; one Auth hardening warning remains: **Leaked Password Protection Disabled**.
+- Performance Advisor: no unresolved missing FK index after `payment_allocations_branch_index`; remaining notices are unused-index INFO on a new database.
 
-### Security note
-- Supabase Security Advisor after bootstrap reported one Auth hardening warning: **Leaked Password Protection Disabled**.
-- This remains a pre-release hardening item; no bootstrap-specific database security regression was observed.
-
-### Current Kitchen / KDS gate
-1. Finish POS `Send to Kitchen / Send Changes` UI.
-2. Require/select warehouse and show guided prerequisite if missing.
-3. Add KDS service and KDS page.
-4. Add POS KDS counters and ticket actions: Start / Ready / Complete.
-5. Verify exact-once stock movement per delta and negative-delta reversal.
-6. Verify cross-branch KDS denial.
-7. Security + performance advisors clean.
-8. GitHub Verify green.
+### Current gate — POS Operational Completion 🚧
+1. Discount command and permission/audit trail.
+2. Void / cancellation after kitchen send with correct inventory/payment rules.
+3. Return/refund contract.
+4. Split bill without duplicate quantities/revenue.
+5. Transfer dine-in order to another available table.
+6. Merge table/order contract where safe.
+7. Receipt print permission + reprint audit contract.
+8. Customer display contract.
+9. Verify all actions remain permission-first, not role-name based.
+10. Security + performance advisors and GitHub Verify green.
 
 ### Next phases
-Payments -> POS operational completion -> Procurement -> Waste/Counts/Approvals -> Accounting/Treasury -> Reports -> Printing -> Offline critical operations -> Settings/UI finalization -> Full E2E -> Release.
+Procurement -> Waste/Counts/Approvals -> Accounting/Treasury -> Reports -> Printing -> Offline critical operations -> Settings/UI finalization -> Full E2E -> Release.
 
 ## Source of Truth
 - Canonical build ledger: `docs/BUILD_PLAN.md`
