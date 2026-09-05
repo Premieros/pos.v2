@@ -28,6 +28,11 @@ export type PurchaseOrderLine = {
   updated_at: string
 }
 
+export type PurchaseReceiptLineInput = {
+  lineId: string
+  quantity: number
+}
+
 export async function listPurchaseOrders(branchId: string): Promise<PurchaseOrder[]> {
   const { data, error } = await supabase
     .from('purchase_orders')
@@ -110,4 +115,21 @@ export async function updatePurchaseOrderLine(input: {
 export async function removePurchaseOrderLine(lineId: string): Promise<void> {
   const { error } = await supabase.rpc('remove_purchase_order_line', { p_line_id: lineId })
   if (error) throw error
+}
+
+export async function receivePurchaseOrder(input: {
+  purchaseOrderId: string
+  warehouseId: string
+  lines: PurchaseReceiptLineInput[]
+  note?: string
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('receive_purchase_order', {
+    p_purchase_order_id: input.purchaseOrderId,
+    p_warehouse_id: input.warehouseId,
+    p_lines: input.lines.map((line) => ({ line_id: line.lineId, quantity: line.quantity })),
+    p_idempotency_key: crypto.randomUUID(),
+    p_note: input.note?.trim() || null,
+  })
+  if (error) throw error
+  return data as string
 }
