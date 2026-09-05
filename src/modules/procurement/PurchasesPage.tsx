@@ -5,12 +5,16 @@ import { usePermissions } from '../permissions/usePermissions'
 import { listSuppliers, type Supplier } from './supplier.service'
 import {
   addPurchaseOrderLine,
+  cancelPurchaseOrder,
   createPurchaseOrder,
+  listPurchaseCostHistory,
   listPurchaseOrderLines,
   listPurchaseOrders,
   receivePurchaseOrder,
   removePurchaseOrderLine,
+  submitPurchaseOrder,
   updatePurchaseOrderLine,
+  type PurchaseCostHistoryRow,
   type PurchaseOrder,
   type PurchaseOrderLine,
 } from './purchase.service'
@@ -29,6 +33,7 @@ export function PurchasesPage() {
   const { can } = usePermissions()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [lines, setLines] = useState<PurchaseOrderLine[]>([])
+  const [costHistory, setCostHistory] = useState<PurchaseCostHistoryRow[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -36,9 +41,11 @@ export function PurchasesPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canView = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.receive')
+  const canView = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const canCreate = can('procurement.purchases.create')
   const canEdit = can('procurement.purchases.edit')
+  const canSubmit = can('procurement.purchases.submit')
+  const canCancel = can('procurement.purchases.cancel')
   const canReceive = can('procurement.purchases.receive')
   const branchId = currentBranchId
 
@@ -46,13 +53,9 @@ export function PurchasesPage() {
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId],
   )
-
   const supplierById = useMemo(() => new Map(suppliers.map((supplier) => [supplier.id, supplier])), [suppliers])
   const inventoryById = useMemo(() => new Map(inventoryItems.map((item) => [item.id, item])), [inventoryItems])
-  const receivableLines = useMemo(
-    () => lines.filter((line) => line.received_quantity < line.ordered_quantity),
-    [lines],
-  )
+  const receivableLines = useMemo(() => lines.filter((line) => line.received_quantity < line.ordered_quantity), [lines])
 
   async function refreshOrders() {
     if (!branchId || !canView) return
@@ -89,21 +92,38 @@ export function PurchasesPage() {
   useEffect(() => { void refreshAll() }, [branchId, canView, canReceive])
 
   useEffect(() => {
-    if (!selectedOrderId) {
+    const activeBranchId = branchId
+    if (!selectedOrderId || !activeBranchId) {
       setLines([])
+      setCostHistory([])
       return
     }
     void (async () => {
       try {
-        setLines(await listPurchaseOrderLines(selectedOrderId))
+        const [nextLines, nextCosts] = await Promise.all([
+          listPurchaseOrderLines(selectedOrderId),
+          listPurchaseCostHistory(activeBranchId, selectedOrderId),
+        ])
+        setLines(nextLines)
+        setCostHistory(nextCosts)
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'تعذر تحميل بنود أمر الشراء')
+        setError(cause instanceof Error ? cause.message : 'تعذر تحميل تفاصيل أمر الشراء')
       }
     })()
-  }, [selectedOrderId])
+  }, [selectedOrderId, branchId])
 
   if (!branchId || !canView) return null
   const activeBranchId = branchId
+
+  async function refreshSelected(orderId: string) {
+    const [nextLines, nextCosts] = await Promise.all([
+      listPurchaseOrderLines(orderId),
+      listPurchaseCostHistory(activeBranchId, orderId),
+    ])
+    setLines(nextLines)
+    setCostHistory(nextCosts)
+    await refreshOrders()
+  }
 
   async function handleCreate(form: HTMLFormElement) {
     const data = new FormData(form)
@@ -111,11 +131,7 @@ export function PurchasesPage() {
     if (!supplierId) return
     setError(null)
     try {
-      const id = await createPurchaseOrder({
-        branchId: activeBranchId,
-        supplierId,
-        notes: String(data.get('notes') ?? ''),
-      })
+      const id = await createPurchaseOrder({ branchId: activeBranchId, supplierId, notes: String(data.get('notes') ?? '') })
       form.reset()
       await refreshOrders()
       setSelectedOrderId(id)
@@ -127,20 +143,16 @@ export function PurchasesPage() {
   async function handleAddLine(form: HTMLFormElement) {
     if (!selectedOrder || selectedOrder.status !== 'draft') return
     const data = new FormData(form)
-    const quantity = Number(data.get('quantity'))
-    const unitCost = Number(data.get('unitCost'))
-    const inventoryItemId = String(data.get('inventoryItemId') ?? '')
     setError(null)
     try {
       await addPurchaseOrderLine({
         purchaseOrderId: selectedOrder.id,
-        inventoryItemId,
-        quantity,
-        unitCost,
+        inventoryItemId: String(data.get('inventoryItemId') ?? ''),
+        quantity: Number(data.get('quantity')),
+        unitCost: Number(data.get('unitCost')),
       })
       form.reset()
-      setLines(await listPurchaseOrderLines(selectedOrder.id))
-      await refreshOrders()
+      await refreshSelected(selectedOrder.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر إضافة البند')
     }
@@ -154,13 +166,8 @@ export function PurchasesPage() {
     if (costText === null) return
     setError(null)
     try {
-      await updatePurchaseOrderLine({
-        lineId: line.id,
-        quantity: Number(quantityText),
-        unitCost: Number(costText),
-      })
-      setLines(await listPurchaseOrderLines(selectedOrder.id))
-      await refreshOrders()
+      await updatePurchaseOrderLine({ lineId: line.id, quantity: Number(quantityText), unitCost: Number(costText) })
+      await refreshSelected(selectedOrder.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تعديل البند')
     }
@@ -172,31 +179,46 @@ export function PurchasesPage() {
     setError(null)
     try {
       await removePurchaseOrderLine(line.id)
-      setLines(await listPurchaseOrderLines(selectedOrder.id))
-      await refreshOrders()
+      await refreshSelected(selectedOrder.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر حذف البند')
     }
   }
 
+  async function handleSubmit() {
+    if (!selectedOrder || selectedOrder.status !== 'draft') return
+    setError(null)
+    try {
+      await submitPurchaseOrder(selectedOrder.id)
+      await refreshSelected(selectedOrder.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر إرسال أمر الشراء للاستلام')
+    }
+  }
+
+  async function handleCancel() {
+    if (!selectedOrder || !['draft', 'submitted'].includes(selectedOrder.status)) return
+    const reason = window.prompt('سبب إلغاء أمر الشراء')?.trim()
+    if (!reason) return
+    setError(null)
+    try {
+      await cancelPurchaseOrder(selectedOrder.id, reason)
+      await refreshSelected(selectedOrder.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر إلغاء أمر الشراء')
+    }
+  }
+
   async function handleReceive(form: HTMLFormElement) {
-    if (!selectedOrder || selectedOrder.status === 'received' || selectedOrder.status === 'cancelled') return
+    if (!selectedOrder || !['submitted', 'partially_received'].includes(selectedOrder.status)) return
     const data = new FormData(form)
     const warehouseId = String(data.get('warehouseId') ?? '')
     const receiptLines = receivableLines.flatMap((line) => {
       const quantity = Number(data.get(`receive:${line.id}`) ?? 0)
-      if (!Number.isFinite(quantity) || quantity <= 0) return []
-      return [{ lineId: line.id, quantity }]
+      return Number.isFinite(quantity) && quantity > 0 ? [{ lineId: line.id, quantity }] : []
     })
-
-    if (!warehouseId) {
-      setError('اختر مخزن الاستلام.')
-      return
-    }
-    if (!receiptLines.length) {
-      setError('أدخل كمية استلام لبند واحد على الأقل.')
-      return
-    }
+    if (!warehouseId) { setError('اختر مخزن الاستلام.'); return }
+    if (!receiptLines.length) { setError('أدخل كمية استلام لبند واحد على الأقل.'); return }
 
     setError(null)
     try {
@@ -207,8 +229,7 @@ export function PurchasesPage() {
         note: String(data.get('receiptNote') ?? ''),
       })
       form.reset()
-      setLines(await listPurchaseOrderLines(selectedOrder.id))
-      await refreshOrders()
+      await refreshSelected(selectedOrder.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر استلام أمر الشراء')
     }
@@ -220,7 +241,7 @@ export function PurchasesPage() {
         <div>
           <p className="eyebrow">Procurement</p>
           <h2 id="purchases-title">أوامر الشراء</h2>
-          <p>المورد، البنود، الكميات والتكلفة مرتبطة ببيانات الفرع الفعلية، والاستلام يكتب دفتر حركة المخزون ذريًا.</p>
+          <p>دورة واضحة: مسودة ← إرسال للاستلام ← استلام جزئي/كامل، مع تكلفة تاريخية من الاستلام المقبول.</p>
         </div>
         <span>{orders.length} أمر شراء</span>
       </div>
@@ -245,22 +266,14 @@ export function PurchasesPage() {
 
       <div className="purchase-layout">
         <aside className="purchase-order-list" aria-label="أوامر الشراء">
-          {orders.map((order) => {
-            const supplier = supplierById.get(order.supplier_id)
-            return (
-              <button
-                key={order.id}
-                type="button"
-                className={order.id === selectedOrderId ? 'purchase-order-card is-active' : 'purchase-order-card'}
-                onClick={() => setSelectedOrderId(order.id)}
-              >
-                <strong>#{order.purchase_number}</strong>
-                <span>{supplier?.name_ar ?? 'مورد غير متاح'}</span>
-                <span>{statusLabel[order.status]}</span>
-                <span>{order.total.toFixed(2)}</span>
-              </button>
-            )
-          })}
+          {orders.map((order) => (
+            <button key={order.id} type="button" className={order.id === selectedOrderId ? 'purchase-order-card is-active' : 'purchase-order-card'} onClick={() => setSelectedOrderId(order.id)}>
+              <strong>#{order.purchase_number}</strong>
+              <span>{supplierById.get(order.supplier_id)?.name_ar ?? 'مورد غير متاح'}</span>
+              <span>{statusLabel[order.status]}</span>
+              <span>{order.total.toFixed(2)}</span>
+            </button>
+          ))}
           {!loading && !orders.length ? <p className="muted-text">لا توجد أوامر شراء في هذا الفرع بعد.</p> : null}
         </aside>
 
@@ -272,6 +285,12 @@ export function PurchasesPage() {
                 <div><span>المورد</span><strong>{supplierById.get(selectedOrder.supplier_id)?.name_ar ?? '—'}</strong></div>
                 <div><span>الحالة</span><strong>{statusLabel[selectedOrder.status]}</strong></div>
                 <div><span>الإجمالي</span><strong>{selectedOrder.total.toFixed(2)}</strong></div>
+              </div>
+
+              <div className="purchase-workflow-actions">
+                {canSubmit && selectedOrder.status === 'draft' ? <button type="button" disabled={!lines.length} onClick={() => void handleSubmit()}>إرسال للاستلام</button> : null}
+                {canCancel && ['draft', 'submitted'].includes(selectedOrder.status) ? <button type="button" onClick={() => void handleCancel()}>إلغاء أمر الشراء</button> : null}
+                {selectedOrder.status === 'draft' && !lines.length ? <span className="muted-text">أضف بندًا واحدًا على الأقل قبل الإرسال.</span> : null}
               </div>
 
               {canEdit && selectedOrder.status === 'draft' ? (
@@ -290,38 +309,31 @@ export function PurchasesPage() {
                 <div className="purchase-line purchase-line-head">
                   <span>الصنف المخزني</span><span>المطلوب</span><span>المستلم</span><span>تكلفة الوحدة</span><span>الإجمالي</span><span>الإجراء</span>
                 </div>
-                {lines.map((line) => {
-                  const item = inventoryById.get(line.inventory_item_id)
-                  return (
-                    <div className="purchase-line" key={line.id}>
-                      <strong>{item?.name_ar ?? line.inventory_item_id}</strong>
-                      <span>{line.ordered_quantity}</span>
-                      <span>{line.received_quantity}</span>
-                      <span>{line.unit_cost.toFixed(2)}</span>
-                      <span>{line.line_total.toFixed(2)}</span>
-                      <div>
-                        {canEdit && selectedOrder.status === 'draft' ? <button type="button" onClick={() => void handleEditLine(line)}>تعديل</button> : null}
-                        {canEdit && selectedOrder.status === 'draft' ? <button type="button" onClick={() => void handleRemoveLine(line)}>حذف</button> : null}
-                      </div>
+                {lines.map((line) => (
+                  <div className="purchase-line" key={line.id}>
+                    <strong>{inventoryById.get(line.inventory_item_id)?.name_ar ?? line.inventory_item_id}</strong>
+                    <span>{line.ordered_quantity}</span>
+                    <span>{line.received_quantity}</span>
+                    <span>{line.unit_cost.toFixed(2)}</span>
+                    <span>{line.line_total.toFixed(2)}</span>
+                    <div>
+                      {canEdit && selectedOrder.status === 'draft' ? <button type="button" onClick={() => void handleEditLine(line)}>تعديل</button> : null}
+                      {canEdit && selectedOrder.status === 'draft' ? <button type="button" onClick={() => void handleRemoveLine(line)}>حذف</button> : null}
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
                 {!lines.length ? <p className="muted-text">لا توجد بنود في هذا الأمر بعد.</p> : null}
               </div>
 
-              {canReceive && selectedOrder.status !== 'received' && selectedOrder.status !== 'cancelled' && receivableLines.length ? (
+              {canReceive && ['submitted', 'partially_received'].includes(selectedOrder.status) && receivableLines.length ? (
                 <form className="purchase-receive-form" onSubmit={(event) => { event.preventDefault(); void handleReceive(event.currentTarget) }}>
                   <div className="purchase-receive-heading">
-                    <div>
-                      <strong>استلام إلى المخزون</strong>
-                      <span>يمكن استلام جزء من الكمية؛ الخادم يمنع تجاوز المتبقي أو التكرار.</span>
-                    </div>
+                    <div><strong>استلام إلى المخزون</strong><span>يمكن الاستلام الجزئي؛ الخادم يمنع تجاوز المتبقي أو التكرار.</span></div>
                     <select name="warehouseId" required defaultValue="">
                       <option value="" disabled>اختر مخزن الاستلام</option>
                       {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_ar} — {warehouse.code}</option>)}
                     </select>
                   </div>
-
                   <div className="purchase-receive-lines">
                     {receivableLines.map((line) => {
                       const remaining = line.ordered_quantity - line.received_quantity
@@ -337,6 +349,20 @@ export function PurchasesPage() {
                   <input name="receiptNote" placeholder="ملاحظة الاستلام — اختياري" />
                   <button type="submit" disabled={!warehouses.length}>تسجيل الاستلام ذريًا</button>
                 </form>
+              ) : null}
+
+              {costHistory.length ? (
+                <section className="purchase-cost-history" aria-label="سجل تكلفة الاستلام">
+                  <strong>سجل تكلفة الاستلام</strong>
+                  {costHistory.map((row) => (
+                    <div key={row.purchase_receipt_line_id}>
+                      <span>{inventoryById.get(row.inventory_item_id)?.name_ar ?? row.inventory_item_id}</span>
+                      <span>كمية {row.quantity}</span>
+                      <span>تكلفة {row.unit_cost.toFixed(2)}</span>
+                      <time>{new Date(row.received_at).toLocaleString('ar-EG')}</time>
+                    </div>
+                  ))}
+                </section>
               ) : null}
             </>
           ) : <p className="muted-text">اختر أمر شراء لعرض التفاصيل.</p>}
