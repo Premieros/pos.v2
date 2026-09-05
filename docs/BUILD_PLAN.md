@@ -30,62 +30,43 @@ Preview: `https://premieros.github.io/pos.v2/`
 - Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 
 ## Batch 8 — Reports & Central Printing ✅ CLOSED
-
-### 8.1 Unified Reports Contract ✅
-- One table-first Reports workspace, `reports.view`, branch-scoped server access and shared date/payment/employee/product/order-type filters.
-- Migration: `20260905192644_unified_reports_foundation`.
-- Verify #411 ✅.
-
-### 8.2 Sales & Operations Reports ✅
-- Real read-only projections for sales summary, detailed invoices, payment method, employee, product, order type, returns/refunds/voids/discounts and cashier/shift performance.
-- Migration: `20260905193209_sales_operations_report_projections`.
-- Verify #421 ✅.
-
-### 8.3 Procurement, Inventory & Cost Reports ✅
-- Purchases/suppliers, ledger-derived inventory, waste and historical accepted purchase cost.
-- Migrations: `20260905194116_procurement_inventory_report_projections`, `20260905194501_purchase_cost_history_report_projection`.
-- Verify #433 ✅.
-
-### 8.4 Accounting Reports Integration ✅
-- Trial Balance, General Ledger, Income Statement and Balance Sheet reuse Batch 7 contracts.
-- `accounting.statements.view` remains mandatory for financial statements.
-- Verify #441 ✅.
-
-### 8.5 Custom Columns + Excel Export ✅
-- Selectable report columns for operational and accounting reports.
-- Export uses only the currently loaded filtered rows and selected columns.
-- SpreadsheetML `.xls` export includes totals and preserves numeric values.
-- Verify #453 ✅.
-
-### 8.6 Central Printing ✅
-- Central printing workspace for receipt first/reprint, Kitchen ticket, shift summary and day summary.
-- Receipt printing checks existing print state first; reprint requires `pos.receipt.reprint`, reason and immutable receipt snapshot reuse.
-- Kitchen/Shift/Day printing remains read-only and reuses existing authorized data contracts.
-- Reports can print the exact currently visible result/columns without refetching broader data.
-
-### 8.7 Batch 8 Regression + Advisors + Verify ✅
-- Added `scripts/verify-batch8.mjs` and workflow gate.
-- Corrected the Excel guard to validate the actual SpreadsheetML contract instead of a false marker.
-- Batch 5/6/7/8 regression ✅, Typecheck ✅, Build ✅, Pages Deploy ✅.
-- Verify #483 ✅ — HEAD `276dffb71c9ed7030c942f8a414dc76600373976`.
-- Security Advisor: only known leaked-password-protection Auth warning.
-- Performance Advisor: unused-index INFO only; no material Batch 8 finding.
+- 8.1 Unified Reports ✅ — Verify #411.
+- 8.2 Sales & Operations Reports ✅ — Verify #421.
+- 8.3 Procurement, Inventory & Cost Reports ✅ — Verify #433.
+- 8.4 Accounting Reports Integration ✅ — Verify #441.
+- 8.5 Custom Columns + Excel Export ✅ — Verify #453.
+- 8.6 Central Printing ✅.
+- 8.7 Batch 8 Regression / Advisors / Verify ✅ — Verify #483, HEAD `276dffb71c9ed7030c942f8a414dc76600373976`.
 
 ## Batch 9 — Administration, Offline & Final UX 🚧 CURRENT
 
-### 9.1 Administration Workspace 🚧 NEXT
-- Branches and warehouses administration using existing branch/warehouse contracts.
-- Users, branch access, effective permissions, role templates and direct grant/revoke controls without exposing protected Super Admin membership.
-- System settings workspace with permission-first visibility.
-- No role-label authorization in feature code.
+### 9.1 Administration Workspace ✅
+- Added permission-first administration workspace for branch, warehouses, ordinary users, branch access, ordinary role templates and direct permission overrides.
+- Protected platform Super Admin membership remains private, is excluded from administrative snapshots and cannot be targeted by branch/user mutations.
+- Role-template create/update blocks privilege escalation: administrators cannot place a permission they do not effectively hold into a role.
+- New migrations:
+  - `20260905201332_administration_workspace_contract`
+  - `20260905201828_harden_administration_public_wrappers`
+- Public administration RPCs are `SECURITY INVOKER`; sensitive implementation lives under `app_private` with explicit guards.
+- Live audit confirmed public wrappers are invoker and protected helpers are not directly executable.
+- Verify #497 ✅ — Batch 5/6/7/8 regressions, Typecheck, Build and Pages Deploy.
+- Security Advisor after hardening: only known leaked-password-protection Auth warning.
+- Performance Advisor: unused-index INFO only.
 
-### 9.2 Guided Setup / Prerequisite Routing ⏳
-- Missing branch, warehouse, shift, catalog/inventory prerequisites route to the required setup action instead of raw database errors.
-- Keep business contracts independent from layout/navigation.
+### 9.2 Guided Setup / Prerequisite Routing ✅
+- Fresh-system bootstrap is now distinguished from an already initialized system where the signed-in user simply lacks branch access; bootstrap is never offered again in that case.
+- Migration `20260905202048_guided_initial_setup_state` provides the safe initialization-state contract through an invoker public wrapper and private implementation.
+- POS prerequisites now surface a guided workspace before the sale flow for missing own shift, active warehouse or sale product.
+- Where the user has the necessary setup permission, the warning contains a direct route to the exact setup section; otherwise it explains that authorized administration is required instead of exposing a raw database error.
+- Multi-branch authorized users now get an explicit current-branch selector in the app header.
+- Verify #511 ✅ — Batch 5/6/7/8 regressions, Typecheck, Build and Pages Deploy.
+- Security Advisor: only known leaked-password-protection Auth warning.
+- Performance Advisor: unused-index INFO only.
 
-### 9.3 Offline Critical Close + Print Resilience ⏳
+### 9.3 Offline Critical Close + Print Resilience 🚧 NEXT
 - Offline-capable shift/day close capture and printing where contractually safe.
 - Explicit queued/retry state for operations requiring server confirmation; no silent double-posting.
+- Server remains authoritative for final close posting and idempotency.
 
 ### 9.4 RTL/LTR + Responsive App Shell ⏳
 - Arabic RTL primary and English LTR secondary.
@@ -98,7 +79,7 @@ Preview: `https://premieros.github.io/pos.v2/`
 
 ### 9.6 Batch 9 Regression + Advisors + Verify ⏳
 
-Immediate target: **9.1 Administration Workspace**.
+Immediate target: **9.3 Offline Critical Close + Print Resilience**.
 
 ## Batch 10 — Full Verification & Release Candidate ⏳ QUEUED
 Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cross-branch denial, offline retry, Advisors and release candidate.
@@ -108,9 +89,9 @@ Typecheck, Build, Unit/contract tests, RLS/permission tests, Integration/E2E, cr
 - Repository: `Premieros/pos.v2` ✅
 - Branch: `development` ✅
 - Batches 1–8: ✅ CLOSED.
-- Batch 9: 🚧 CURRENT.
-- Immediate target: **9.1 Administration Workspace**.
-- Verified implementation HEAD before this log update: `276dffb71c9ed7030c942f8a414dc76600373976` — Verify #483 ✅.
+- Batch 9.1–9.2: ✅ CLOSED.
+- Immediate target: **9.3 Offline Critical Close + Print Resilience**.
+- Verified implementation HEAD before this log update: `85560f7cafb44c4dd20763d454dd0963a6f48c18` — Verify #511 ✅.
 - `main` untouched.
 
 ## Hardening backlog
