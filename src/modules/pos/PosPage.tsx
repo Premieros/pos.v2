@@ -3,6 +3,7 @@ import { useBranch } from '../branches/useBranch'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
+import { SplitBillControls } from '../splits/SplitBillControls'
 import {
   addPosOrderItem,
   cancelPosOrder,
@@ -47,6 +48,7 @@ export function PosPage() {
   const [orders, setOrders] = useState<PosOrder[]>([])
   const [items, setItems] = useState<PosOrderItem[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [hasBillSplits, setHasBillSplits] = useState(false)
   const [kitchenQueueCount, setKitchenQueueCount] = useState(0)
   const [hasShift, setHasShift] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -61,6 +63,7 @@ export function PosPage() {
   const canPay = can('pos.payment.take')
   const canClose = can('pos.order.close')
   const canDiscount = can('pos.discount.apply')
+  const canSplit = can('pos.order.split')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
 
@@ -113,6 +116,7 @@ export function PosPage() {
 
   useEffect(() => { void refreshAll() }, [branchId, canView])
   useEffect(() => { void refreshItems(selectedOrderId) }, [selectedOrderId])
+  useEffect(() => { setHasBillSplits(false) }, [selectedOrderId])
 
   if (!branchId || !canView) return null
   const activeBranchId = branchId
@@ -320,6 +324,15 @@ export function PosPage() {
                 onChanged={refreshOrderState}
               />
 
+              <SplitBillControls
+                order={selectedOrder}
+                items={items}
+                canSplit={canSplit}
+                canPay={canPay}
+                onChanged={refreshOrderState}
+                onSplitStateChange={setHasBillSplits}
+              />
+
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
                 <div className="payment-card">
                   <div className="payment-summary">
@@ -334,7 +347,9 @@ export function PosPage() {
                     </div>
                   ) : null}
 
-                  {canPay && paymentReady ? (
+                  {hasBillSplits && paymentReady ? <p className="muted-text">يتم التحصيل من الفواتير المقسمة أعلاه.</p> : null}
+
+                  {canPay && paymentReady && !hasBillSplits ? (
                     <form className="payment-form" onSubmit={(event) => { event.preventDefault(); void handlePayment(event.currentTarget) }}>
                       <select name="method" defaultValue="cash" aria-label="طريقة الدفع">
                         <option value="cash">نقدي</option>
