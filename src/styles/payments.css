@@ -1,0 +1,11 @@
+.payment-card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 14px; display: grid; gap: 12px; background: #f9fafb; }
+.payment-summary { display: flex; flex-wrap: wrap; gap: 12px; }
+.payment-summary span, .payment-history span { padding: 7px 10px; border-radius: 10px; background: white; border: 1px solid #e5e7eb; }
+.payment-history { display: flex; flex-wrap: wrap; gap: 8px; }
+.payment-form { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(140px, 1fr) auto; gap: 8px; }
+.payment-form select, .payment-form input { min-height: 42px; border: 1px solid #d1d5db; border-radius: 10px; padding-inline: 10px; background: white; }
+.payment-form button, .payment-card > button { min-height: 42px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+
+@media (max-width: 560px) {
+  .payment-form { grid-template-columns: 1fr; }
+}
