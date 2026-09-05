@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { usePermissions } from '../permissions/usePermissions'
 import { hasOwnOpenShift, listPosProducts, listPosWarehouses } from '../pos/pos.service'
+import './guided-setup.css'
 
 type Prerequisite = {
   key: 'shift' | 'warehouse' | 'products'
