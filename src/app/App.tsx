@@ -1,4 +1,5 @@
 import { ChartOfAccountsPage } from '../modules/accounting/ChartOfAccountsPage'
+import { JournalPage } from '../modules/accounting/JournalPage'
 import { ApprovalCenterPage } from '../modules/approvals/ApprovalCenterPage'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
@@ -39,6 +40,7 @@ export function App() {
   const showSuppliers = can('procurement.view') || can('procurement.suppliers.manage')
   const showPurchases = can('procurement.purchases.view') || can('procurement.purchases.create') || can('procurement.purchases.edit') || can('procurement.purchases.submit') || can('procurement.purchases.cancel') || can('procurement.purchases.receive')
   const showAccounting = can('accounting.coa.view') || can('accounting.coa.manage')
+  const showJournals = can('accounting.journals.view') || can('accounting.journals.create') || can('accounting.journals.edit') || can('accounting.journals.post')
   const showShifts = can('shifts.view') || can('shifts.open') || can('shifts.close') || can('shifts.cash.move') || can('shifts.manage')
 
   return (
@@ -65,6 +67,7 @@ export function App() {
           {showSuppliers ? <a href="#suppliers-section">الموردون</a> : null}
           {showPurchases ? <a href="#purchases-section">أوامر الشراء</a> : null}
           {showAccounting ? <a href="#accounting-section">دليل الحسابات</a> : null}
+          {showJournals ? <a href="#journals-section">القيود اليومية</a> : null}
           {showShifts ? <a href="#shifts-section">الورديات والدرج</a> : null}
         </nav>
 
@@ -99,6 +102,7 @@ export function App() {
         {showSuppliers ? <section id="suppliers-section" className="app-section-anchor"><SuppliersPage /></section> : null}
         {showPurchases ? <section id="purchases-section" className="app-section-anchor"><PurchasesPage /></section> : null}
         {showAccounting ? <section id="accounting-section" className="app-section-anchor"><ChartOfAccountsPage /></section> : null}
+        {showJournals ? <section id="journals-section" className="app-section-anchor"><JournalPage /></section> : null}
         {showShifts ? <section id="shifts-section" className="app-section-anchor"><ShiftsPage /></section> : null}
       </div>
     </main>
