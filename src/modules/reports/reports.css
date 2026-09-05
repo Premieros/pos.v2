@@ -48,3 +48,12 @@
 .accounting-account-filter select { min-height:42px; border:1px solid var(--border,#d7dce2); border-radius:12px; padding:.7rem .8rem; background:var(--surface,#fff); }
 @media (max-width:960px) { .reports-filter-bar { grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-layout { grid-template-columns:1fr; } .report-selector { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:640px) { .reports-filter-bar, .report-selector { grid-template-columns:1fr; } .report-result-heading { flex-direction:column; } .report-table { min-width:680px; } .accounting-report-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .report-actions { justify-content:stretch; } .report-actions > button, .report-column-picker, .report-column-picker > summary { width:100%; } .report-column-options { position:static; margin-top:.4rem; width:100%; box-shadow:none; } }
+@media print {
+  body.report-print-mode * { visibility:hidden !important; }
+  body.report-print-mode .report-result-card, body.report-print-mode .report-result-card * { visibility:visible !important; }
+  body.report-print-mode .report-result-card { position:absolute; inset:0; width:100%; border:0; padding:10mm; background:#fff; color:#000; }
+  body.report-print-mode .report-screen-only { display:none !important; }
+  body.report-print-mode .report-table-wrap { overflow:visible; border-color:#bbb; }
+  body.report-print-mode .report-table { min-width:0; width:100%; font-size:10pt; }
+  body.report-print-mode .report-table th { position:static; background:#fff; }
+}
