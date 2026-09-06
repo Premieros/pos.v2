@@ -78,34 +78,94 @@
 .pos-actions button,.kitchen-send-controls select{min-height:32px!important;height:32px!important;font-size:.72rem!important;border-radius:8px!important}
 .payment-card,.split-bill-card,.receipt-controls{border-radius:10px!important;box-shadow:none!important;border-color:var(--dp-line)!important}
 
-/* Back-office density baseline. */
-.table-wrap,.report-table-wrap{border-radius:10px!important;box-shadow:none!important}
-table th,table td,.report-table th,.report-table td{padding:9px 10px!important;font-size:.78rem!important}
-.report-totals article{border-radius:10px!important;box-shadow:none!important}
+/* KDS track: operational, high-contrast and scan-first. */
+.app-content:has(.kds-workspace)>.app-header{display:none!important}
+.app-content:has(.kds-workspace){padding-top:8px!important;height:100dvh;overflow:hidden;gap:0!important}
+.app-content:has(.kds-workspace)>.app-view{height:calc(100dvh - 16px);padding:0!important;overflow:hidden}
+.kds-workspace{height:100%;min-height:0;padding:0!important;overflow:hidden;border-radius:14px!important;background:#f4f5f7!important;border:1px solid var(--dp-line)!important;display:grid!important;grid-template-rows:58px auto minmax(0,1fr)!important;gap:0!important}
+.kds-workspace>.workspace-heading{height:58px;padding:7px 12px!important;background:#fff;border-bottom:1px solid var(--dp-line);display:flex!important;align-items:center!important;justify-content:space-between!important}
+.kds-workspace>.workspace-heading .eyebrow{display:none!important}
+.kds-workspace>.workspace-heading h2{font-size:1.05rem!important;margin:0!important}.kds-workspace>.workspace-heading p{font-size:.72rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px!important}
+.kds-workspace>.error-text,.kds-workspace>p{margin:7px 12px!important}
+.kds-workspace .pos-counters span{font-size:.72rem!important;padding:5px 9px!important}
+.kds-grid{min-height:0;height:100%;overflow:auto;padding:10px!important;display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))!important;grid-auto-rows:min-content;gap:9px!important;align-content:start}
+.kds-ticket{padding:0!important;gap:0!important;border-radius:12px!important;background:#fff!important;box-shadow:none!important;overflow:hidden;border:1px solid #dfe3e8!important;border-inline-start-width:4px!important}
+.kds-ticket-header{min-height:48px;padding:9px 11px!important;border-bottom:1px solid #eceef1;background:#fafbfc;gap:8px!important}
+.kds-ticket-header strong{font-size:.88rem}.kds-ticket-header span{font-size:.74rem}
+.kds-ticket-items{gap:0!important;padding:3px 10px!important}.kds-item-row{min-height:38px;padding:7px 2px!important;border-bottom:1px solid #f0f1f3!important;font-size:.8rem}
+.kds-item-row:last-child{border-bottom:0!important}.kds-item-row>span{font-size:.86rem;font-weight:800;font-variant-numeric:tabular-nums}
+.kds-actions{padding:8px 10px!important;border-top:1px solid #eceef1;background:#fafbfc;display:grid!important;grid-template-columns:1fr}
+.kds-actions button{min-height:36px!important;height:36px!important;border-radius:8px!important;font-size:.78rem!important;background:#111827!important}
+.kds-ready .kds-actions button{background:#166534!important}.kds-preparing .kds-actions button{background:#92400e!important}
+
+/* Back-office track: compact page toolbar + table-first working area. */
+.reports-workspace,.admin-panel,.printing-form,.accounting-report-panel{gap:10px!important}
+.reports-filter-bar{grid-template-columns:repeat(6,minmax(120px,1fr))!important;gap:7px!important;padding:9px!important;border:1px solid var(--dp-line);border-radius:10px;background:#f8f9fb}
+.reports-filter-bar label{gap:3px!important;font-size:.72rem!important;color:#475467}.reports-filter-bar input,.reports-filter-bar select,.reports-filter-bar button{min-height:34px!important;height:34px!important;border-radius:8px!important;padding:5px 8px!important;font-size:.76rem!important}
+.reports-layout{grid-template-columns:210px minmax(0,1fr)!important;gap:9px!important;min-height:0}
+.report-selector{gap:4px!important;max-height:calc(100dvh - 220px);overflow:auto;padding-inline-end:2px}
+.report-selector button{min-height:54px!important;padding:7px 8px!important;border-radius:9px!important;gap:2px!important;text-align:start!important;box-shadow:none!important}
+.report-selector button.active{outline:0!important;border-color:#98a2b3!important;background:#f0f2f5!important}.report-selector button strong{font-size:.78rem}.report-selector small{font-size:.68rem!important;line-height:1.3!important}
+.report-result-card{gap:8px!important;padding:10px!important;border-radius:10px!important;box-shadow:none!important}.report-result-heading h3{font-size:.95rem}.report-result-heading p{font-size:.74rem!important}.report-result-heading>span{font-size:.68rem!important}
+.report-filter-summary{gap:4px!important}.report-filter-summary span{padding:4px 7px!important;border-radius:7px!important;font-size:.68rem!important;background:#fafbfc}
+.report-totals{gap:6px!important;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important}.report-totals article{padding:7px 8px!important}.report-totals small{font-size:.68rem}.report-totals strong{font-size:.92rem!important}
+.report-actions{gap:5px!important}.report-actions>button,.report-column-picker>summary,.accounting-report-tabs button{min-height:34px!important;height:34px!important;padding:5px 8px!important;border-radius:8px!important;font-size:.74rem!important}
+.report-table-wrap{max-height:calc(100dvh - 330px);overflow:auto!important}.report-table th,.report-table td{padding:8px 9px!important;font-size:.74rem!important;white-space:nowrap}
+.report-table th{top:0!important}.report-table tbody tr:nth-child(even) td{background:#fbfcfd}
+
+/* Common back-office forms and cards. */
+.workspace-card form:not(.pos-create-order):not(.payment-form){gap:8px}
+.workspace-card input,.workspace-card select,.workspace-card textarea{border-radius:8px!important}
+.workspace-card button{border-radius:8px}
+.plain-list{gap:5px!important}.plain-list>button,.plain-list>li{border-radius:9px!important;box-shadow:none!important}
+.table-wrap,.report-table-wrap{border-radius:9px!important;box-shadow:none!important;background:#fff!important}
+table th,table td,.report-table th,.report-table td{padding:8px 9px!important;font-size:.76rem!important}
+table th,.report-table th{font-size:.72rem!important;text-transform:none!important}
+.report-totals article{border-radius:9px!important;box-shadow:none!important}
+
+/* Direction parity: avoid physical-side assumptions in active indicators and panels. */
+.app-shell[dir="rtl"] .report-selector button,.app-shell[dir="rtl"] .pos-orders-panel .plain-list button{text-align:right!important}
+.app-shell[dir="ltr"] .report-selector button,.app-shell[dir="ltr"] .pos-orders-panel .plain-list button{text-align:left!important}
+.app-shell[dir="rtl"] .kds-ticket{border-inline-start-width:4px!important}.app-shell[dir="ltr"] .kds-ticket{border-inline-start-width:4px!important}
+
+@media(max-width:1280px){
+  .reports-filter-bar{grid-template-columns:repeat(3,minmax(140px,1fr))!important}
+  .reports-layout{grid-template-columns:190px minmax(0,1fr)!important}
+}
 
 @media(max-width:1180px){
   .pos-layout{grid-template-columns:150px minmax(0,1fr)!important}
   .pos-main-panel{grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr)!important}
   .pos-products-scroll{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))!important}
   .pos-counters span:nth-child(2){display:none}
+  .kds-grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr))!important}
 }
 
 @media(max-width:1020px){
-  .app-content:has(.pos-workspace){height:auto!important;min-height:calc(100dvh - 58px);overflow:visible!important;padding-top:4px!important}
-  .app-content:has(.pos-workspace)>.app-view{height:auto!important;min-height:calc(100dvh - 70px);overflow:visible!important}
-  .pos-workspace{height:auto!important;min-height:calc(100dvh - 76px)!important;grid-template-rows:auto auto auto auto!important;overflow:visible!important}
-  .pos-workspace>.workspace-heading{height:auto!important;min-height:54px;flex-wrap:wrap!important}
+  .app-content:has(.pos-workspace),.app-content:has(.kds-workspace){height:auto!important;min-height:calc(100dvh - 58px);overflow:visible!important;padding-top:4px!important}
+  .app-content:has(.pos-workspace)>.app-view,.app-content:has(.kds-workspace)>.app-view{height:auto!important;min-height:calc(100dvh - 70px);overflow:visible!important}
+  .pos-workspace,.kds-workspace{height:auto!important;min-height:calc(100dvh - 76px)!important;overflow:visible!important}
+  .pos-workspace{grid-template-rows:auto auto auto auto!important}.kds-workspace{grid-template-rows:auto auto auto!important}
+  .pos-workspace>.workspace-heading,.kds-workspace>.workspace-heading{height:auto!important;min-height:54px;flex-wrap:wrap!important}
   .pos-layout{grid-template-columns:1fr!important;height:auto!important}
   .pos-orders-panel{max-height:180px!important;border-inline-end:0!important;border-bottom:1px solid var(--dp-line)!important}
   .pos-main-panel{grid-template-columns:minmax(0,1fr) minmax(300px,.8fr)!important;height:auto!important;min-height:620px!important}
   .active-order-card,.pos-products-scroll{height:620px!important}
+  .kds-grid{height:auto!important;overflow:visible!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .reports-layout{grid-template-columns:1fr!important}.report-selector{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-height:none!important;overflow:visible!important}.report-selector button{min-height:58px!important}.report-table-wrap{max-height:none!important}
 }
 
 @media(max-width:720px){
-  .pos-workspace>.workspace-heading p{display:none}.pos-counters{overflow:auto;max-width:100%}
+  .pos-workspace>.workspace-heading p,.kds-workspace>.workspace-heading p{display:none}.pos-counters{overflow:auto;max-width:100%}
   .pos-main-panel{display:flex!important;flex-direction:column!important;min-height:0!important}
   .pos-create-order{display:grid!important;grid-template-columns:1fr 1fr!important}
   .pos-table-setup{order:1}.pos-products-scroll{order:2;height:46dvh!important;min-height:320px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}.active-order-card{order:3;height:auto!important;min-height:360px!important;border-inline-start:0!important;border-top:1px solid var(--dp-line)!important}
+  .kds-grid{grid-template-columns:1fr!important;padding:8px!important}.kds-ticket{border-radius:10px!important}
+  .reports-filter-bar{grid-template-columns:repeat(2,minmax(0,1fr))!important}.report-selector{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 
-@media(max-width:460px){.pos-products-scroll{grid-template-columns:repeat(2,minmax(0,1fr))!important}.pos-counters span:nth-child(3){display:none}}
+@media(max-width:460px){
+  .pos-products-scroll{grid-template-columns:repeat(2,minmax(0,1fr))!important}.pos-counters span:nth-child(3){display:none}
+  .reports-filter-bar,.report-selector{grid-template-columns:1fr!important}
+  .kds-workspace>.workspace-heading{align-items:flex-start!important}.kds-workspace .pos-counters{width:100%!important}
+}
