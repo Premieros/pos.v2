@@ -11,6 +11,7 @@ import './styles/payments.css'
 import './styles/final-ui.css'
 import './styles/design-parity.css'
 import './styles/design-parity-backoffice.css'
+import './styles/design-parity-operations.css'
 
 const root = document.getElementById('root')
 
