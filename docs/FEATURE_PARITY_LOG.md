@@ -66,7 +66,7 @@ Verified POS integration commit: `f9a651808f0dcb634ebe7dec524eca1508b76b88`
 - Verify #668 ✅
 - Release Guard #108 ✅
 
-### Pass 2.5 — Product modifiers ✅ BACKEND + POS + CATALOG IMPLEMENTED
+### Pass 2.5 — Product modifiers ✅ VERIFIED
 Live migrations on locked project:
 - `20260906071749_product_modifiers_foundation`
 - `20260906071813_harden_product_modifiers_insert_and_stock_idempotency`
@@ -114,22 +114,45 @@ Implementation checkpoints:
 - Modifier management service: `33883d896f452b007bc24447f0c24515641057d7`
 - Catalog modifier panel: `ae84afddf664d66ae34e9df988fd52d84bf3f006`
 - Catalog integration: `fa7492bc979e196954f00f927dd2b59c42feaa46`
-- Styling checkpoint: `8976a709896200440b05dccea69d0be8efac1034`
+- Verified styling/catalog code checkpoint: `8976a709896200440b05dccea69d0be8efac1034`
 
-Verification for the latest styling/catalog HEAD is running at the time of this log entry; Build already passed. Do not mark this pass verified until CI/Verify/Release Guard finish green.
+Verification on `8976a709...`:
+- Build ✅
+- Repository contract ✅
+- Frontend/Verify checks ✅
+- GitHub Pages deploy ✅
+- No failing check detected.
+
+Persistent DEMO modifier dataset added on branch `DEMO` without deleting prior data:
+- Required group `DEMO-BURGER-STYLE`: متوسط / تسوية كاملة.
+- Optional group `DEMO-BURGER-EXTRAS`: جبنة إضافية +15 linked to DEMO cheese inventory; لحم إضافي +35 linked to DEMO beef inventory.
+- Both groups assigned to `DEMO-BRG-01` / كلاسيك برجر.
+
+Transactional DEMO smoke test (rolled back, no temporary order persisted):
+1. Create Quick order with Classic Burger.
+2. Kitchen send without required style → correctly blocked ✅.
+3. Select `متوسط` + `جبنة إضافية`.
+4. Line price changed from 95.00 → 110.00 ✅.
+5. Order total became 110.00 ✅.
+6. Kitchen ticket created successfully ✅.
+7. Extra cheese stock delta recorded as `-1.000000` on the source order line ✅.
+8. Test transaction rolled back; permanent DEMO modifier configuration remains.
+
+Review note: initial smoke used the DEMO kitchen warehouse and correctly failed because that warehouse has zero cheese/beef. We did not fabricate stock to make the test pass. The successful smoke used the DEMO main warehouse where the actual inventory balances exist.
 
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
 - Search/F2/Clear + labeled order controls + active order cards + categories/filters + responsive fallbacks are independent from business authorization.
 - Modifier UI is isolated in `src/modules/modifiers/modifiers.css` and does not move permission/business rules into layout.
 
-## Current parallel execution
-1. Verify modifier POS/catalog integration on the latest HEAD.
-2. Add persistent DEMO modifier groups/options/product assignment only after the code pass is green.
-3. Run full add → customize → kitchen → KDS delta → return lineage test on retained DEMO data.
-4. Review product image/availability contract next; no fake UI fields.
-5. Refine checkout/payment workspace and split-tender UX over current server contracts.
-6. Continue Security + Performance Advisor review after every DDL batch.
+## Current parallel execution — NEXT GROUP
+1. Product Images + Availability contract review and implementation.
+2. POS product tiles: image/fallback/available/unavailable states and stock-aware disable behavior.
+3. Order + line notes contract/UI and KDS visibility review.
+4. Checkout workspace refinement: split tender + cash received/change + numeric keypad UX over server contracts.
+5. Active Orders / Floor / Tables operational UX refinement.
+6. Re-run cashier E2E against persistent DEMO after each accepted pass.
+7. Continue Security + Performance Advisor review after every DDL batch.
 
 ## Current 10-stage roadmap
 1. Design Parity ✅ implementation complete.
