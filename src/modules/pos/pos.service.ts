@@ -7,6 +7,8 @@ export type PosProduct = {
   id: string
   name_ar: string
   name_en: string | null
+  sku: string | null
+  barcode: string | null
   sale_price: number
   category_id: string | null
 }
@@ -75,7 +77,7 @@ export async function hasOwnOpenShift(branchId: string): Promise<boolean> {
 export async function listPosProducts(branchId: string): Promise<PosProduct[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name_ar, name_en, sale_price, category_id')
+    .select('id, name_ar, name_en, sku, barcode, sale_price, category_id')
     .eq('branch_id', branchId)
     .eq('is_active', true)
     .order('name_ar')
