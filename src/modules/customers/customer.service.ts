@@ -23,6 +23,16 @@ export type CustomerAddress = {
   is_active: boolean
 }
 
+export type OrderCustomerContext = {
+  customer_id: string | null
+  customer_name_snapshot: string | null
+  customer_phone_snapshot: string | null
+  delivery_address_id: string | null
+  delivery_address_snapshot: string | null
+  delivery_notes_snapshot: string | null
+  drive_thru_reference: string | null
+}
+
 export async function listCustomers(branchId: string): Promise<Customer[]> {
   const { data, error } = await supabase
     .from('customers')
@@ -44,6 +54,16 @@ export async function listCustomerAddresses(customerId: string): Promise<Custome
     .order('created_at')
   if (error) throw error
   return (data ?? []) as CustomerAddress[]
+}
+
+export async function getPosOrderCustomerContext(orderId: string): Promise<OrderCustomerContext> {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('customer_id, customer_name_snapshot, customer_phone_snapshot, delivery_address_id, delivery_address_snapshot, delivery_notes_snapshot, drive_thru_reference')
+    .eq('id', orderId)
+    .single()
+  if (error) throw error
+  return data as OrderCustomerContext
 }
 
 export async function createCustomer(input: { branchId: string; name: string; phone?: string; email?: string; notes?: string }): Promise<string> {
