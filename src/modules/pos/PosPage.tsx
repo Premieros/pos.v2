@@ -8,7 +8,9 @@ import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import { ReceiptControls } from '../receipts/ReceiptControls'
 import { SplitBillControls } from '../splits/SplitBillControls'
+import { OrderItemNotesControls, OrderNotesControls } from './OrderNotesControls'
 import { TableOrderControls } from './TableOrderControls'
+import { usePosAvailability } from './usePosAvailability'
 import {
   addPosOrderItem,
   cancelPosOrder,
@@ -61,6 +63,15 @@ const orderStatusLabels: Record<PosOrderStatus, string> = {
   merged: 'مدمج',
 }
 
+const availabilityReasonLabels: Record<string, string> = {
+  available: 'متاح',
+  out_of_stock: 'نفد المخزون',
+  insufficient_components: 'مكونات غير كافية',
+  inventory_mapping_required: 'غير مربوط بالمخزون',
+  warehouse_unavailable: 'المخزن غير متاح',
+  permission_denied: 'غير مصرح',
+}
+
 function normalized(value: string | null | undefined) {
   return (value ?? '').trim().toLocaleLowerCase()
 }
@@ -103,6 +114,7 @@ export function PosPage() {
   const canReprintReceipt = can('pos.receipt.reprint')
   const canManageTables = can('pos.tables.manage')
   const branchId = currentBranchId
+  const { byProductId: availabilityByProductId, loading: availabilityLoading, error: availabilityError, refresh: refreshAvailability } = usePosAvailability(branchId, selectedWarehouseId)
 
   const selectedOrder = useMemo(() => orders.find((order) => order.id === selectedOrderId) ?? null, [orders, selectedOrderId])
   const occupiedTableIds = useMemo(() => new Set(orders.filter((order) => order.dining_table_id).map((order) => order.dining_table_id as string)), [orders])
@@ -202,6 +214,7 @@ export function PosPage() {
       await refreshAll()
       await refreshItems(selectedOrderId)
       await refreshPayments()
+      await refreshAvailability()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تنفيذ العملية')
     }
@@ -211,6 +224,7 @@ export function PosPage() {
     await refreshAll()
     await refreshItems(selectedOrderId)
     await refreshPayments()
+    await refreshAvailability()
   }
 
   async function handleCreateOrder(form: HTMLFormElement) {
@@ -259,6 +273,11 @@ export function PosPage() {
 
   async function addSearchExactProduct() {
     if (!exactSearchProduct || !selectedOrder || !canEdit || !editable) return
+    const availability = availabilityByProductId.get(exactSearchProduct.id)
+    if (!availability?.is_available) {
+      setError(`المنتج غير متاح: ${availabilityReasonLabels[availability?.reason ?? ''] ?? 'تحقق من المخزون'}`)
+      return
+    }
     await runAction(() => addPosOrderItem(selectedOrder.id, exactSearchProduct.id, 1).then(() => undefined))
     setProductQuery('')
     productSearchRef.current?.focus()
@@ -361,6 +380,7 @@ export function PosPage() {
               </div>
 
               <CustomerOrderContextControls order={selectedOrder} canEdit={Boolean(canEdit && editable)} onChanged={refreshOrderState} />
+              <OrderNotesControls orderId={selectedOrder.id} value={selectedOrder.notes} editable={Boolean(canEdit && ['created', 'held'].includes(selectedOrder.status))} onChanged={refreshOrderState} />
 
               <div className="order-items-list">
                 {items.filter((item) => !item.is_removed).map((item) => (
@@ -384,6 +404,7 @@ export function PosPage() {
                       <strong>{item.line_total.toFixed(2)}</strong>
                       {canEdit && editable ? <button type="button" onClick={() => void runAction(() => removePosOrderItem(item.id))}>حذف</button> : null}
                     </div>
+                    <OrderItemNotesControls orderItemId={item.id} value={item.notes} editable={Boolean(canEdit && editable && item.sent_quantity === 0)} onChanged={refreshOrderState} />
                     <OrderItemModifierControls
                       branchId={activeBranchId}
                       orderItemId={item.id}
@@ -503,19 +524,30 @@ export function PosPage() {
               {categories.map((category) => <button key={category.id} type="button" className={selectedCategoryId === category.id ? 'active' : ''} onClick={() => setSelectedCategoryId(category.id)}>{category.name_ar} <span>{categoryCounts.get(category.id) ?? 0}</span></button>)}
             </div>
 
-            {visibleProducts.map((product) => (
-              <button
-                key={product.id}
-                type="button"
-                className="product-tile"
-                disabled={!selectedOrder || !canEdit || !editable}
-                onClick={() => selectedOrder && void runAction(() => addPosOrderItem(selectedOrder.id, product.id, 1).then(() => undefined))}
-              >
-                <strong>{product.name_ar}</strong>
-                <span>{product.sale_price.toFixed(2)}</span>
-                {product.sku ? <small>{product.sku}</small> : null}
-              </button>
-            ))}
+            {availabilityError ? <p className="error-text">{availabilityError}</p> : null}
+            {availabilityLoading ? <p className="muted-text">جارٍ تحديث توافر المنتجات…</p> : null}
+
+            {visibleProducts.map((product) => {
+              const availability = availabilityByProductId.get(product.id)
+              const available = availability?.is_available === true
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  className={`product-tile${available ? '' : ' product-unavailable'}`}
+                  disabled={!selectedOrder || !canEdit || !editable || !available}
+                  onClick={() => selectedOrder && void runAction(() => addPosOrderItem(selectedOrder.id, product.id, 1).then(() => undefined))}
+                >
+                  <span className="product-tile-media">{product.image_url ? <img src={product.image_url} alt="" loading="lazy" /> : <span>{product.name_ar.slice(0, 1)}</span>}</span>
+                  <strong>{product.name_ar}</strong>
+                  <span>{product.sale_price.toFixed(2)}</span>
+                  {product.sku ? <small>{product.sku}</small> : null}
+                  <small className={available ? 'product-stock-ok' : 'product-stock-blocked'}>
+                    {available ? `متاح · ${Math.floor(availability.available_quantity)}` : (availabilityReasonLabels[availability?.reason ?? ''] ?? 'غير متاح')}
+                  </small>
+                </button>
+              )
+            })}
             {!visibleProducts.length ? <p className="pos-products-empty">لا توجد منتجات مطابقة.</p> : null}
           </div>
         </div>
