@@ -209,6 +209,21 @@ Advisor gate after DDL:
 6. Recheck split bill + receipt + customer display interactions after Checkout replacement.
 7. Continue Security + Performance Advisor review after every DDL batch.
 
+## 2026-09-06 — MODEL HANDOFF CHECKPOINT
+Canonical continuation point for any second model:
+- Repository: `Premieros/pos.v2`
+- Branch: `development`
+- Supabase project ref: `scpovyrqmsbiduanykod`
+- Reference repo `Premieros/johna-s` remains READ ONLY.
+- Latest branch HEAD observed before handoff: `ea0015adfe47b9319aab0f435e7bf96d9c726281` (`docs: record media availability notes and checkout pass`).
+- Because another model may be working concurrently, the incoming model MUST re-read the current `development` HEAD before every write and must not overwrite or revert commits it did not author.
+- Phase 1 Design Parity is closed.
+- Phase 2 Passes 2.1–2.6 are implemented; Pass 2.6 is verified at code checkpoint `6cde7679b37641aea8d0963496eef8f4e02ffe25` with CI #346 / Verify #750 / Release Guard #190 green.
+- Persistent DEMO data must remain; do not delete it.
+- `main` must not be touched without explicit user approval.
+- Next work begins from the `Current parallel execution — NEXT GROUP` section above.
+- Update this log after each accepted pass and record exact commit + verification runs.
+
 ## Current 10-stage roadmap
 1. Design Parity ✅ implementation complete.
 2. POS Functional Completion 🔵 in progress.
