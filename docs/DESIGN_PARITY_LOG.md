@@ -75,26 +75,35 @@ Reference: `Premieros/johna-s` — READ ONLY
 - Added compact shared controls for Admin, Accounting and Printing surfaces without changing their business actions.
 - Common operational headings/forms/tables now follow the same density system as Reports and Procurement.
 
-### Current implementation checkpoint
+## 2026-09-06 — Parallel execution pass C
+
+### Shifts / Drawer
+- Added a dedicated operations parity layer for the shift workspace.
+- Shift open, cash movement and close forms now use the compact operational card language.
+- Offline-close queue was reorganized visually into concise warning/status rows with clear retry/print actions.
+- Shift history remains table-first with desktop scroll containment and mobile fallback.
+- Online/offline semantics, local queue behavior and idempotent close contract were not changed.
+
+### Current implementation checkpoints
 - Parallel visual core: `d2d56dde2e99af7619b625576a28a76ee50af03a`
 - Catalog productization: `6347af6fa5222353387bd095d490efc85a0502a1`
 - Back-office parity layer enabled: `43f9bde912a2329bcf49ec005f955e9fc8af3ad2`
 - Grouped navigation + styling checkpoint: `0742a380a72defb2f95d31fb08e89804c4cb0f5a`
+- Shifts/Operations parity layer enabled: `11d262d00b71bc344cca79ba8800b0acc26bfd3d`
 
 No DDL, Supabase mutation or reference-project write occurred in these design passes.
 
 ### Phase 1 status
 - 1.1 Design inventory: IN PROGRESS
 - 1.2 Global App Shell: IN PROGRESS — density + grouped navigation implemented; final acceptance sweep remains
-- 1.3 Global Design System: IN PROGRESS — shell/POS/KDS/reports/catalog/inventory/procurement/common admin surfaces covered
+- 1.3 Global Design System: IN PROGRESS — shell/POS/KDS/reports/catalog/inventory/procurement/shifts/common admin surfaces covered
 - 1.4 POS visual clone: IN PROGRESS — primary desktop/tablet/mobile composition implemented; visual acceptance still required
-- 1.5 KDS / Operations visual parity: IN PROGRESS — KDS primary composition implemented; shifts/operations finishing pass remains
+- 1.5 KDS / Operations visual parity: MOSTLY COMPLETE — KDS + Shifts primary layouts implemented; acceptance sweep remains
 - 1.6 Back-office visual parity: IN PROGRESS — Catalog/Inventory/Procurement/Reports covered; Accounting/Admin/Printing finishing audit remains
 - 1.7 Design acceptance gate: PENDING
 
 ## Next parallel execution
 1. Verify current HEAD and repair any CI/Typecheck/Build regression immediately.
-2. Finish Shifts/Operations visual pass.
-3. Audit Accounting/Admin/Printing module-specific compositions and patch remaining inconsistencies.
-4. Run desktop/tablet/mobile + RTL/LTR acceptance sweep.
-5. Mark Phase 1 complete only after the acceptance gate is green; then begin Phase 2 functional POS completion.
+2. Audit Accounting/Admin/Printing module-specific compositions and patch remaining inconsistencies.
+3. Run desktop/tablet/mobile + RTL/LTR acceptance sweep.
+4. Mark Phase 1 complete only after the acceptance gate is green; then begin Phase 2 functional POS completion.
