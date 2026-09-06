@@ -32,6 +32,7 @@ for (const path of [
   'scripts/verify-batch7.mjs',
   'scripts/verify-batch8.mjs',
   'scripts/verify-batch9.mjs',
+  'scripts/verify-batch10.mjs',
   'supabase/migrations/20260905201332_administration_workspace_contract.sql',
   'supabase/migrations/20260905201828_harden_administration_public_wrappers.sql',
   'supabase/migrations/20260905202048_guided_initial_setup_state.sql',
@@ -39,7 +40,7 @@ for (const path of [
 ]) read(path)
 
 const packageJson = JSON.parse(read('package.json'))
-for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9']) {
+for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9', 'test:batch10']) {
   if (!packageJson.scripts?.[script]) throw new Error(`Missing regression script: ${script}`)
 }
 
