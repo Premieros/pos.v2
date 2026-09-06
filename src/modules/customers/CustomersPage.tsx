@@ -68,7 +68,7 @@ export function CustomersPage() {
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!mayCreate) return
+    if (!mayCreate || !branchId) return
     const formElement = event.currentTarget
     const form = new FormData(formElement)
     setError(null)
