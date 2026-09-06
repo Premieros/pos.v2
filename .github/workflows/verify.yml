@@ -40,6 +40,8 @@ jobs:
         run: npm run test:batch10
       - name: Batch 11 product media storage regression
         run: npm run test:batch11
+      - name: Batch 12 authenticated harness regression
+        run: npm run test:batch12
       - name: Typecheck
         run: npm run typecheck
       - name: Build
