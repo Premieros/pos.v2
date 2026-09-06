@@ -14,6 +14,7 @@ import './customers.css'
 
 export function CustomersPage() {
   const { currentBranchId } = useBranch()
+  const branchId = currentBranchId
   const { can } = usePermissions()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [addresses, setAddresses] = useState<CustomerAddress[]>([])
@@ -34,11 +35,11 @@ export function CustomersPage() {
   }), [customers, normalizedQuery])
 
   async function refreshCustomers() {
-    if (!currentBranchId || !mayView) return
+    if (!branchId || !mayView) return
     setLoading(true)
     setError(null)
     try {
-      const next = await listCustomers(currentBranchId, includeInactive)
+      const next = await listCustomers(branchId, includeInactive)
       setCustomers(next)
       setSelectedId((current) => current && next.some((customer) => customer.id === current) ? current : next[0]?.id ?? null)
     } catch (cause) {
@@ -60,25 +61,26 @@ export function CustomersPage() {
     }
   }
 
-  useEffect(() => { void refreshCustomers() }, [currentBranchId, mayView, includeInactive])
+  useEffect(() => { void refreshCustomers() }, [branchId, mayView, includeInactive])
   useEffect(() => { void refreshAddresses(selectedId) }, [selectedId])
 
-  if (!mayView || !currentBranchId) return null
+  if (!mayView || !branchId) return null
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!mayCreate) return
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     setError(null)
     try {
       const id = await createCustomer({
-        branchId: currentBranchId,
+        branchId,
         name: String(form.get('name') ?? ''),
         phone: String(form.get('phone') ?? ''),
         email: String(form.get('email') ?? ''),
         notes: String(form.get('notes') ?? ''),
       })
-      event.currentTarget.reset()
+      formElement.reset()
       await refreshCustomers()
       setSelectedId(id)
     } catch (cause) {
@@ -109,7 +111,8 @@ export function CustomersPage() {
   async function handleAddress(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected || !mayCreate) return
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     setError(null)
     try {
       await createCustomerAddress({
@@ -121,7 +124,7 @@ export function CustomersPage() {
         deliveryNotes: String(form.get('deliveryNotes') ?? ''),
         isDefault: form.get('isDefault') === 'on',
       })
-      event.currentTarget.reset()
+      formElement.reset()
       await refreshAddresses(selected.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر إضافة العنوان')
