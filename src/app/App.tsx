@@ -27,7 +27,17 @@ import { InitialSetupPage } from '../modules/setup/InitialSetupPage'
 import { ShiftsPage } from '../modules/shifts/ShiftsPage'
 import { useShellPreferences } from '../modules/shell/useShellPreferences'
 
-type NavItem = { href: string; icon: string; ar: string; en: string; visible: boolean }
+type NavGroupKey = 'home' | 'sales' | 'operations' | 'inventory' | 'finance' | 'system'
+type NavItem = { href: string; icon: string; ar: string; en: string; visible: boolean; group: NavGroupKey }
+
+const navGroups: Array<{ key: NavGroupKey; ar: string; en: string }> = [
+  { key: 'home', ar: 'الرئيسية', en: 'Home' },
+  { key: 'sales', ar: 'البيع', en: 'Sales' },
+  { key: 'operations', ar: 'التشغيل', en: 'Operations' },
+  { key: 'inventory', ar: 'المخزون والمشتريات', en: 'Inventory & Procurement' },
+  { key: 'finance', ar: 'المالية والتقارير', en: 'Finance & Reports' },
+  { key: 'system', ar: 'النظام', en: 'System' },
+]
 
 export function App() {
   const { user, loading: authLoading } = useAuth()
@@ -77,27 +87,27 @@ export function App() {
   const showAdmin = can('settings.manage') || can('branches.view') || can('branches.manage') || can('branches.update') || can('users.view') || can('users.manage') || can('users.permissions.manage') || can('roles.view') || can('roles.manage') || can('roles.assign') || can('inventory.setup')
 
   const navItems: NavItem[] = [
-    { href: '#overview', icon: '⌂', ar: 'الرئيسية', en: 'Overview', visible: true },
-    { href: '#pos-section', icon: '▣', ar: 'شاشة البيع', en: 'POS', visible: showPos },
-    { href: '#returns-section', icon: '↩', ar: 'المرتجعات', en: 'Returns', visible: showReturns },
-    { href: '#kds-section', icon: '⌁', ar: 'المطبخ KDS', en: 'Kitchen KDS', visible: showKitchen },
-    { href: '#catalog-section', icon: '◇', ar: 'المنتجات والتصنيفات', en: 'Catalog', visible: showCatalog },
-    { href: '#inventory-section', icon: '▦', ar: 'المخزون والمخازن', en: 'Inventory', visible: showInventory },
-    { href: '#waste-section', icon: '△', ar: 'مركز الهالك', en: 'Waste', visible: showWaste },
-    { href: '#count-section', icon: '✓', ar: 'جلسات الجرد', en: 'Stock Counts', visible: showCounts },
-    { href: '#approvals-section', icon: '◎', ar: 'مركز الموافقات', en: 'Approvals', visible: showApprovals },
-    { href: '#suppliers-section', icon: '♢', ar: 'الموردون', en: 'Suppliers', visible: showSuppliers },
-    { href: '#purchases-section', icon: '＋', ar: 'أوامر الشراء', en: 'Purchases', visible: showPurchases },
-    { href: '#reports-section', icon: '≡', ar: 'التقارير', en: 'Reports', visible: showReports },
-    { href: '#printing-section', icon: '▤', ar: 'مركز الطباعة', en: 'Printing', visible: showPrinting },
-    { href: '#admin-section', icon: '⚙', ar: 'الإدارة والإعدادات', en: 'Administration', visible: showAdmin },
-    { href: '#accounting-section', icon: '∑', ar: 'دليل الحسابات', en: 'Chart of Accounts', visible: showAccounting },
-    { href: '#journals-section', icon: '≣', ar: 'القيود اليومية', en: 'Journals', visible: showJournals },
-    { href: '#expenses-section', icon: '−', ar: 'المصروفات', en: 'Expenses', visible: showExpenses },
-    { href: '#treasury-section', icon: '□', ar: 'الخزينة والبنوك', en: 'Treasury', visible: showTreasury },
-    { href: '#posting-section', icon: '⇄', ar: 'ربط المحاسبة', en: 'Posting Center', visible: showPosting },
-    { href: '#statements-section', icon: '▥', ar: 'القوائم المالية', en: 'Statements', visible: showStatements },
-    { href: '#shifts-section', icon: '◷', ar: 'الورديات والدرج', en: 'Shifts & Drawer', visible: showShifts },
+    { href: '#overview', icon: '⌂', ar: 'الرئيسية', en: 'Overview', visible: true, group: 'home' },
+    { href: '#pos-section', icon: '▣', ar: 'شاشة البيع', en: 'POS', visible: showPos, group: 'sales' },
+    { href: '#returns-section', icon: '↩', ar: 'المرتجعات', en: 'Returns', visible: showReturns, group: 'sales' },
+    { href: '#kds-section', icon: '⌁', ar: 'المطبخ KDS', en: 'Kitchen KDS', visible: showKitchen, group: 'operations' },
+    { href: '#shifts-section', icon: '◷', ar: 'الورديات والدرج', en: 'Shifts & Drawer', visible: showShifts, group: 'operations' },
+    { href: '#approvals-section', icon: '◎', ar: 'مركز الموافقات', en: 'Approvals', visible: showApprovals, group: 'operations' },
+    { href: '#catalog-section', icon: '◇', ar: 'المنتجات والتصنيفات', en: 'Catalog', visible: showCatalog, group: 'inventory' },
+    { href: '#inventory-section', icon: '▦', ar: 'المخزون والمخازن', en: 'Inventory', visible: showInventory, group: 'inventory' },
+    { href: '#waste-section', icon: '△', ar: 'مركز الهالك', en: 'Waste', visible: showWaste, group: 'inventory' },
+    { href: '#count-section', icon: '✓', ar: 'جلسات الجرد', en: 'Stock Counts', visible: showCounts, group: 'inventory' },
+    { href: '#suppliers-section', icon: '♢', ar: 'الموردون', en: 'Suppliers', visible: showSuppliers, group: 'inventory' },
+    { href: '#purchases-section', icon: '＋', ar: 'أوامر الشراء', en: 'Purchases', visible: showPurchases, group: 'inventory' },
+    { href: '#reports-section', icon: '≡', ar: 'التقارير', en: 'Reports', visible: showReports, group: 'finance' },
+    { href: '#accounting-section', icon: '∑', ar: 'دليل الحسابات', en: 'Chart of Accounts', visible: showAccounting, group: 'finance' },
+    { href: '#journals-section', icon: '≣', ar: 'القيود اليومية', en: 'Journals', visible: showJournals, group: 'finance' },
+    { href: '#expenses-section', icon: '−', ar: 'المصروفات', en: 'Expenses', visible: showExpenses, group: 'finance' },
+    { href: '#treasury-section', icon: '□', ar: 'الخزينة والبنوك', en: 'Treasury', visible: showTreasury, group: 'finance' },
+    { href: '#posting-section', icon: '⇄', ar: 'ربط المحاسبة', en: 'Posting Center', visible: showPosting, group: 'finance' },
+    { href: '#statements-section', icon: '▥', ar: 'القوائم المالية', en: 'Statements', visible: showStatements, group: 'finance' },
+    { href: '#printing-section', icon: '▤', ar: 'مركز الطباعة', en: 'Printing', visible: showPrinting, group: 'system' },
+    { href: '#admin-section', icon: '⚙', ar: 'الإدارة والإعدادات', en: 'Administration', visible: showAdmin, group: 'system' },
   ]
 
   const visibleNavItems = navItems.filter((item) => item.visible)
@@ -152,19 +162,28 @@ export function App() {
         </div>
 
         <nav className="sidebar-nav">
-          {visibleNavItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={currentHref === item.href ? 'active' : undefined}
-              aria-current={currentHref === item.href ? 'page' : undefined}
-              title={isArabic ? item.ar : item.en}
-              onClick={(event) => { event.preventDefault(); navigate(item.href) }}
-            >
-              <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
-              <span className="sidebar-nav-label">{isArabic ? item.ar : item.en}</span>
-            </a>
-          ))}
+          {navGroups.map((group) => {
+            const groupItems = visibleNavItems.filter((item) => item.group === group.key)
+            if (!groupItems.length) return null
+            return (
+              <div className="sidebar-nav-group" key={group.key}>
+                <div className="sidebar-nav-group-label">{isArabic ? group.ar : group.en}</div>
+                {groupItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={currentHref === item.href ? 'active' : undefined}
+                    aria-current={currentHref === item.href ? 'page' : undefined}
+                    title={isArabic ? item.ar : item.en}
+                    onClick={(event) => { event.preventDefault(); navigate(item.href) }}
+                  >
+                    <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
+                    <span className="sidebar-nav-label">{isArabic ? item.ar : item.en}</span>
+                  </a>
+                ))}
+              </div>
+            )
+          })}
         </nav>
 
         <div className="sidebar-controls">
