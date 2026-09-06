@@ -194,20 +194,63 @@ Advisor gate after DDL:
 - Security: no new finding; only existing external Auth warning `Leaked Password Protection Disabled`.
 - Performance: expected unused-index INFO only; no new warning/error was introduced.
 
+### Pass 2.7 — Active Orders + Floor/Tables + Keyboard/Touch/Scanner polish ✅ VERIFIED
+No DDL and no new mutation path in this pass.
+
+Delivered:
+- Active Orders converted into an operational panel with Orders/Tables modes while preserving branch-scoped reads and fine-grained POS permissions.
+- Orders remain filterable by type/status and now show clearer status badges, guest count and totals.
+- Floor/Tables workspace groups tables by floor/area and shows available/occupied state, capacity, active order and guest count.
+- Clicking an occupied table opens its existing order; clicking an available table only preselects Dine-in/table when `pos.order.create` is allowed and a shift is open.
+- Existing `TableOrderControls` remains the authoritative transfer/merge operational control; no parallel table mutation was created.
+- Keyboard workflow: F2 search/scanner focus, F3 Orders/Tables switch, Escape clears search, Alt+Up/Down cycles visible active orders.
+- Barcode/SKU exact-match Enter continues using `add_pos_order_item`; availability and edit permission guards are unchanged.
+- Touch affordances and responsive table/order cards are isolated in `src/styles/pos-operations.css`.
+
+Implementation checkpoint: `3cf469593141d4828294720b1ff6d98ae0992efd`
+- CI #350 ✅
+- Verify #757 ✅
+- Release Guard #198 ✅
+- Typecheck/Build ✅
+
+### Pass 2.8 — Checkout interaction regression guard ✅ VERIFIED
+Repository regression coverage was extended without weakening existing tests.
+
+Delivered:
+- Added `scripts/verify-batch10.mjs` and wired it into Verify + release candidate guards.
+- Guards all five POS order-type UI contracts (`dine_in`, `take_away`, `drive_thru`, `delivery`, `quick`).
+- Guards Permission-First POS markers for view/create/edit/payment/split/receipt/table management.
+- Guards that Checkout cannot collect through the normal path when bill splits exist, preventing duplicate collection paths after Checkout replacement.
+- Guards Split Bill mutations remain RPC-based and idempotent rather than direct protected writes.
+- Guards receipt first-print/reprint remain server RPC/idempotency contracts.
+- Guards Customer Display remains read-only through `get_customer_display_projection` and continues showing paid/remaining totals.
+- Batch 10, Typecheck and Build all passed in GitHub Verify.
+
+Regression checkpoint: `1a6d86e7ce4aa1b8ab47f1e02f076914215b03d9`
+- CI #351 ✅
+- Verify #760 ✅
+- Release Guard #200 ✅
+- Batch 10 ✅
+- Typecheck/Build ✅
+
+E2E boundary noted during this pass:
+- Persistent DEMO branch, warehouses, products, tables and open shift were read and left intact.
+- The available database execution tool does not permit impersonating an authenticated cashier via role/JWT claim switching.
+- A postgres-owner smoke would bypass the exact Permission-First/RLS path being tested, so it is **not** accepted or recorded as the requested full cashier E2E.
+- Full five-order-type **authenticated** cashier E2E therefore remains open and must be run with a real authenticated-session harness/browser; no DEMO data was deleted.
+
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
+- `src/styles/pos-operations.css` adds the operational orders/tables/touch layer without moving business authorization into layout.
 - Search/F2/Clear + labeled order controls + active order cards + categories/filters + responsive fallbacks are independent from business authorization.
 - Modifier UI is isolated in `src/modules/modifiers/modifiers.css` and does not move permission/business rules into layout.
 - Checkout uses `src/styles/payments.css` and the existing payment service rather than duplicating payment business logic.
 
 ## Current parallel execution — NEXT GROUP
-1. Active Orders operational drawer/panel refinement.
-2. Floor / Tables workspace refinement: occupancy, guests, transfer/merge discoverability.
-3. Product media storage/upload productization decision; current URL-backed media remains valid.
-4. POS keyboard/touch workflow and scanner polish.
-5. Full five-order-type cashier E2E on persistent DEMO, including Delivery + Drive Thru prerequisites.
-6. Recheck split bill + receipt + customer display interactions after Checkout replacement.
-7. Continue Security + Performance Advisor review after every DDL batch.
+1. Full five-order-type authenticated cashier E2E on persistent DEMO, including Delivery + Drive Thru prerequisites — OPEN.
+2. Product media storage/upload productization decision; current URL-backed media remains valid.
+3. Runtime/table transfer-merge discoverability E2E in a real authenticated session.
+4. Continue Security + Performance Advisor review after every DDL batch.
 
 ## 2026-09-06 — MODEL HANDOFF CHECKPOINT
 Canonical continuation point for any second model:
