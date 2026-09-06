@@ -66,7 +66,7 @@ export function KdsPage() {
         <div>
           <p className="eyebrow">KITCHEN DISPLAY</p>
           <h2 id="kds-title">شاشة المطبخ</h2>
-          <p>كل تذكرة تمثل Delta مستقلًا وصل للمطبخ، مع الإضافات والملاحظات الخاصة بالسطر.</p>
+          <p>كل تذكرة تمثل Delta مستقلًا وصل للمطبخ، مع الإضافات وملاحظات الطلب والسطر.</p>
         </div>
         <div className="pos-counters">
           <span>انتظار: {counters.queued}</span>
@@ -88,6 +88,8 @@ export function KdsPage() {
               </div>
               <span>{statusLabel[ticket.status]}</span>
             </div>
+
+            {ticket.order_notes ? <div className="kds-order-note"><strong>ملاحظة الطلب:</strong> {ticket.order_notes}</div> : null}
 
             <div className="kds-ticket-items">
               {ticket.items.map((item) => (
