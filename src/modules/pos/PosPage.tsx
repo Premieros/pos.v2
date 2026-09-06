@@ -18,6 +18,7 @@ import {
   listActiveOrders,
   listDiningTables,
   listOrderItems,
+  listPosCategories,
   listPosProducts,
   listPosWarehouses,
   removePosOrderItem,
@@ -26,8 +27,10 @@ import {
   setPosOrderItemQuantity,
   voidPosOrder,
   type DiningTable,
+  type PosCategory,
   type PosOrder,
   type PosOrderItem,
+  type PosOrderStatus,
   type PosOrderType,
   type PosProduct,
   type PosWarehouse,
@@ -41,7 +44,7 @@ const orderTypeLabels: Record<PosOrderType, string> = {
   quick: 'طلب سريع',
 }
 
-const orderStatusLabels: Record<PosOrder['status'], string> = {
+const orderStatusLabels: Record<PosOrderStatus, string> = {
   created: 'جديد',
   held: 'معلّق',
   sent_to_kitchen: 'أرسل للمطبخ',
@@ -64,12 +67,17 @@ export function PosPage() {
   const { currentBranchId } = useBranch()
   const { can } = usePermissions()
   const [products, setProducts] = useState<PosProduct[]>([])
+  const [categories, setCategories] = useState<PosCategory[]>([])
   const [productQuery, setProductQuery] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const productSearchRef = useRef<HTMLInputElement | null>(null)
   const [warehouses, setWarehouses] = useState<PosWarehouse[]>([])
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('')
   const [tables, setTables] = useState<DiningTable[]>([])
   const [orders, setOrders] = useState<PosOrder[]>([])
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | PosOrderType>('all')
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | PosOrderStatus>('all')
+  const [newOrderType, setNewOrderType] = useState<PosOrderType>('quick')
   const [items, setItems] = useState<PosOrderItem[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [hasBillSplits, setHasBillSplits] = useState(false)
@@ -100,13 +108,28 @@ export function PosPage() {
   const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
   const query = normalized(productQuery)
   const visibleProducts = useMemo(() => {
-    if (!query) return products
-    return products.filter((product) => [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query)))
-  }, [products, query])
+    return products.filter((product) => {
+      if (selectedCategoryId !== 'all' && product.category_id !== selectedCategoryId) return false
+      if (!query) return true
+      return [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query))
+    })
+  }, [products, query, selectedCategoryId])
   const exactSearchProduct = useMemo(() => {
     if (!query) return null
     return products.find((product) => normalized(product.sku) === query || normalized(product.barcode) === query) ?? null
   }, [products, query])
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const product of products) {
+      if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1)
+    }
+    return counts
+  }, [products])
+  const visibleOrders = useMemo(() => orders.filter((order) => {
+    if (orderTypeFilter !== 'all' && order.order_type !== orderTypeFilter) return false
+    if (orderStatusFilter !== 'all' && order.status !== orderStatusFilter) return false
+    return true
+  }), [orders, orderTypeFilter, orderStatusFilter])
 
   const { payments, paidAmount, remainingAmount, refreshPayments, takePayment, closePaidOrder } = usePayments(selectedOrder)
 
@@ -115,8 +138,9 @@ export function PosPage() {
     setLoading(true)
     setError(null)
     try {
-      const [nextProducts, nextWarehouses, nextTables, nextOrders, openShift, queueCount] = await Promise.all([
+      const [nextProducts, nextCategories, nextWarehouses, nextTables, nextOrders, openShift, queueCount] = await Promise.all([
         listPosProducts(branchId),
+        listPosCategories(branchId),
         listPosWarehouses(branchId),
         listDiningTables(branchId),
         listActiveOrders(branchId),
@@ -124,11 +148,13 @@ export function PosPage() {
         countKitchenQueue(branchId),
       ])
       setProducts(nextProducts)
+      setCategories(nextCategories)
       setWarehouses(nextWarehouses)
       setTables(nextTables)
       setOrders(nextOrders)
       setHasShift(openShift)
       setKitchenQueueCount(queueCount)
+      setSelectedCategoryId((current) => current === 'all' || nextCategories.some((category) => category.id === current) ? current : 'all')
       setSelectedWarehouseId((current) => nextWarehouses.some((warehouse) => warehouse.id === current) ? current : nextWarehouses[0]?.id ?? '')
       if (selectedOrderId && !nextOrders.some((order) => order.id === selectedOrderId)) setSelectedOrderId(null)
     } catch (cause) {
@@ -194,6 +220,7 @@ export function PosPage() {
       const id = await createPosOrder({ branchId: activeBranchId, orderType, diningTableId, guestCount })
       setSelectedOrderId(id)
       form.reset()
+      setNewOrderType('quick')
     })
   }
 
@@ -271,29 +298,39 @@ export function PosPage() {
       <div className="pos-layout">
         <aside className="pos-orders-panel">
           <h3>الطلبات الحالية</h3>
+          <div className="pos-order-filters">
+            <select aria-label="فلتر نوع الطلب" value={orderTypeFilter} onChange={(event) => setOrderTypeFilter(event.target.value as 'all' | PosOrderType)}>
+              <option value="all">كل الأنواع</option>
+              {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <select aria-label="فلتر حالة الطلب" value={orderStatusFilter} onChange={(event) => setOrderStatusFilter(event.target.value as 'all' | PosOrderStatus)}>
+              <option value="all">كل الحالات</option>
+              {(['created', 'held', 'sent_to_kitchen', 'preparing', 'ready', 'partially_paid', 'paid'] as PosOrderStatus[]).map((status) => <option key={status} value={status}>{orderStatusLabels[status]}</option>)}
+            </select>
+          </div>
           <div className="plain-list">
-            {orders.map((order) => (
+            {visibleOrders.map((order) => (
               <button key={order.id} type="button" className={selectedOrderId === order.id ? 'selected-row' : ''} onClick={() => setSelectedOrderId(order.id)}>
                 <strong>#{order.order_number}</strong>
                 <span>{orderTypeLabels[order.order_type]} · {orderStatusLabels[order.status]}</span>
                 <span>{order.total.toFixed(2)}</span>
               </button>
             ))}
-            {!orders.length ? <p>لا توجد طلبات مفتوحة.</p> : null}
+            {!visibleOrders.length ? <p>لا توجد طلبات مطابقة.</p> : null}
           </div>
         </aside>
 
         <div className="pos-main-panel">
           {canCreate ? (
             <form className="pos-create-order" onSubmit={(event) => { event.preventDefault(); void handleCreateOrder(event.currentTarget) }}>
-              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required defaultValue="quick">
+              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required value={newOrderType} onChange={(event) => setNewOrderType(event.target.value as PosOrderType)}>
                 {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select></label>
-              <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" defaultValue="">
-                <option value="">بدون طاولة</option>
+              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" defaultValue="" required>
+                <option value="" disabled>اختر طاولة</option>
                 {tables.map((table) => <option key={table.id} value={table.id} disabled={occupiedTableIds.has(table.id)}>{table.name} · {table.capacity} مقاعد{occupiedTableIds.has(table.id) ? ' · مشغولة' : ''}</option>)}
-              </select></label>
-              <label className="pos-order-field"><span>الضيوف</span><input name="guestCount" type="number" min="0" defaultValue="1" /></label>
+              </select></label> : <div className="pos-order-context-hint">لا يحتاج هذا النوع إلى طاولة</div>}
+              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الضيوف</span><input name="guestCount" type="number" min="1" defaultValue="1" /></label> : <input type="hidden" name="guestCount" value="1" />}
               <button type="submit" disabled={!hasShift}>طلب جديد</button>
             </form>
           ) : null}
@@ -445,6 +482,11 @@ export function PosPage() {
               </label>
               <kbd>F2</kbd>
               {productQuery ? <button type="button" onClick={() => { setProductQuery(''); productSearchRef.current?.focus() }}>مسح</button> : null}
+            </div>
+
+            <div className="pos-category-strip" role="group" aria-label="تصنيفات المنتجات">
+              <button type="button" className={selectedCategoryId === 'all' ? 'active' : ''} onClick={() => setSelectedCategoryId('all')}>الكل <span>{products.length}</span></button>
+              {categories.map((category) => <button key={category.id} type="button" className={selectedCategoryId === category.id ? 'active' : ''} onClick={() => setSelectedCategoryId(category.id)}>{category.name_ar} <span>{categoryCounts.get(category.id) ?? 0}</span></button>)}
             </div>
 
             {visibleProducts.map((product) => (
