@@ -11,6 +11,14 @@ export type PosProduct = {
   barcode: string | null
   sale_price: number
   category_id: string | null
+  image_url: string | null
+}
+
+export type PosProductAvailability = {
+  product_id: string
+  available_quantity: number
+  is_available: boolean
+  reason: 'available' | 'out_of_stock' | 'insufficient_components' | 'inventory_mapping_required' | 'warehouse_unavailable' | 'permission_denied' | string
 }
 
 export type PosCategory = {
@@ -84,12 +92,26 @@ export async function hasOwnOpenShift(branchId: string): Promise<boolean> {
 export async function listPosProducts(branchId: string): Promise<PosProduct[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name_ar, name_en, sku, barcode, sale_price, category_id')
+    .select('id, name_ar, name_en, sku, barcode, sale_price, category_id, image_url')
     .eq('branch_id', branchId)
     .eq('is_active', true)
     .order('name_ar')
   if (error) throw error
-  return (data ?? []) as PosProduct[]
+  return (data ?? []).map((row) => ({ ...row, sale_price: Number(row.sale_price) })) as PosProduct[]
+}
+
+export async function listPosProductAvailability(branchId: string, warehouseId: string): Promise<PosProductAvailability[]> {
+  if (!warehouseId) return []
+  const { data, error } = await supabase.rpc('get_pos_product_availability', {
+    p_branch_id: branchId,
+    p_warehouse_id: warehouseId,
+  })
+  if (error) throw error
+  return (data ?? []).map((row) => ({
+    ...row,
+    available_quantity: Number(row.available_quantity),
+    is_available: Boolean(row.is_available),
+  })) as PosProductAvailability[]
 }
 
 export async function listPosCategories(branchId: string): Promise<PosCategory[]> {
@@ -141,7 +163,7 @@ export async function listActiveOrders(branchId: string): Promise<PosOrder[]> {
     .in('status', ['created', 'held', 'sent_to_kitchen', 'preparing', 'ready', 'partially_paid', 'paid'])
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as PosOrder[]
+  return (data ?? []).map((row) => ({ ...row, subtotal: Number(row.subtotal), discount_total: Number(row.discount_total), total: Number(row.total) })) as PosOrder[]
 }
 
 export async function listOrderItems(orderId: string): Promise<PosOrderItem[]> {
@@ -151,7 +173,7 @@ export async function listOrderItems(orderId: string): Promise<PosOrderItem[]> {
     .eq('order_id', orderId)
     .order('created_at')
   if (error) throw error
-  return (data ?? []) as PosOrderItem[]
+  return (data ?? []).map((row) => ({ ...row, unit_price: Number(row.unit_price), quantity: Number(row.quantity), sent_quantity: Number(row.sent_quantity), line_total: Number(row.line_total) })) as PosOrderItem[]
 }
 
 export async function createDiningTable(input: { branchId: string; code: string; name: string; capacity: number; floorName?: string }): Promise<string> {
