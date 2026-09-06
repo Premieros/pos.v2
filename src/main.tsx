@@ -14,6 +14,7 @@ import './styles/design-parity-backoffice.css'
 import './styles/design-parity-operations.css'
 import './styles/design-parity-controls.css'
 import './styles/pos-phase2.css'
+import './styles/pos-operations.css'
 
 const root = document.getElementById('root')
 

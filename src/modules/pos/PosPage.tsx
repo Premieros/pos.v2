@@ -77,6 +77,10 @@ function normalized(value: string | null | undefined) {
   return (value ?? '').trim().toLocaleLowerCase()
 }
 
+function isTypingTarget(target: EventTarget | null) {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
+}
+
 export function PosPage() {
   const { currentBranchId } = useBranch()
   const { can } = usePermissions()
@@ -92,6 +96,9 @@ export function PosPage() {
   const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | PosOrderType>('all')
   const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | PosOrderStatus>('all')
   const [newOrderType, setNewOrderType] = useState<PosOrderType>('quick')
+  const [selectedNewTableId, setSelectedNewTableId] = useState('')
+  const [operationalView, setOperationalView] = useState<'orders' | 'tables'>('orders')
+  const [selectedFloor, setSelectedFloor] = useState('all')
   const [items, setItems] = useState<PosOrderItem[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [hasBillSplits, setHasBillSplits] = useState(false)
@@ -118,26 +125,29 @@ export function PosPage() {
   const { byProductId: availabilityByProductId, loading: availabilityLoading, error: availabilityError, refresh: refreshAvailability } = usePosAvailability(branchId, selectedWarehouseId)
 
   const selectedOrder = useMemo(() => orders.find((order) => order.id === selectedOrderId) ?? null, [orders, selectedOrderId])
-  const occupiedTableIds = useMemo(() => new Set(orders.filter((order) => order.dining_table_id).map((order) => order.dining_table_id as string)), [orders])
+  const tableOrderByTableId = useMemo(() => {
+    const map = new Map<string, PosOrder>()
+    for (const order of orders) if (order.dining_table_id) map.set(order.dining_table_id, order)
+    return map
+  }, [orders])
+  const occupiedTableIds = useMemo(() => new Set(tableOrderByTableId.keys()), [tableOrderByTableId])
+  const floorNames = useMemo(() => Array.from(new Set(tables.map((table) => table.floor_name?.trim() || 'بدون منطقة'))).sort(), [tables])
+  const visibleTables = useMemo(() => tables.filter((table) => selectedFloor === 'all' || (table.floor_name?.trim() || 'بدون منطقة') === selectedFloor), [tables, selectedFloor])
   const hasKitchenDelta = useMemo(() => items.some((item) => (item.is_removed ? 0 : item.quantity) !== item.sent_quantity), [items])
   const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
   const query = normalized(productQuery)
-  const visibleProducts = useMemo(() => {
-    return products.filter((product) => {
-      if (selectedCategoryId !== 'all' && product.category_id !== selectedCategoryId) return false
-      if (!query) return true
-      return [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query))
-    })
-  }, [products, query, selectedCategoryId])
+  const visibleProducts = useMemo(() => products.filter((product) => {
+    if (selectedCategoryId !== 'all' && product.category_id !== selectedCategoryId) return false
+    if (!query) return true
+    return [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query))
+  }), [products, query, selectedCategoryId])
   const exactSearchProduct = useMemo(() => {
     if (!query) return null
     return products.find((product) => normalized(product.sku) === query || normalized(product.barcode) === query) ?? null
   }, [products, query])
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const product of products) {
-      if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1)
-    }
+    for (const product of products) if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1)
     return counts
   }, [products])
   const visibleOrders = useMemo(() => orders.filter((order) => {
@@ -171,6 +181,8 @@ export function PosPage() {
       setKitchenQueueCount(queueCount)
       setSelectedCategoryId((current) => current === 'all' || nextCategories.some((category) => category.id === current) ? current : 'all')
       setSelectedWarehouseId((current) => nextWarehouses.some((warehouse) => warehouse.id === current) ? current : nextWarehouses[0]?.id ?? '')
+      setSelectedFloor((current) => current === 'all' || nextTables.some((table) => (table.floor_name?.trim() || 'بدون منطقة') === current) ? current : 'all')
+      setSelectedNewTableId((current) => nextTables.some((table) => table.id === current && !nextOrders.some((order) => order.dining_table_id === table.id)) ? current : '')
       if (selectedOrderId && !nextOrders.some((order) => order.id === selectedOrderId)) setSelectedOrderId(null)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'تعذر تحميل شاشة البيع')
@@ -196,14 +208,34 @@ export function PosPage() {
   useEffect(() => { setHasBillSplits(false) }, [selectedOrderId])
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'F2') return
-      event.preventDefault()
-      productSearchRef.current?.focus()
-      productSearchRef.current?.select()
+      if (event.key === 'F2') {
+        event.preventDefault()
+        productSearchRef.current?.focus()
+        productSearchRef.current?.select()
+        return
+      }
+      if (event.key === 'F3' && !isTypingTarget(event.target)) {
+        event.preventDefault()
+        setOperationalView((current) => current === 'orders' ? 'tables' : 'orders')
+        return
+      }
+      if (event.key === 'Escape' && productQuery) {
+        event.preventDefault()
+        setProductQuery('')
+        productSearchRef.current?.focus()
+        return
+      }
+      if (event.altKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp') && visibleOrders.length && !isTypingTarget(event.target)) {
+        event.preventDefault()
+        const index = visibleOrders.findIndex((order) => order.id === selectedOrderId)
+        const direction = event.key === 'ArrowDown' ? 1 : -1
+        const nextIndex = index < 0 ? 0 : (index + direction + visibleOrders.length) % visibleOrders.length
+        setSelectedOrderId(visibleOrders[nextIndex].id)
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [productQuery, selectedOrderId, visibleOrders])
 
   if (!branchId || !canView) return null
   const activeBranchId = branchId
@@ -238,6 +270,8 @@ export function PosPage() {
       setSelectedOrderId(id)
       form.reset()
       setNewOrderType('quick')
+      setSelectedNewTableId('')
+      setOperationalView('orders')
     })
   }
 
@@ -289,6 +323,14 @@ export function PosPage() {
         </div>
       </div>
 
+      <div className="pos-shortcut-bar" aria-label="اختصارات شاشة البيع">
+        <span><kbd>F2</kbd> بحث/باركود</span>
+        <span><kbd>Enter</kbd> إضافة تطابق كامل</span>
+        <span><kbd>F3</kbd> طلبات/طاولات</span>
+        <span><kbd>Alt</kbd> + <kbd>↑/↓</kbd> تنقل الطلبات</span>
+        <span><kbd>Esc</kbd> مسح البحث</span>
+      </div>
+
       {error ? <p className="error-text">{error}</p> : null}
       {loading ? <p>جارٍ تحميل شاشة البيع…</p> : null}
 
@@ -307,37 +349,79 @@ export function PosPage() {
       ) : null}
 
       <div className="pos-layout">
-        <aside className="pos-orders-panel">
-          <h3>الطلبات الحالية</h3>
-          <div className="pos-order-filters">
-            <select aria-label="فلتر نوع الطلب" value={orderTypeFilter} onChange={(event) => setOrderTypeFilter(event.target.value as 'all' | PosOrderType)}>
-              <option value="all">كل الأنواع</option>
-              {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-            <select aria-label="فلتر حالة الطلب" value={orderStatusFilter} onChange={(event) => setOrderStatusFilter(event.target.value as 'all' | PosOrderStatus)}>
-              <option value="all">كل الحالات</option>
-              {(['created', 'held', 'sent_to_kitchen', 'preparing', 'ready', 'partially_paid', 'paid'] as PosOrderStatus[]).map((status) => <option key={status} value={status}>{orderStatusLabels[status]}</option>)}
-            </select>
+        <aside className="pos-orders-panel pos-operational-panel">
+          <div className="pos-operational-tabs" role="tablist" aria-label="مساحة التشغيل">
+            <button type="button" role="tab" aria-selected={operationalView === 'orders'} className={operationalView === 'orders' ? 'active' : ''} onClick={() => setOperationalView('orders')}>الطلبات <span>{orders.length}</span></button>
+            <button type="button" role="tab" aria-selected={operationalView === 'tables'} className={operationalView === 'tables' ? 'active' : ''} onClick={() => setOperationalView('tables')}>الطاولات <span>{occupiedTableIds.size}/{tables.length}</span></button>
           </div>
-          <div className="plain-list">
-            {visibleOrders.map((order) => (
-              <button key={order.id} type="button" className={selectedOrderId === order.id ? 'selected-row' : ''} onClick={() => setSelectedOrderId(order.id)}>
-                <strong>#{order.order_number}</strong>
-                <span>{orderTypeLabels[order.order_type]} · {orderStatusLabels[order.status]}</span>
-                <span>{order.total.toFixed(2)}</span>
-              </button>
-            ))}
-            {!visibleOrders.length ? <p>لا توجد طلبات مطابقة.</p> : null}
-          </div>
+
+          {operationalView === 'orders' ? (
+            <>
+              <div className="pos-order-filters">
+                <select aria-label="فلتر نوع الطلب" value={orderTypeFilter} onChange={(event) => setOrderTypeFilter(event.target.value as 'all' | PosOrderType)}>
+                  <option value="all">كل الأنواع</option>
+                  {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+                <select aria-label="فلتر حالة الطلب" value={orderStatusFilter} onChange={(event) => setOrderStatusFilter(event.target.value as 'all' | PosOrderStatus)}>
+                  <option value="all">كل الحالات</option>
+                  {(['created', 'held', 'sent_to_kitchen', 'preparing', 'ready', 'partially_paid', 'paid'] as PosOrderStatus[]).map((status) => <option key={status} value={status}>{orderStatusLabels[status]}</option>)}
+                </select>
+              </div>
+              <div className="plain-list pos-active-orders-list">
+                {visibleOrders.map((order) => (
+                  <button key={order.id} type="button" className={selectedOrderId === order.id ? 'selected-row' : ''} onClick={() => setSelectedOrderId(order.id)}>
+                    <span className="pos-order-card-top"><strong>#{order.order_number}</strong><span className={`pos-status-dot status-${order.status}`}>{orderStatusLabels[order.status]}</span></span>
+                    <span>{orderTypeLabels[order.order_type]}{order.guest_count > 1 ? ` · ${order.guest_count} ضيوف` : ''}</span>
+                    <strong>{order.total.toFixed(2)}</strong>
+                  </button>
+                ))}
+                {!visibleOrders.length ? <p>لا توجد طلبات مطابقة.</p> : null}
+              </div>
+            </>
+          ) : (
+            <div className="pos-floor-workspace">
+              <div className="pos-floor-filter" role="group" aria-label="فلتر المنطقة">
+                <button type="button" className={selectedFloor === 'all' ? 'active' : ''} onClick={() => setSelectedFloor('all')}>الكل</button>
+                {floorNames.map((floor) => <button key={floor} type="button" className={selectedFloor === floor ? 'active' : ''} onClick={() => setSelectedFloor(floor)}>{floor}</button>)}
+              </div>
+              <div className="pos-table-grid">
+                {visibleTables.map((table) => {
+                  const order = tableOrderByTableId.get(table.id)
+                  const occupied = Boolean(order)
+                  return (
+                    <button
+                      key={table.id}
+                      type="button"
+                      className={`pos-table-tile ${occupied ? 'occupied' : 'available'}${selectedNewTableId === table.id ? ' selected' : ''}`}
+                      onClick={() => {
+                        if (order) {
+                          setSelectedOrderId(order.id)
+                          return
+                        }
+                        if (!canCreate || !hasShift) return
+                        setNewOrderType('dine_in')
+                        setSelectedNewTableId(table.id)
+                      }}
+                    >
+                      <span className="pos-table-tile-head"><strong>{table.name}</strong><span>{occupied ? 'مشغولة' : 'متاحة'}</span></span>
+                      <small>{table.floor_name?.trim() || 'بدون منطقة'} · {table.capacity} مقاعد</small>
+                      {order ? <span>طلب #{order.order_number} · {order.guest_count} ضيوف</span> : <span>اضغط لاختيارها لطلب صالة</span>}
+                    </button>
+                  )
+                })}
+                {!visibleTables.length ? <p>لا توجد طاولات في هذه المنطقة.</p> : null}
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className="pos-main-panel">
           {canCreate ? (
             <form className="pos-create-order" onSubmit={(event) => { event.preventDefault(); void handleCreateOrder(event.currentTarget) }}>
-              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required value={newOrderType} onChange={(event) => setNewOrderType(event.target.value as PosOrderType)}>
+              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required value={newOrderType} onChange={(event) => { const value = event.target.value as PosOrderType; setNewOrderType(value); if (value !== 'dine_in') setSelectedNewTableId('') }}>
                 {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select></label>
-              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" defaultValue="" required>
+              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" value={selectedNewTableId} onChange={(event) => setSelectedNewTableId(event.target.value)} required>
                 <option value="" disabled>اختر طاولة</option>
                 {tables.map((table) => <option key={table.id} value={table.id} disabled={occupiedTableIds.has(table.id)}>{table.name} · {table.capacity} مقاعد{occupiedTableIds.has(table.id) ? ' · مشغولة' : ''}</option>)}
               </select></label> : <div className="pos-order-context-hint">لا يحتاج هذا النوع إلى طاولة</div>}
@@ -486,6 +570,9 @@ export function PosPage() {
                   }}
                   placeholder="اسم المنتج / SKU / Barcode"
                   aria-label="بحث المنتجات بالاسم أو SKU أو Barcode"
+                  autoComplete="off"
+                  spellCheck={false}
+                  inputMode="search"
                 />
               </label>
               <kbd>F2</kbd>
