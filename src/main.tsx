@@ -10,6 +10,7 @@ import './styles/kitchen.css'
 import './styles/payments.css'
 import './styles/final-ui.css'
 import './styles/design-parity.css'
+import './styles/design-parity-backoffice.css'
 
 const root = document.getElementById('root')
 
