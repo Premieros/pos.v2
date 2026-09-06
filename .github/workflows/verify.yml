@@ -44,6 +44,8 @@ jobs:
         run: npm run test:batch12
       - name: Batch 13 customer workspace regression
         run: npm run test:batch13
+      - name: Batch 14 catalog management regression
+        run: npm run test:batch14
       - name: Typecheck
         run: npm run typecheck
       - name: Build
