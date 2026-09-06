@@ -11,6 +11,11 @@
 .kds-ticket-header { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
 .kds-ticket-items { display: grid; gap: 8px; }
 .kds-item-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f3f4f6; padding-block: 8px; }
+.kds-item-detailed { align-items: flex-start; }
+.kds-item-copy { min-width: 0; display: grid; gap: 4px; }
+.kds-item-copy small { line-height: 1.45; }
+.kds-modifier-summary { color: #1d4ed8; font-weight: 700; }
+.kds-line-note { color: #92400e; font-weight: 700; white-space: pre-wrap; }
 .kds-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .negative-delta { font-weight: 800; }
 .kds-queued { border-inline-start: 4px solid #9ca3af; }
