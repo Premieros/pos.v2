@@ -33,13 +33,14 @@ export type OrderCustomerContext = {
   drive_thru_reference: string | null
 }
 
-export async function listCustomers(branchId: string): Promise<Customer[]> {
-  const { data, error } = await supabase
+export async function listCustomers(branchId: string, includeInactive = false): Promise<Customer[]> {
+  let query = supabase
     .from('customers')
     .select('id, branch_id, name, phone, email, notes, is_active')
     .eq('branch_id', branchId)
-    .eq('is_active', true)
     .order('name')
+  if (!includeInactive) query = query.eq('is_active', true)
+  const { data, error } = await query
   if (error) throw error
   return (data ?? []) as Customer[]
 }
@@ -76,6 +77,25 @@ export async function createCustomer(input: { branchId: string; name: string; ph
   })
   if (error) throw error
   return data as string
+}
+
+export async function updateCustomer(input: {
+  customerId: string
+  name: string
+  phone?: string
+  email?: string
+  notes?: string
+  isActive: boolean
+}): Promise<void> {
+  const { error } = await supabase.rpc('update_customer', {
+    p_customer_id: input.customerId,
+    p_name: input.name.trim(),
+    p_phone: input.phone?.trim() || null,
+    p_email: input.email?.trim() || null,
+    p_notes: input.notes?.trim() || null,
+    p_is_active: input.isActive,
+  })
+  if (error) throw error
 }
 
 export async function createCustomerAddress(input: {
