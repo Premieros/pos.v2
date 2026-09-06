@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { updateProductImageUrl, type Product } from './catalog.service'
+import './product-media.css'
 
 export function ProductMediaPanel({ products, mayManage, onChanged }: { products: Product[]; mayManage: boolean; onChanged: () => Promise<void> | void }) {
   const [editingId, setEditingId] = useState<string | null>(null)
