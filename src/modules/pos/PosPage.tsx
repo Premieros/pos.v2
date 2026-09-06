@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { CustomerDisplayControls } from '../customer-display/CustomerDisplayControls'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
@@ -41,10 +41,31 @@ const orderTypeLabels: Record<PosOrderType, string> = {
   quick: 'طلب سريع',
 }
 
+const orderStatusLabels: Record<PosOrder['status'], string> = {
+  created: 'جديد',
+  held: 'معلّق',
+  sent_to_kitchen: 'أرسل للمطبخ',
+  preparing: 'قيد التحضير',
+  ready: 'جاهز',
+  partially_paid: 'مدفوع جزئيًا',
+  paid: 'مدفوع',
+  closed: 'مغلق',
+  cancelled: 'ملغي',
+  voided: 'Void',
+  returned: 'مرتجع',
+  merged: 'مدمج',
+}
+
+function normalized(value: string | null | undefined) {
+  return (value ?? '').trim().toLocaleLowerCase()
+}
+
 export function PosPage() {
   const { currentBranchId } = useBranch()
   const { can } = usePermissions()
   const [products, setProducts] = useState<PosProduct[]>([])
+  const [productQuery, setProductQuery] = useState('')
+  const productSearchRef = useRef<HTMLInputElement | null>(null)
   const [warehouses, setWarehouses] = useState<PosWarehouse[]>([])
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('')
   const [tables, setTables] = useState<DiningTable[]>([])
@@ -77,6 +98,15 @@ export function PosPage() {
   const occupiedTableIds = useMemo(() => new Set(orders.filter((order) => order.dining_table_id).map((order) => order.dining_table_id as string)), [orders])
   const hasKitchenDelta = useMemo(() => items.some((item) => (item.is_removed ? 0 : item.quantity) !== item.sent_quantity), [items])
   const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
+  const query = normalized(productQuery)
+  const visibleProducts = useMemo(() => {
+    if (!query) return products
+    return products.filter((product) => [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query)))
+  }, [products, query])
+  const exactSearchProduct = useMemo(() => {
+    if (!query) return null
+    return products.find((product) => normalized(product.sku) === query || normalized(product.barcode) === query) ?? null
+  }, [products, query])
 
   const { payments, paidAmount, remainingAmount, refreshPayments, takePayment, closePaidOrder } = usePayments(selectedOrder)
 
@@ -123,6 +153,16 @@ export function PosPage() {
   useEffect(() => { void refreshAll() }, [branchId, canView])
   useEffect(() => { void refreshItems(selectedOrderId) }, [selectedOrderId])
   useEffect(() => { setHasBillSplits(false) }, [selectedOrderId])
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'F2') return
+      event.preventDefault()
+      productSearchRef.current?.focus()
+      productSearchRef.current?.select()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   if (!branchId || !canView) return null
   const activeBranchId = branchId
@@ -188,6 +228,13 @@ export function PosPage() {
   const kitchenSendable = selectedOrder && ['created', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
   const paymentReady = selectedOrder && ['ready', 'partially_paid'].includes(selectedOrder.status)
 
+  async function addSearchExactProduct() {
+    if (!exactSearchProduct || !selectedOrder || !canEdit || !editable) return
+    await runAction(() => addPosOrderItem(selectedOrder.id, exactSearchProduct.id, 1).then(() => undefined))
+    setProductQuery('')
+    productSearchRef.current?.focus()
+  }
+
   return (
     <section className="workspace-card pos-workspace" aria-labelledby="pos-title">
       <div className="workspace-heading">
@@ -199,7 +246,7 @@ export function PosPage() {
         <div className="pos-counters">
           <span>مفتوحة: {orders.length}</span>
           <span>طاولات مشغولة: {occupiedTableIds.size}</span>
-          <span>Held: {orders.filter((order) => order.status === 'held').length}</span>
+          <span>معلّقة: {orders.filter((order) => order.status === 'held').length}</span>
           <span>طابور KDS: {kitchenQueueCount}</span>
         </div>
       </div>
@@ -227,7 +274,9 @@ export function PosPage() {
           <div className="plain-list">
             {orders.map((order) => (
               <button key={order.id} type="button" className={selectedOrderId === order.id ? 'selected-row' : ''} onClick={() => setSelectedOrderId(order.id)}>
-                #{order.order_number} · {orderTypeLabels[order.order_type]} · {order.status} · {order.total.toFixed(2)}
+                <strong>#{order.order_number}</strong>
+                <span>{orderTypeLabels[order.order_type]} · {orderStatusLabels[order.status]}</span>
+                <span>{order.total.toFixed(2)}</span>
               </button>
             ))}
             {!orders.length ? <p>لا توجد طلبات مفتوحة.</p> : null}
@@ -237,15 +286,15 @@ export function PosPage() {
         <div className="pos-main-panel">
           {canCreate ? (
             <form className="pos-create-order" onSubmit={(event) => { event.preventDefault(); void handleCreateOrder(event.currentTarget) }}>
-              <select name="orderType" required defaultValue="quick">
+              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required defaultValue="quick">
                 {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <select name="diningTableId" defaultValue="">
+              </select></label>
+              <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" defaultValue="">
                 <option value="">بدون طاولة</option>
                 {tables.map((table) => <option key={table.id} value={table.id} disabled={occupiedTableIds.has(table.id)}>{table.name} · {table.capacity} مقاعد{occupiedTableIds.has(table.id) ? ' · مشغولة' : ''}</option>)}
-              </select>
-              <input name="guestCount" type="number" min="0" defaultValue="1" />
-              <button type="submit" disabled={!hasShift}>إنشاء طلب</button>
+              </select></label>
+              <label className="pos-order-field"><span>الضيوف</span><input name="guestCount" type="number" min="0" defaultValue="1" /></label>
+              <button type="submit" disabled={!hasShift}>طلب جديد</button>
             </form>
           ) : null}
 
@@ -267,7 +316,7 @@ export function PosPage() {
               <div className="active-order-header">
                 <div>
                   <h3>طلب #{selectedOrder.order_number}</h3>
-                  <p>{orderTypeLabels[selectedOrder.order_type]} · {selectedOrder.status}</p>
+                  <p>{orderTypeLabels[selectedOrder.order_type]} · {orderStatusLabels[selectedOrder.status]}</p>
                 </div>
                 <strong>{selectedOrder.total.toFixed(2)}</strong>
               </div>
@@ -298,8 +347,8 @@ export function PosPage() {
               </div>
 
               <div className="pos-actions">
-                {canEdit && selectedOrder.status === 'created' ? <button type="button" onClick={() => void runAction(() => holdPosOrder(selectedOrder.id))}>Hold</button> : null}
-                {canEdit && selectedOrder.status === 'held' ? <button type="button" onClick={() => void runAction(() => resumePosOrder(selectedOrder.id))}>Resume</button> : null}
+                {canEdit && selectedOrder.status === 'created' ? <button type="button" onClick={() => void runAction(() => holdPosOrder(selectedOrder.id))}>تعليق</button> : null}
+                {canEdit && selectedOrder.status === 'held' ? <button type="button" onClick={() => void runAction(() => resumePosOrder(selectedOrder.id))}>استئناف</button> : null}
                 {canCancel && cancellable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء قبل المطبخ'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
                 {canVoid && voidable ? <button type="button" onClick={() => { const reason = window.prompt('سبب إلغاء الطلب بعد المطبخ (Void)'); if (reason) void runAction(async () => { await voidPosOrder(selectedOrder.id, reason) }) }}>Void بعد المطبخ</button> : null}
 
@@ -377,7 +426,28 @@ export function PosPage() {
           ) : <p>اختر طلبًا أو أنشئ طلبًا جديدًا.</p>}
 
           <div className="pos-products-scroll" aria-label="المنتجات">
-            {products.map((product) => (
+            <div className="pos-product-search">
+              <label>
+                <span>المنتجات</span>
+                <input
+                  ref={productSearchRef}
+                  value={productQuery}
+                  onChange={(event) => setProductQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && exactSearchProduct) {
+                      event.preventDefault()
+                      void addSearchExactProduct()
+                    }
+                  }}
+                  placeholder="اسم المنتج / SKU / Barcode"
+                  aria-label="بحث المنتجات بالاسم أو SKU أو Barcode"
+                />
+              </label>
+              <kbd>F2</kbd>
+              {productQuery ? <button type="button" onClick={() => { setProductQuery(''); productSearchRef.current?.focus() }}>مسح</button> : null}
+            </div>
+
+            {visibleProducts.map((product) => (
               <button
                 key={product.id}
                 type="button"
@@ -387,9 +457,10 @@ export function PosPage() {
               >
                 <strong>{product.name_ar}</strong>
                 <span>{product.sale_price.toFixed(2)}</span>
+                {product.sku ? <small>{product.sku}</small> : null}
               </button>
             ))}
-            {!products.length ? <p>لا توجد منتجات نشطة.</p> : null}
+            {!visibleProducts.length ? <p className="pos-products-empty">لا توجد منتجات مطابقة.</p> : null}
           </div>
         </div>
       </div>
