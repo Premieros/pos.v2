@@ -3,6 +3,7 @@ import { useBranch } from '../branches/useBranch'
 import { ModifierCatalogPanel } from '../modifiers/ModifierCatalogPanel'
 import '../modifiers/modifiers.css'
 import { usePermissions } from '../permissions/usePermissions'
+import { CatalogManagementPanel } from './CatalogManagementPanel'
 import { ProductMediaPanel } from './ProductMediaPanel'
 import {
   createCategory,
@@ -51,21 +52,23 @@ export function CatalogPage() {
   async function handleCategorySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!currentBranchId || !mayManage) return
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     await createCategory({
       branchId: currentBranchId,
       code: String(form.get('code') ?? ''),
       nameAr: String(form.get('nameAr') ?? ''),
       nameEn: String(form.get('nameEn') ?? ''),
     })
-    event.currentTarget.reset()
+    formElement.reset()
     await refresh()
   }
 
   async function handleProductSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!currentBranchId || !mayManage) return
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     await createProduct({
       branchId: currentBranchId,
       categoryId: String(form.get('categoryId') ?? '') || null,
@@ -75,7 +78,7 @@ export function CatalogPage() {
       nameEn: String(form.get('nameEn') ?? ''),
       salePrice: Number(form.get('salePrice') ?? 0),
     })
-    event.currentTarget.reset()
+    formElement.reset()
     await refresh()
   }
 
@@ -135,6 +138,7 @@ export function CatalogPage() {
                   <div className="catalog-list-row" role="listitem" key={category.id}>
                     <strong>{category.name_ar}</strong>
                     <span>{category.code}</span>
+                    <span>ترتيب {category.sort_order}</span>
                     <span>{category.is_active ? 'نشط' : 'متوقف'}</span>
                   </div>
                 ))}
@@ -151,12 +155,14 @@ export function CatalogPage() {
                     <strong>{product.name_ar}</strong>
                     <span>{product.sku || '—'}</span>
                     <span>{product.sale_price.toFixed(2)}</span>
+                    <span>{product.is_active ? 'نشط' : 'متوقف'}</span>
                   </div>
                 ))}
               </div>
             )}
           </section>
 
+          <CatalogManagementPanel categories={categories} products={products} mayManage={mayManage} onChanged={refresh} />
           <ProductMediaPanel products={products} mayManage={mayManage} onChanged={refresh} />
           {currentBranchId ? <ModifierCatalogPanel branchId={currentBranchId} products={products} mayManage={mayManage} /> : null}
         </div>
