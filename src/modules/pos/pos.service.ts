@@ -13,6 +13,13 @@ export type PosProduct = {
   category_id: string | null
 }
 
+export type PosCategory = {
+  id: string
+  name_ar: string
+  name_en: string | null
+  sort_order: number
+}
+
 export type PosWarehouse = {
   id: string
   name_ar: string
@@ -83,6 +90,18 @@ export async function listPosProducts(branchId: string): Promise<PosProduct[]> {
     .order('name_ar')
   if (error) throw error
   return (data ?? []) as PosProduct[]
+}
+
+export async function listPosCategories(branchId: string): Promise<PosCategory[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, name_ar, name_en, sort_order')
+    .eq('branch_id', branchId)
+    .eq('is_active', true)
+    .order('sort_order')
+    .order('name_ar')
+  if (error) throw error
+  return (data ?? []) as PosCategory[]
 }
 
 export async function listPosWarehouses(branchId: string): Promise<PosWarehouse[]> {
