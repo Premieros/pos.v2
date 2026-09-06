@@ -11,6 +11,7 @@ import { LoginPage } from '../modules/auth/LoginPage'
 import { useAuth } from '../modules/auth/useAuth'
 import { useBranch } from '../modules/branches/useBranch'
 import { CatalogPage } from '../modules/catalog/CatalogPage'
+import { CustomersPage } from '../modules/customers/CustomersPage'
 import { InventoryPage } from '../modules/inventory/InventoryPage'
 import { StockCountPage } from '../modules/inventory/StockCountPage'
 import { WastePage } from '../modules/inventory/WastePage'
@@ -67,6 +68,7 @@ export function App() {
 
   const showPos = can('pos.view')
   const showReturns = can('pos.order.return') && can('pos.payment.refund')
+  const showCustomers = can('customers.view') || can('customers.create') || can('customers.manage')
   const showKitchen = can('kitchen.view') || can('kitchen.manage')
   const showCatalog = can('catalog.view') || can('catalog.manage')
   const showInventory = can('inventory.view')
@@ -89,6 +91,7 @@ export function App() {
   const navItems: NavItem[] = [
     { href: '#overview', icon: '⌂', ar: 'الرئيسية', en: 'Overview', visible: true, group: 'home' },
     { href: '#pos-section', icon: '▣', ar: 'شاشة البيع', en: 'POS', visible: showPos, group: 'sales' },
+    { href: '#customers-section', icon: '◉', ar: 'العملاء', en: 'Customers', visible: showCustomers, group: 'sales' },
     { href: '#returns-section', icon: '↩', ar: 'المرتجعات', en: 'Returns', visible: showReturns, group: 'sales' },
     { href: '#kds-section', icon: '⌁', ar: 'المطبخ KDS', en: 'Kitchen KDS', visible: showKitchen, group: 'operations' },
     { href: '#shifts-section', icon: '◷', ar: 'الورديات والدرج', en: 'Shifts & Drawer', visible: showShifts, group: 'operations' },
@@ -125,6 +128,7 @@ export function App() {
   const renderWorkspace = () => {
     switch (currentHref) {
       case '#pos-section': return <><GuidedSetupBanner /><PosPage /></>
+      case '#customers-section': return <CustomersPage />
       case '#returns-section': return <ReturnPanel />
       case '#kds-section': return <KdsPage />
       case '#catalog-section': return <CatalogPage />
