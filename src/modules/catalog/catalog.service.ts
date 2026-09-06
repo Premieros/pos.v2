@@ -19,6 +19,7 @@ export type Product = {
   name_ar: string
   name_en: string | null
   sale_price: number
+  image_url: string | null
   is_active: boolean
 }
 
@@ -37,12 +38,12 @@ export async function listCategories(branchId: string): Promise<Category[]> {
 export async function listProducts(branchId: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, branch_id, category_id, sku, barcode, name_ar, name_en, sale_price, is_active')
+    .select('id, branch_id, category_id, sku, barcode, name_ar, name_en, sale_price, image_url, is_active')
     .eq('branch_id', branchId)
     .order('name_ar')
 
   if (error) throw error
-  return (data ?? []) as Product[]
+  return (data ?? []).map((row) => ({ ...row, sale_price: Number(row.sale_price) })) as Product[]
 }
 
 export async function createCategory(input: {
@@ -80,5 +81,13 @@ export async function createProduct(input: {
     sale_price: input.salePrice,
   })
 
+  if (error) throw error
+}
+
+export async function updateProductImageUrl(productId: string, imageUrl: string | null): Promise<void> {
+  const { error } = await supabase.rpc('update_product_image_url', {
+    p_product_id: productId,
+    p_image_url: imageUrl?.trim() || null,
+  })
   if (error) throw error
 }
