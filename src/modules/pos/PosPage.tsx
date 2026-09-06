@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBranch } from '../branches/useBranch'
 import { CustomerDisplayControls } from '../customer-display/CustomerDisplayControls'
+import { CustomerOrderContextControls } from '../customers/CustomerOrderContextControls'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
@@ -357,6 +358,8 @@ export function PosPage() {
                 </div>
                 <strong>{selectedOrder.total.toFixed(2)}</strong>
               </div>
+
+              <CustomerOrderContextControls order={selectedOrder} canEdit={Boolean(canEdit && editable)} onChanged={refreshOrderState} />
 
               <div className="order-items-list">
                 {items.filter((item) => !item.is_removed).map((item) => (
