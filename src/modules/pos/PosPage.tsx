@@ -3,6 +3,7 @@ import { useBranch } from '../branches/useBranch'
 import { CustomerDisplayControls } from '../customer-display/CustomerDisplayControls'
 import { CustomerOrderContextControls } from '../customers/CustomerOrderContextControls'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
+import { OrderItemModifierControls } from '../modifiers/OrderItemModifierControls'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import { ReceiptControls } from '../receipts/ReceiptControls'
@@ -363,24 +364,34 @@ export function PosPage() {
 
               <div className="order-items-list">
                 {items.filter((item) => !item.is_removed).map((item) => (
-                  <div key={item.id} className="order-item-row">
-                    <span>{item.product_name}</span>
-                    <span>{item.unit_price.toFixed(2)}</span>
-                    {canEdit && editable ? (
-                      <input
-                        aria-label={`كمية ${item.product_name}`}
-                        type="number"
-                        min="0.001"
-                        step="0.001"
-                        value={item.quantity}
-                        onChange={(event) => {
-                          const quantity = Number(event.target.value)
-                          if (quantity > 0) void runAction(() => setPosOrderItemQuantity(item.id, quantity))
-                        }}
-                      />
-                    ) : <span>{item.quantity}</span>}
-                    <strong>{item.line_total.toFixed(2)}</strong>
-                    {canEdit && editable ? <button type="button" onClick={() => void runAction(() => removePosOrderItem(item.id))}>حذف</button> : null}
+                  <div key={item.id} className="order-item-block">
+                    <div className="order-item-row">
+                      <span>{item.product_name}</span>
+                      <span>{item.unit_price.toFixed(2)}</span>
+                      {canEdit && editable ? (
+                        <input
+                          aria-label={`كمية ${item.product_name}`}
+                          type="number"
+                          min="0.001"
+                          step="0.001"
+                          value={item.quantity}
+                          onChange={(event) => {
+                            const quantity = Number(event.target.value)
+                            if (quantity > 0) void runAction(() => setPosOrderItemQuantity(item.id, quantity))
+                          }}
+                        />
+                      ) : <span>{item.quantity}</span>}
+                      <strong>{item.line_total.toFixed(2)}</strong>
+                      {canEdit && editable ? <button type="button" onClick={() => void runAction(() => removePosOrderItem(item.id))}>حذف</button> : null}
+                    </div>
+                    <OrderItemModifierControls
+                      branchId={activeBranchId}
+                      orderItemId={item.id}
+                      productId={item.product_id}
+                      sentQuantity={item.sent_quantity}
+                      canEdit={Boolean(canEdit && editable)}
+                      onChanged={refreshOrderState}
+                    />
                   </div>
                 ))}
                 {!items.filter((item) => !item.is_removed).length ? <p>لم تتم إضافة منتجات بعد.</p> : null}
