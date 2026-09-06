@@ -5,8 +5,11 @@ export type KitchenTicketStatus = 'queued' | 'preparing' | 'ready' | 'completed'
 export type KitchenTicketItem = {
   id: string
   kitchen_ticket_id: string
+  order_item_id: string
   product_name: string
   quantity_delta: number
+  line_notes: string | null
+  modifier_summary: string | null
 }
 
 export type KitchenTicket = {
@@ -36,20 +39,27 @@ export async function listKitchenTickets(branchId: string): Promise<KitchenTicke
   if (!tickets?.length) return []
 
   const orderIds = [...new Set(tickets.map((ticket) => ticket.order_id))]
-  const ticketIds = tickets.map((ticket) => ticket.id)
-
-  const [{ data: orders, error: orderError }, { data: items, error: itemError }] = await Promise.all([
+  const [{ data: orders, error: orderError }, { data: details, error: detailError }] = await Promise.all([
     supabase.from('orders').select('id, order_number, order_type').in('id', orderIds),
-    supabase.from('kitchen_ticket_items').select('id, kitchen_ticket_id, product_name, quantity_delta').in('kitchen_ticket_id', ticketIds).order('created_at'),
+    supabase.rpc('get_kitchen_ticket_details', { p_branch_id: branchId }),
   ])
 
   if (orderError) throw orderError
-  if (itemError) throw itemError
+  if (detailError) throw detailError
 
   const orderById = new Map((orders ?? []).map((order) => [order.id, order]))
   const itemsByTicket = new Map<string, KitchenTicketItem[]>()
 
-  for (const item of (items ?? []) as KitchenTicketItem[]) {
+  for (const detail of details ?? []) {
+    const item: KitchenTicketItem = {
+      id: detail.kitchen_ticket_item_id,
+      kitchen_ticket_id: detail.kitchen_ticket_id,
+      order_item_id: detail.order_item_id,
+      product_name: detail.product_name,
+      quantity_delta: Number(detail.quantity_delta),
+      line_notes: detail.line_notes,
+      modifier_summary: detail.modifier_summary,
+    }
     const current = itemsByTicket.get(item.kitchen_ticket_id) ?? []
     current.push(item)
     itemsByTicket.set(item.kitchen_ticket_id, current)
