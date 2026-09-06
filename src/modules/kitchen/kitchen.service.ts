@@ -24,6 +24,7 @@ export type KitchenTicket = {
   completed_at: string | null
   order_number: number | null
   order_type: string | null
+  order_notes: string | null
   items: KitchenTicketItem[]
 }
 
@@ -40,7 +41,7 @@ export async function listKitchenTickets(branchId: string): Promise<KitchenTicke
 
   const orderIds = [...new Set(tickets.map((ticket) => ticket.order_id))]
   const [{ data: orders, error: orderError }, { data: details, error: detailError }] = await Promise.all([
-    supabase.from('orders').select('id, order_number, order_type').in('id', orderIds),
+    supabase.from('orders').select('id, order_number, order_type, notes').in('id', orderIds),
     supabase.rpc('get_kitchen_ticket_details', { p_branch_id: branchId }),
   ])
 
@@ -71,6 +72,7 @@ export async function listKitchenTickets(branchId: string): Promise<KitchenTicke
       ...ticket,
       order_number: order?.order_number ?? null,
       order_type: order?.order_type ?? null,
+      order_notes: order?.notes ?? null,
       items: itemsByTicket.get(ticket.id) ?? [],
     } as KitchenTicket
   })
