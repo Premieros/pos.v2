@@ -1,12 +1,13 @@
 /* Phase 2 POS functional UX — uses existing POS contracts only. */
 
-/* Replace the Phase 1 pseudo catalog label with a real sticky search toolbar. */
+/* Replace the Phase 1 pseudo catalog label with real sticky search/category controls. */
 .pos-products-scroll{padding:0 10px 10px!important;grid-auto-rows:96px!important}
 .pos-products-scroll::before{display:none!important;content:none!important}
-.pos-product-search{grid-column:1/-1;position:sticky;inset-block-start:0;z-index:8;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:end;padding:9px 2px 8px;background:rgba(245,246,248,.98);border-bottom:1px solid #e5e7eb;backdrop-filter:blur(10px)}
+.pos-product-search{grid-column:1/-1;position:sticky;inset-block-start:0;z-index:9;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:end;padding:9px 2px 8px;background:rgba(245,246,248,.98);border-bottom:1px solid #e5e7eb;backdrop-filter:blur(10px)}
 .pos-product-search label{display:grid;gap:3px;min-width:0}.pos-product-search label>span{font-size:.7rem;font-weight:800;color:#475467}.pos-product-search input{height:34px!important;min-height:34px!important;padding:5px 9px!important;border-radius:8px!important;font-size:.76rem!important;background:#fff!important}
 .pos-product-search kbd{align-self:end;height:34px;display:grid;place-items:center;padding-inline:9px;border:1px solid #d0d5dd;border-bottom-width:2px;border-radius:7px;background:#fff;color:#475467;font:700 .68rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
 .pos-product-search button{align-self:end;height:34px!important;min-height:34px!important;padding-inline:9px!important;font-size:.7rem!important;background:#fff!important;color:#344054!important;border:1px solid #d0d5dd!important}
+.pos-category-strip{grid-column:1/-1;position:sticky;inset-block-start:53px;z-index:8;display:flex;gap:5px;overflow:auto;padding:6px 2px 7px;background:rgba(245,246,248,.98);border-bottom:1px solid #eceef1;scrollbar-width:none}.pos-category-strip::-webkit-scrollbar{display:none}.pos-category-strip button{flex:0 0 auto;min-height:30px!important;height:30px!important;padding:4px 8px!important;border:1px solid #d8dde5!important;border-radius:999px!important;background:#fff!important;color:#475467!important;font-size:.68rem!important;white-space:nowrap}.pos-category-strip button.active{background:#111827!important;border-color:#111827!important;color:#fff!important}.pos-category-strip button span{margin-inline-start:3px;opacity:.68;font-variant-numeric:tabular-nums}
 .pos-products-empty{grid-column:1/-1;margin:18px 4px!important;padding:18px;border:1px dashed #d0d5dd;border-radius:9px;background:#fff;color:#667085;text-align:center;font-size:.76rem}
 .product-tile small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem;color:#98a2b3}
 
@@ -16,8 +17,11 @@
 .pos-order-field>span{padding-inline:2px;white-space:nowrap}
 .pos-order-field input,.pos-order-field select{width:100%!important;margin:0!important}
 .pos-create-order>button{align-self:end}
+.pos-order-context-hint{align-self:end;display:grid;place-items:center;min-height:34px;height:34px;padding:4px 8px;border:1px dashed #d0d5dd;border-radius:8px;background:#fafbfc;color:#667085;font-size:.68rem;text-align:center}
 
-/* Active orders are scannable mini cards instead of one long sentence. */
+/* Active orders are filtered, scannable mini cards. */
+.pos-order-filters{position:sticky;inset-block-start:37px;z-index:4;display:grid;grid-template-columns:1fr;gap:4px;margin:0 -2px 7px;padding:6px 2px;background:#fafafa;border-bottom:1px solid #eceef1}
+.pos-order-filters select{height:30px!important;min-height:30px!important;padding:3px 6px!important;border-radius:7px!important;font-size:.66rem!important;background:#fff!important}
 .pos-orders-panel .plain-list button{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:2px 6px!important;align-items:center!important}
 .pos-orders-panel .plain-list button strong{font-size:.76rem;line-height:1.2}
 .pos-orders-panel .plain-list button span{font-size:.66rem;color:#667085;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -25,10 +29,14 @@
 
 @media(max-width:720px){
   .pos-product-search{grid-template-columns:minmax(0,1fr) auto}.pos-product-search button{grid-column:1/-1;width:100%}.pos-product-search kbd{display:none}
-  .pos-create-order{grid-template-columns:1fr 1fr!important}.pos-create-order>button{min-height:42px!important;height:42px!important}
+  .pos-category-strip{inset-block-start:87px}
+  .pos-create-order{grid-template-columns:1fr 1fr!important}.pos-create-order>button{min-height:42px!important;height:42px!important}.pos-order-context-hint{height:42px}
+  .pos-order-filters{grid-template-columns:1fr 1fr;inset-block-start:37px}
 }
 
 @media(max-width:460px){
   .pos-create-order{grid-template-columns:1fr!important}.pos-order-field{width:100%}
   .pos-product-search{grid-template-columns:1fr}.pos-product-search button{grid-column:auto}.pos-product-search input{height:40px!important;min-height:40px!important}
+  .pos-category-strip{inset-block-start:128px}
+  .pos-order-filters{grid-template-columns:1fr}
 }
