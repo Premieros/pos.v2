@@ -15,6 +15,7 @@
     "test:batch10": "node scripts/verify-batch10.mjs",
     "test:batch11": "node scripts/verify-batch11.mjs",
     "test:batch12": "node scripts/verify-batch12.mjs",
+    "test:batch13": "node scripts/verify-batch13.mjs",
     "test:e2e": "playwright test",
     "test:release": "node scripts/verify-release-candidate.mjs",
     "preview": "vite preview"
