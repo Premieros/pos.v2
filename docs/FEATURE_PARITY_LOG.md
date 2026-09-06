@@ -66,52 +66,70 @@ Verified POS integration commit: `f9a651808f0dcb634ebe7dec524eca1508b76b88`
 - Verify #668 ✅
 - Release Guard #108 ✅
 
-### Pass 2.5 — Product modifiers foundation 🔵 BACKEND COMPLETE / POS EDITOR BUILT / FINAL WIRING PENDING
+### Pass 2.5 — Product modifiers ✅ BACKEND + POS + CATALOG IMPLEMENTED
 Live migrations on locked project:
 - `20260906071749_product_modifiers_foundation`
 - `20260906071813_harden_product_modifiers_insert_and_stock_idempotency`
 - `20260906072032_modifier_fk_covering_indexes`
 - `20260906072121_enforce_required_modifiers_before_kitchen`
+- `20260906072555_modifier_catalog_management_commands`
 
-Backend contract now includes:
+Backend contract:
 - Branch-scoped modifier groups with min/max selection rules.
 - Modifier options with price delta and optional inventory-item consumption mapping.
 - Product → modifier-group assignments.
-- Order-line modifier snapshots preserving name/price/inventory quantity at sale time.
+- Order-line snapshots preserving option name/price/inventory quantity.
 - `base_unit_price` + modifier price recalculation + order total recalculation.
 - Atomic `set_order_item_modifiers` RPC guarded by `pos.order.edit`.
-- Modifier editing is locked after first kitchen send. Correct operational change after send is remove/reverse line + add a new customized line, preserving KDS/stock lineage.
-- Kitchen modifier stock consumption/restoration is generated from the same kitchen quantity delta and `source_order_item_id` lineage used by returns.
-- Required modifier groups are enforced server-side before KDS ticket creation; UI bypass cannot send an incomplete product configuration.
-- Insert trigger preserves compatibility with existing `add_pos_order_item` by deriving `base_unit_price` from `unit_price` for new lines.
-- Modifier stock idempotency uses selection identity, preventing collisions when multiple options map to the same inventory item.
+- Editing locks after first kitchen send; operational change after send is reverse/remove line then add a new customized line.
+- Kitchen stock consumption/restoration follows the same quantity delta + source order-item lineage used by returns.
+- Required modifier groups are enforced server-side before KDS ticket creation.
+- Insert compatibility derives `base_unit_price` from the line unit price.
+- Modifier stock idempotency includes the modifier selection identity, avoiding collisions when several options map to the same inventory item.
+- Catalog management uses Permission-First RPCs guarded by `catalog.manage`; no new direct authenticated writes were introduced for modifier mutations.
 
-Review/hardening results:
-- Initial Advisor found five new FK covering-index findings; all five were fixed in `20260906072032`.
-- Performance Advisor now reports only expected unused-index INFO for the fresh/low-traffic database.
-- Security Advisor remains unchanged: only external Auth warning `Leaked Password Protection Disabled`.
+Review/hardening:
+- Five FK covering-index findings were discovered and fixed before acceptance.
+- Performance Advisor returned to expected unused-index INFO only.
+- Security Advisor remained unchanged except external Auth warning `Leaked Password Protection Disabled`.
 
-Frontend files built and typecheck-visible:
-- `src/modules/modifiers/modifier.service.ts`
-- `src/modules/modifiers/OrderItemModifierControls.tsx`
-- `src/modules/modifiers/modifiers.css`
+POS wiring completed:
+- `OrderItemModifierControls` is mounted below each active POS line.
+- Each line shows current selections and price delta.
+- Required/min/max validation exists in UI and server.
+- After kitchen send the editor is read-only and explains the correct replacement-line workflow.
+- POS line refresh recalculates totals after modifier save.
 
-Current wiring task:
-- Mount `OrderItemModifierControls` under each active order line in POS.
-- Then verify full add → customize → kitchen → delta → return path against DEMO.
-- Catalog-side modifier management must be built through server RPCs; direct authenticated table writes remain forbidden.
+Catalog management completed:
+- `ModifierCatalogPanel` integrated into `CatalogPage`.
+- Create modifier group.
+- Create modifier option.
+- Optional Inventory Item + quantity consumption mapping.
+- Assign/unassign modifier groups per product.
+- Group and option summaries are visible in the catalog workspace.
+- Responsive CSS added for POS modifier editor and catalog management.
+
+Implementation checkpoints:
+- POS line wiring: `c89c4f9c73acb5df98196a8e9b905f341d91c564`
+- Modifier management service: `33883d896f452b007bc24447f0c24515641057d7`
+- Catalog modifier panel: `ae84afddf664d66ae34e9df988fd52d84bf3f006`
+- Catalog integration: `fa7492bc979e196954f00f927dd2b59c42feaa46`
+- Styling checkpoint: `8976a709896200440b05dccea69d0be8efac1034`
+
+Verification for the latest styling/catalog HEAD is running at the time of this log entry; Build already passed. Do not mark this pass verified until CI/Verify/Release Guard finish green.
 
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
 - Search/F2/Clear + labeled order controls + active order cards + categories/filters + responsive fallbacks are independent from business authorization.
+- Modifier UI is isolated in `src/modules/modifiers/modifiers.css` and does not move permission/business rules into layout.
 
 ## Current parallel execution
-1. Finish POS line modifier editor wiring and verify it.
-2. Build Catalog modifier-management RPC contract + admin UI without direct table mutation.
-3. Start product image/availability contract only after schema/security design review; no fake fields.
-4. Refine checkout/payment workspace and split-tender UX over current server contracts.
-5. Run full cashier E2E against retained `DEMO` dataset.
-6. Keep Security + Performance Advisor green after every DDL batch.
+1. Verify modifier POS/catalog integration on the latest HEAD.
+2. Add persistent DEMO modifier groups/options/product assignment only after the code pass is green.
+3. Run full add → customize → kitchen → KDS delta → return lineage test on retained DEMO data.
+4. Review product image/availability contract next; no fake UI fields.
+5. Refine checkout/payment workspace and split-tender UX over current server contracts.
+6. Continue Security + Performance Advisor review after every DDL batch.
 
 ## Current 10-stage roadmap
 1. Design Parity ✅ implementation complete.
