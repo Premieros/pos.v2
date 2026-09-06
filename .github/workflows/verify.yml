@@ -38,6 +38,8 @@ jobs:
         run: npm run test:batch9
       - name: Batch 10 POS operations regression
         run: npm run test:batch10
+      - name: Batch 11 product media storage regression
+        run: npm run test:batch11
       - name: Typecheck
         run: npm run typecheck
       - name: Build
