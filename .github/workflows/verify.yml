@@ -42,6 +42,8 @@ jobs:
         run: npm run test:batch11
       - name: Batch 12 authenticated harness regression
         run: npm run test:batch12
+      - name: Batch 13 customer workspace regression
+        run: npm run test:batch13
       - name: Typecheck
         run: npm run typecheck
       - name: Build
