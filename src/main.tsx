@@ -9,6 +9,7 @@ import './styles/shell.css'
 import './styles/kitchen.css'
 import './styles/payments.css'
 import './styles/final-ui.css'
+import './styles/design-parity.css'
 
 const root = document.getElementById('root')
 
