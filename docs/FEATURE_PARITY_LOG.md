@@ -239,6 +239,39 @@ E2E boundary noted during this pass:
 - A postgres-owner smoke would bypass the exact Permission-First/RLS path being tested, so it is **not** accepted or recorded as the requested full cashier E2E.
 - Full five-order-type **authenticated** cashier E2E therefore remains open and must be run with a real authenticated-session harness/browser; no DEMO data was deleted.
 
+### Pass 2.9 — Product Media Storage Upload + schema reproducibility ✅ VERIFIED
+Live migration on locked project `scpovyrqmsbiduanykod`:
+- `20260906095717_product_media_storage_bucket`
+
+Delivered:
+- Public `product-media` Storage bucket with 5MB limit and JPEG/PNG/WebP/GIF allow-list.
+- Authenticated INSERT/UPDATE/DELETE policies are branch-folder scoped and require `catalog.manage` through `app_private.current_user_has_permission`.
+- Product media panel now supports direct image upload and retains URL-backed media as fallback.
+- Upload paths are branch/product scoped and randomized; product record mutation still uses `update_product_image_url` RPC rather than a new direct protected-table write.
+- Failed product URL update removes the just-uploaded object to avoid orphan media.
+- Review found the live migration had initially been applied to Production but not committed under `supabase/migrations`; this schema-reproducibility drift was repaired in `c8e524c8e1edee30e67f28c4912403c20b139ad7`.
+- Added Batch 11 to guard the migration, bucket contract, RLS policy markers, upload path, 5MB limit, RPC update path and orphan cleanup.
+- Batch 11 is wired into Verify and the Release Candidate repository guard.
+
+Implementation/hardening checkpoints:
+- Product media UI/service checkpoint: `3b688244a927d3c7fe10edc558ffa61a97916d8d`
+- Migration tracking repair: `c8e524c8e1edee30e67f28c4912403c20b139ad7`
+- Batch 11 guard: `0c1f28359545d34bb3e665c06e00c4ea594508c9`
+- Final verification checkpoint: `aa2979e4f5d6bfbd004bcc5f0de008dc3247e185`
+
+Verification on final checkpoint:
+- Verify #777 ✅
+- Release Guard #217 ✅
+- Batch 11 ✅
+- Typecheck ✅
+- Build ✅
+- GitHub Pages deploy ✅
+- No separate workflow named CI was triggered for this HEAD; no CI run number is fabricated.
+
+Advisor gate after DDL:
+- Security: no new product-media finding; existing external Auth warning `Leaked Password Protection Disabled` remains.
+- Performance: INFO-level unused indexes only; no new blocking product-media issue.
+
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
 - `src/styles/pos-operations.css` adds the operational orders/tables/touch layer without moving business authorization into layout.
@@ -247,10 +280,11 @@ E2E boundary noted during this pass:
 - Checkout uses `src/styles/payments.css` and the existing payment service rather than duplicating payment business logic.
 
 ## Current parallel execution — NEXT GROUP
-1. Full five-order-type authenticated cashier E2E on persistent DEMO, including Delivery + Drive Thru prerequisites — OPEN.
-2. Product media storage/upload productization decision; current URL-backed media remains valid.
-3. Runtime/table transfer-merge discoverability E2E in a real authenticated session.
-4. Continue Security + Performance Advisor review after every DDL batch.
+1. Establish a legitimate authenticated browser E2E harness for persistent DEMO; current repository has no Playwright/Cypress dependency and no acceptable authenticated cashier harness — OPEN.
+2. Run full five-order-type authenticated cashier E2E (`dine_in`, `take_away`, `drive_thru`, `delivery`, `quick`) including Delivery + Drive-Thru prerequisites once the legitimate session harness is available — OPEN.
+3. Run runtime table occupancy/open/transfer/merge discoverability E2E in the same real authenticated session — OPEN.
+4. Re-run Checkout / Split Bill / Receipt-Reprint / Customer Display / KDS runtime regression in that authenticated session — OPEN.
+5. Continue Security + Performance Advisor review after every future DDL batch.
 
 ## 2026-09-06 — MODEL HANDOFF CHECKPOINT
 Canonical continuation point for any second model:
@@ -258,10 +292,12 @@ Canonical continuation point for any second model:
 - Branch: `development`
 - Supabase project ref: `scpovyrqmsbiduanykod`
 - Reference repo `Premieros/johna-s` remains READ ONLY.
-- Latest branch HEAD observed before handoff: `ea0015adfe47b9319aab0f435e7bf96d9c726281` (`docs: record media availability notes and checkout pass`).
+- Latest verified implementation/hardening checkpoint before this documentation write: `aa2979e4f5d6bfbd004bcc5f0de008dc3247e185`.
+- Verify #777 and Release Guard #217 are green; Batch 11, Typecheck and Build are green.
 - Because another model may be working concurrently, the incoming model MUST re-read the current `development` HEAD before every write and must not overwrite or revert commits it did not author.
 - Phase 1 Design Parity is closed.
-- Phase 2 Passes 2.1–2.6 are implemented; Pass 2.6 is verified at code checkpoint `6cde7679b37641aea8d0963496eef8f4e02ffe25` with CI #346 / Verify #750 / Release Guard #190 green.
+- Phase 2 Passes 2.1–2.9 are implemented; Pass 2.9 closes Product Media Storage Upload and repository/live-schema parity for that migration.
+- Full authenticated five-order-type cashier browser E2E is still open; do not substitute postgres-owner execution or invented credentials.
 - Persistent DEMO data must remain; do not delete it.
 - `main` must not be touched without explicit user approval.
 - Next work begins from the `Current parallel execution — NEXT GROUP` section above.
