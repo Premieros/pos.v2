@@ -272,6 +272,42 @@ Advisor gate after DDL:
 - Security: no new product-media finding; existing external Auth warning `Leaked Password Protection Disabled` remains.
 - Performance: INFO-level unused indexes only; no new blocking product-media issue.
 
+### Pass 2.10 — Authenticated browser E2E harness + table-operation regression ✅ VERIFIED
+No DDL and no privileged test bypass were introduced.
+
+Delivered:
+- Added real Playwright browser harness using pinned `@playwright/test` `1.63.0` and Chromium.
+- Added `playwright.config.mjs` with deployed-site base URL override, single-worker execution and retained failure evidence.
+- Added `e2e/authenticated-pos.spec.mjs` that authenticates through the real login form and opens the permission-scoped POS workspace.
+- Credentials are read only from `E2E_CASHIER_EMAIL` / `E2E_CASHIER_PASSWORD`; no email/password is hardcoded in the repository.
+- Added manual `Authenticated E2E` GitHub workflow. It requires authorized repository secrets and fails explicitly when they are missing rather than reporting a false green E2E.
+- Added Batch 12 to protect the Playwright harness, secret-only credential model and the authoritative Dine-in transfer/merge contracts.
+- Batch 12 guards `transfer_order_table` and `merge_dine_in_orders` RPC usage and UUID idempotency; no direct protected write or parallel table mutation path was introduced.
+- Batch 12 is wired into Verify and Release Candidate repository guards.
+
+Implementation/hardening checkpoints:
+- Playwright config: `b11dd8fc32c01c14ab034868c88808e30e48d5bd`
+- Authenticated POS smoke: `17814fe088406259463fded56d03bca79b71b7f0`
+- Browser runner dependency/script: `264642d1256b2649c79b77f3e1ab78b0b65e164a`
+- Authenticated E2E workflow: `3605b475352804a7c5d3e5f13ff36bce897bdf20`
+- Batch 12 guard: `96c71d75e310325ab70dc89ead866312801a4442`
+- Verify wiring: `7daa6739d5f9f6ad9a600b8e22d559cf7ea25550`
+- Final verification checkpoint: `df0c74ba46a97d16020dfb12b9cb3e748cbcd7c3`
+
+Verification on final checkpoint:
+- CI #369 ✅
+- Verify #795 ✅
+- Release Guard #235 ✅
+- Batch 12 ✅
+- Typecheck ✅
+- Build ✅
+- GitHub Pages deploy ✅
+
+Acceptance boundary:
+- This pass verifies the **real authenticated-browser harness and its safety/regression contract**, not the five-order runtime cycle itself.
+- The actual authenticated cashier browser run remains OPEN until authorized `E2E_CASHIER_EMAIL` / `E2E_CASHIER_PASSWORD` repository secrets are configured.
+- PostgreSQL owner execution, JWT/role impersonation or invented credentials are not accepted as substitutes.
+
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
 - `src/styles/pos-operations.css` adds the operational orders/tables/touch layer without moving business authorization into layout.
@@ -280,10 +316,10 @@ Advisor gate after DDL:
 - Checkout uses `src/styles/payments.css` and the existing payment service rather than duplicating payment business logic.
 
 ## Current parallel execution — NEXT GROUP
-1. Establish a legitimate authenticated browser E2E harness for persistent DEMO; current repository has no Playwright/Cypress dependency and no acceptable authenticated cashier harness — OPEN.
-2. Run full five-order-type authenticated cashier E2E (`dine_in`, `take_away`, `drive_thru`, `delivery`, `quick`) including Delivery + Drive-Thru prerequisites once the legitimate session harness is available — OPEN.
-3. Run runtime table occupancy/open/transfer/merge discoverability E2E in the same real authenticated session — OPEN.
-4. Re-run Checkout / Split Bill / Receipt-Reprint / Customer Display / KDS runtime regression in that authenticated session — OPEN.
+1. Run full five-order-type authenticated cashier E2E (`dine_in`, `take_away`, `drive_thru`, `delivery`, `quick`) including Delivery + Drive-Thru prerequisites once authorized E2E secrets are configured — OPEN.
+2. Run runtime table occupancy/open/transfer/merge discoverability E2E in the same real authenticated session — OPEN.
+3. Re-run Checkout / Split Bill / Receipt-Reprint / Customer Display / KDS runtime regression in that authenticated session — OPEN.
+4. Continue building non-credential-dependent static/runtime guards in parallel without falsely marking authenticated E2E complete.
 5. Continue Security + Performance Advisor review after every future DDL batch.
 
 ## 2026-09-06 — MODEL HANDOFF CHECKPOINT
@@ -292,12 +328,12 @@ Canonical continuation point for any second model:
 - Branch: `development`
 - Supabase project ref: `scpovyrqmsbiduanykod`
 - Reference repo `Premieros/johna-s` remains READ ONLY.
-- Latest verified implementation/hardening checkpoint before this documentation write: `aa2979e4f5d6bfbd004bcc5f0de008dc3247e185`.
-- Verify #777 and Release Guard #217 are green; Batch 11, Typecheck and Build are green.
+- Latest verified implementation/hardening checkpoint before this documentation write: `df0c74ba46a97d16020dfb12b9cb3e748cbcd7c3`.
+- CI #369, Verify #795 and Release Guard #235 are green; Batch 12, Typecheck, Build and Pages deploy are green.
 - Because another model may be working concurrently, the incoming model MUST re-read the current `development` HEAD before every write and must not overwrite or revert commits it did not author.
 - Phase 1 Design Parity is closed.
-- Phase 2 Passes 2.1–2.9 are implemented; Pass 2.9 closes Product Media Storage Upload and repository/live-schema parity for that migration.
-- Full authenticated five-order-type cashier browser E2E is still open; do not substitute postgres-owner execution or invented credentials.
+- Phase 2 Passes 2.1–2.10 are implemented; Pass 2.10 establishes the legitimate authenticated browser harness without embedding or fabricating credentials.
+- Full authenticated five-order-type cashier runtime E2E is still open until authorized GitHub E2E secrets are configured.
 - Persistent DEMO data must remain; do not delete it.
 - `main` must not be touched without explicit user approval.
 - Next work begins from the `Current parallel execution — NEXT GROUP` section above.
