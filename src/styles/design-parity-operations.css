@@ -1,0 +1,17 @@
+/* Phase 1 — operational workspaces beyond POS/KDS. Visual/layout only. */
+.workspace-card:has(#shifts-title){display:grid;gap:9px;min-height:calc(100dvh - 96px)}
+.workspace-card:has(#shifts-title)>.workspace-heading{min-height:50px;align-items:center!important;border-bottom:1px solid #eceef1;padding-bottom:9px!important}
+.workspace-card:has(#shifts-title)>.workspace-heading .eyebrow{display:none!important}
+.workspace-card:has(#shifts-title)>.workspace-heading>span{padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;font-size:.7rem;font-weight:800}
+.workspace-card:has(#shifts-title)>.inline-form,.workspace-card:has(#shifts-title)>.form-grid .inline-form{padding:9px!important;border:1px solid #e5e7eb!important;border-radius:10px!important;background:#fafbfc!important;box-shadow:none!important;gap:6px!important}
+.workspace-card:has(#shifts-title) .inline-form h3{margin:0 0 2px!important;font-size:.82rem!important}
+.workspace-card:has(#shifts-title) .inline-form input,.workspace-card:has(#shifts-title) .inline-form select,.workspace-card:has(#shifts-title) .inline-form button{min-height:34px!important;height:34px!important;font-size:.74rem!important;padding:5px 8px!important}
+.workspace-card:has(#shifts-title)>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.offline-close-status{display:grid!important;gap:7px!important;padding:9px!important;border:1px solid #f0cf99!important;border-radius:10px!important;background:#fffbeb!important}
+.offline-close-status>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.offline-close-status strong{font-size:.78rem}.offline-close-status p{margin:0!important;font-size:.7rem!important;color:#785b27}
+.offline-close-list{display:grid!important;gap:5px!important}.offline-close-item{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:center;padding:7px 8px!important;border-radius:8px!important;background:#fff!important;box-shadow:none!important}
+.offline-close-item>div:first-child{display:grid;gap:2px}.offline-close-item small{font-size:.66rem}.offline-close-actions{display:flex!important;gap:4px!important}.offline-close-actions button,.offline-close-status>button{min-height:32px!important;height:32px!important;font-size:.7rem!important;padding:4px 7px!important}
+.workspace-card:has(#shifts-title) .table-wrap{max-height:calc(100dvh - 340px);overflow:auto!important}.workspace-card:has(#shifts-title) table{min-width:760px}.workspace-card:has(#shifts-title) table th,.workspace-card:has(#shifts-title) table td{white-space:nowrap}
+
+@media(max-width:900px){.workspace-card:has(#shifts-title)>.form-grid{grid-template-columns:1fr!important}.workspace-card:has(#shifts-title) .table-wrap{max-height:none}.offline-close-item{grid-template-columns:1fr!important}.offline-close-actions{justify-content:flex-start}}
+@media(max-width:560px){.offline-close-actions{display:grid!important;grid-template-columns:1fr!important}.offline-close-actions button{width:100%}.workspace-card:has(#shifts-title)>.workspace-heading{align-items:flex-start!important}}

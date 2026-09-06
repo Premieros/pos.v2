@@ -1,0 +1,29 @@
+.kitchen-send-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kitchen-send-controls select { min-height: 42px; border: 1px solid #d1d5db; border-radius: 10px; padding-inline: 10px; background: white; }
+.kitchen-send-controls button, .kds-actions button { min-height: 42px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.pending-delta, .synced-delta { padding: 6px 10px; border-radius: 999px; border: 1px solid #d1d5db; font-size: .9rem; }
+.pending-delta { background: #fff7ed; }
+.synced-delta { background: #f0fdf4; }
+
+.kds-workspace { display: grid; gap: 18px; }
+.kds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
+.kds-ticket { border: 1px solid #e5e7eb; border-radius: 18px; padding: 16px; background: white; display: grid; gap: 14px; }
+.kds-ticket-header { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.kds-order-note { padding: 9px 10px; border: 1px solid #f4d6a8; border-radius: 10px; background: #fffaf0; color: #78350f; font-size: .82rem; line-height: 1.5; white-space: pre-wrap; }
+.kds-ticket-items { display: grid; gap: 8px; }
+.kds-item-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #f3f4f6; padding-block: 8px; }
+.kds-item-detailed { align-items: flex-start; }
+.kds-item-copy { min-width: 0; display: grid; gap: 4px; }
+.kds-item-copy small { line-height: 1.45; }
+.kds-modifier-summary { color: #1d4ed8; font-weight: 700; }
+.kds-line-note { color: #92400e; font-weight: 700; white-space: pre-wrap; }
+.kds-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.negative-delta { font-weight: 800; }
+.kds-queued { border-inline-start: 4px solid #9ca3af; }
+.kds-preparing { border-inline-start: 4px solid #f59e0b; }
+.kds-ready { border-inline-start: 4px solid #10b981; }
+
+@media (max-width: 560px) {
+  .kitchen-send-controls { align-items: stretch; flex-direction: column; }
+  .kitchen-send-controls select, .kitchen-send-controls button { width: 100%; }
+}

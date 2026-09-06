@@ -1,0 +1,22 @@
+.printing-center { display:grid; gap:1rem; }
+.printing-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
+.printing-tabs button { min-height:40px; padding:.55rem .8rem; border:1px solid var(--border,#e5e7eb); border-radius:10px; background:var(--surface,#fff); }
+.printing-tabs button.active { outline:2px solid currentColor; outline-offset:-2px; }
+.printing-form { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:.75rem; align-items:end; border:1px solid var(--border,#e5e7eb); border-radius:14px; padding:1rem; }
+.printing-form label { display:grid; gap:.35rem; font-size:.85rem; }
+.printing-form select, .printing-form input { min-height:42px; width:100%; border:1px solid var(--border,#d7dce2); border-radius:12px; padding:.7rem .8rem; background:var(--surface,#fff); }
+.printing-form button { min-height:42px; }
+.printing-form small { grid-column:1 / -1; opacity:.7; line-height:1.55; }
+.central-print-root { display:none; }
+.central-print-paper { width:80mm; padding:5mm; background:#fff; color:#000; font-family:Arial,sans-serif; font-size:12px; }
+.central-print-paper h2, .central-print-paper h3 { text-align:center; margin:.3rem 0; }
+.central-print-line { display:flex; justify-content:space-between; gap:.6rem; padding:.2rem 0; }
+.central-print-line strong { white-space:nowrap; }
+@media (max-width:640px) { .printing-form { grid-template-columns:1fr; } }
+@media print {
+  body.central-print-mode * { visibility:hidden !important; }
+  body.central-print-mode .central-print-root, body.central-print-mode .central-print-root * { visibility:visible !important; }
+  body.central-print-mode .central-print-root { display:block !important; position:absolute; inset:0; margin:0; background:#fff; }
+  body.central-print-mode .central-print-paper { margin:0 auto; box-shadow:none; }
+  @page { margin:0; }
+}

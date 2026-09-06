@@ -1,0 +1,617 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useBranch } from '../branches/useBranch'
+import { CustomerDisplayControls } from '../customer-display/CustomerDisplayControls'
+import { CustomerOrderContextControls } from '../customers/CustomerOrderContextControls'
+import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
+import { OrderItemModifierControls } from '../modifiers/OrderItemModifierControls'
+import { CheckoutPanel } from '../payments/CheckoutPanel'
+import { usePayments } from '../payments/usePayments'
+import { usePermissions } from '../permissions/usePermissions'
+import { ReceiptControls } from '../receipts/ReceiptControls'
+import { SplitBillControls } from '../splits/SplitBillControls'
+import { OrderItemNotesControls, OrderNotesControls } from './OrderNotesControls'
+import { TableOrderControls } from './TableOrderControls'
+import { usePosAvailability } from './usePosAvailability'
+import {
+  addPosOrderItem,
+  cancelPosOrder,
+  countKitchenQueue,
+  createDiningTable,
+  createPosOrder,
+  hasOwnOpenShift,
+  holdPosOrder,
+  listActiveOrders,
+  listDiningTables,
+  listOrderItems,
+  listPosCategories,
+  listPosProducts,
+  listPosWarehouses,
+  removePosOrderItem,
+  resumePosOrder,
+  sendOrderToKitchen,
+  setPosOrderItemQuantity,
+  voidPosOrder,
+  type DiningTable,
+  type PosCategory,
+  type PosOrder,
+  type PosOrderItem,
+  type PosOrderStatus,
+  type PosOrderType,
+  type PosProduct,
+  type PosWarehouse,
+} from './pos.service'
+
+const orderTypeLabels: Record<PosOrderType, string> = {
+  dine_in: 'صالة',
+  take_away: 'تيك أواي',
+  drive_thru: 'درايف ثرو',
+  delivery: 'دليفري',
+  quick: 'طلب سريع',
+}
+
+const orderStatusLabels: Record<PosOrderStatus, string> = {
+  created: 'جديد',
+  held: 'معلّق',
+  sent_to_kitchen: 'أرسل للمطبخ',
+  preparing: 'قيد التحضير',
+  ready: 'جاهز',
+  partially_paid: 'مدفوع جزئيًا',
+  paid: 'مدفوع',
+  closed: 'مغلق',
+  cancelled: 'ملغي',
+  voided: 'Void',
+  returned: 'مرتجع',
+  merged: 'مدمج',
+}
+
+const availabilityReasonLabels: Record<string, string> = {
+  available: 'متاح',
+  out_of_stock: 'نفد المخزون',
+  insufficient_components: 'مكونات غير كافية',
+  inventory_mapping_required: 'غير مربوط بالمخزون',
+  warehouse_unavailable: 'المخزن غير متاح',
+  permission_denied: 'غير مصرح',
+}
+
+function normalized(value: string | null | undefined) {
+  return (value ?? '').trim().toLocaleLowerCase()
+}
+
+function isTypingTarget(target: EventTarget | null) {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
+}
+
+export function PosPage() {
+  const { currentBranchId } = useBranch()
+  const { can } = usePermissions()
+  const [products, setProducts] = useState<PosProduct[]>([])
+  const [categories, setCategories] = useState<PosCategory[]>([])
+  const [productQuery, setProductQuery] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all')
+  const productSearchRef = useRef<HTMLInputElement | null>(null)
+  const [warehouses, setWarehouses] = useState<PosWarehouse[]>([])
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('')
+  const [tables, setTables] = useState<DiningTable[]>([])
+  const [orders, setOrders] = useState<PosOrder[]>([])
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | PosOrderType>('all')
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | PosOrderStatus>('all')
+  const [newOrderType, setNewOrderType] = useState<PosOrderType>('quick')
+  const [selectedNewTableId, setSelectedNewTableId] = useState('')
+  const [operationalView, setOperationalView] = useState<'orders' | 'tables'>('orders')
+  const [selectedFloor, setSelectedFloor] = useState('all')
+  const [items, setItems] = useState<PosOrderItem[]>([])
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [hasBillSplits, setHasBillSplits] = useState(false)
+  const [kitchenQueueCount, setKitchenQueueCount] = useState(0)
+  const [hasShift, setHasShift] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const canView = can('pos.view')
+  const canCreate = can('pos.order.create')
+  const canEdit = can('pos.order.edit')
+  const canCancel = can('pos.order.cancel')
+  const canVoid = can('pos.order.void')
+  const canSendKitchen = can('pos.send_kitchen')
+  const canPay = can('pos.payment.take')
+  const canClose = can('pos.order.close')
+  const canDiscount = can('pos.discount.apply')
+  const canSplit = can('pos.order.split')
+  const canTransfer = can('pos.order.transfer')
+  const canPrintReceipt = can('pos.receipt.print')
+  const canReprintReceipt = can('pos.receipt.reprint')
+  const canManageTables = can('pos.tables.manage')
+  const branchId = currentBranchId
+  const { byProductId: availabilityByProductId, loading: availabilityLoading, error: availabilityError, refresh: refreshAvailability } = usePosAvailability(branchId, selectedWarehouseId)
+
+  const selectedOrder = useMemo(() => orders.find((order) => order.id === selectedOrderId) ?? null, [orders, selectedOrderId])
+  const tableOrderByTableId = useMemo(() => {
+    const map = new Map<string, PosOrder>()
+    for (const order of orders) if (order.dining_table_id) map.set(order.dining_table_id, order)
+    return map
+  }, [orders])
+  const occupiedTableIds = useMemo(() => new Set(tableOrderByTableId.keys()), [tableOrderByTableId])
+  const floorNames = useMemo(() => Array.from(new Set(tables.map((table) => table.floor_name?.trim() || 'بدون منطقة'))).sort(), [tables])
+  const visibleTables = useMemo(() => tables.filter((table) => selectedFloor === 'all' || (table.floor_name?.trim() || 'بدون منطقة') === selectedFloor), [tables, selectedFloor])
+  const hasKitchenDelta = useMemo(() => items.some((item) => (item.is_removed ? 0 : item.quantity) !== item.sent_quantity), [items])
+  const hasBeenSent = useMemo(() => items.some((item) => item.sent_quantity !== 0), [items])
+  const query = normalized(productQuery)
+  const visibleProducts = useMemo(() => products.filter((product) => {
+    if (selectedCategoryId !== 'all' && product.category_id !== selectedCategoryId) return false
+    if (!query) return true
+    return [product.name_ar, product.name_en, product.sku, product.barcode].some((value) => normalized(value).includes(query))
+  }), [products, query, selectedCategoryId])
+  const exactSearchProduct = useMemo(() => {
+    if (!query) return null
+    return products.find((product) => normalized(product.sku) === query || normalized(product.barcode) === query) ?? null
+  }, [products, query])
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const product of products) if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1)
+    return counts
+  }, [products])
+  const visibleOrders = useMemo(() => orders.filter((order) => {
+    if (orderTypeFilter !== 'all' && order.order_type !== orderTypeFilter) return false
+    if (orderStatusFilter !== 'all' && order.status !== orderStatusFilter) return false
+    return true
+  }), [orders, orderTypeFilter, orderStatusFilter])
+
+  const { payments, paidAmount, remainingAmount, refreshPayments, takePayment, closePaidOrder } = usePayments(selectedOrder)
+
+  async function refreshAll() {
+    if (!branchId || !canView) return
+    setLoading(true)
+    setError(null)
+    try {
+      const [nextProducts, nextCategories, nextWarehouses, nextTables, nextOrders, openShift, queueCount] = await Promise.all([
+        listPosProducts(branchId),
+        listPosCategories(branchId),
+        listPosWarehouses(branchId),
+        listDiningTables(branchId),
+        listActiveOrders(branchId),
+        hasOwnOpenShift(branchId),
+        countKitchenQueue(branchId),
+      ])
+      setProducts(nextProducts)
+      setCategories(nextCategories)
+      setWarehouses(nextWarehouses)
+      setTables(nextTables)
+      setOrders(nextOrders)
+      setHasShift(openShift)
+      setKitchenQueueCount(queueCount)
+      setSelectedCategoryId((current) => current === 'all' || nextCategories.some((category) => category.id === current) ? current : 'all')
+      setSelectedWarehouseId((current) => nextWarehouses.some((warehouse) => warehouse.id === current) ? current : nextWarehouses[0]?.id ?? '')
+      setSelectedFloor((current) => current === 'all' || nextTables.some((table) => (table.floor_name?.trim() || 'بدون منطقة') === current) ? current : 'all')
+      setSelectedNewTableId((current) => nextTables.some((table) => table.id === current && !nextOrders.some((order) => order.dining_table_id === table.id)) ? current : '')
+      if (selectedOrderId && !nextOrders.some((order) => order.id === selectedOrderId)) setSelectedOrderId(null)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تحميل شاشة البيع')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function refreshItems(orderId: string | null) {
+    if (!orderId) {
+      setItems([])
+      return
+    }
+    try {
+      setItems(await listOrderItems(orderId))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تحميل عناصر الطلب')
+    }
+  }
+
+  useEffect(() => { void refreshAll() }, [branchId, canView])
+  useEffect(() => { void refreshItems(selectedOrderId) }, [selectedOrderId])
+  useEffect(() => { setHasBillSplits(false) }, [selectedOrderId])
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F2') {
+        event.preventDefault()
+        productSearchRef.current?.focus()
+        productSearchRef.current?.select()
+        return
+      }
+      if (event.key === 'F3' && !isTypingTarget(event.target)) {
+        event.preventDefault()
+        setOperationalView((current) => current === 'orders' ? 'tables' : 'orders')
+        return
+      }
+      if (event.key === 'Escape' && productQuery) {
+        event.preventDefault()
+        setProductQuery('')
+        productSearchRef.current?.focus()
+        return
+      }
+      if (event.altKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp') && visibleOrders.length && !isTypingTarget(event.target)) {
+        event.preventDefault()
+        const index = visibleOrders.findIndex((order) => order.id === selectedOrderId)
+        const direction = event.key === 'ArrowDown' ? 1 : -1
+        const nextIndex = index < 0 ? 0 : (index + direction + visibleOrders.length) % visibleOrders.length
+        setSelectedOrderId(visibleOrders[nextIndex].id)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [productQuery, selectedOrderId, visibleOrders])
+
+  if (!branchId || !canView) return null
+  const activeBranchId = branchId
+
+  async function runAction(action: () => Promise<void>) {
+    setError(null)
+    try {
+      await action()
+      await refreshAll()
+      await refreshItems(selectedOrderId)
+      await refreshPayments()
+      await refreshAvailability()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذر تنفيذ العملية')
+    }
+  }
+
+  async function refreshOrderState() {
+    await refreshAll()
+    await refreshItems(selectedOrderId)
+    await refreshPayments()
+    await refreshAvailability()
+  }
+
+  async function handleCreateOrder(form: HTMLFormElement) {
+    const data = new FormData(form)
+    const orderType = String(data.get('orderType')) as PosOrderType
+    const diningTableId = String(data.get('diningTableId') ?? '') || null
+    const guestCount = Number(data.get('guestCount') ?? 1)
+    await runAction(async () => {
+      const id = await createPosOrder({ branchId: activeBranchId, orderType, diningTableId, guestCount })
+      setSelectedOrderId(id)
+      form.reset()
+      setNewOrderType('quick')
+      setSelectedNewTableId('')
+      setOperationalView('orders')
+    })
+  }
+
+  async function handleCreateTable(form: HTMLFormElement) {
+    const data = new FormData(form)
+    await runAction(async () => {
+      await createDiningTable({
+        branchId: activeBranchId,
+        code: String(data.get('code') ?? ''),
+        name: String(data.get('name') ?? ''),
+        capacity: Number(data.get('capacity') ?? 4),
+        floorName: String(data.get('floorName') ?? ''),
+      })
+      form.reset()
+    })
+  }
+
+  const editable = selectedOrder && ['created', 'held', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
+  const cancellable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
+  const voidable = selectedOrder && ['sent_to_kitchen', 'preparing', 'ready'].includes(selectedOrder.status) && payments.length === 0
+  const kitchenSendable = selectedOrder && ['created', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
+  const paymentReady = selectedOrder && ['ready', 'partially_paid'].includes(selectedOrder.status)
+
+  async function addSearchExactProduct() {
+    if (!exactSearchProduct || !selectedOrder || !canEdit || !editable) return
+    const availability = availabilityByProductId.get(exactSearchProduct.id)
+    if (!availability?.is_available) {
+      setError(`المنتج غير متاح: ${availabilityReasonLabels[availability?.reason ?? ''] ?? 'تحقق من المخزون'}`)
+      return
+    }
+    await runAction(() => addPosOrderItem(selectedOrder.id, exactSearchProduct.id, 1).then(() => undefined))
+    setProductQuery('')
+    productSearchRef.current?.focus()
+  }
+
+  return (
+    <section className="workspace-card pos-workspace" aria-labelledby="pos-title">
+      <div className="workspace-heading">
+        <div>
+          <p className="eyebrow">POS</p>
+          <h2 id="pos-title">شاشة البيع</h2>
+          <p>تعديلات الطلب بعد الإرسال تبقى محلية حتى تضغط «إرسال التغييرات» للمطبخ، والدفع منفصل عن إنشاء الطلب.</p>
+        </div>
+        <div className="pos-counters">
+          <span>مفتوحة: {orders.length}</span>
+          <span>طاولات مشغولة: {occupiedTableIds.size}</span>
+          <span>معلّقة: {orders.filter((order) => order.status === 'held').length}</span>
+          <span>طابور KDS: {kitchenQueueCount}</span>
+        </div>
+      </div>
+
+      <div className="pos-shortcut-bar" aria-label="اختصارات شاشة البيع">
+        <span><kbd>F2</kbd> بحث/باركود</span>
+        <span><kbd>Enter</kbd> إضافة تطابق كامل</span>
+        <span><kbd>F3</kbd> طلبات/طاولات</span>
+        <span><kbd>Alt</kbd> + <kbd>↑/↓</kbd> تنقل الطلبات</span>
+        <span><kbd>Esc</kbd> مسح البحث</span>
+      </div>
+
+      {error ? <p className="error-text">{error}</p> : null}
+      {loading ? <p>جارٍ تحميل شاشة البيع…</p> : null}
+
+      {!hasShift ? (
+        <div className="prerequisite-card">
+          <strong>يجب فتح وردية قبل إنشاء طلب.</strong>
+          <p>استخدم قسم الورديات لفتح ورديتك ثم عد إلى شاشة البيع.</p>
+        </div>
+      ) : null}
+
+      {canSendKitchen && !warehouses.length ? (
+        <div className="prerequisite-card">
+          <strong>لا يوجد مخزن نشط للإرسال للمطبخ.</strong>
+          <p>أنشئ مخزنًا من قسم المخزون أولًا؛ لن يتم خصم أي مخزون بصورة عشوائية.</p>
+        </div>
+      ) : null}
+
+      <div className="pos-layout">
+        <aside className="pos-orders-panel pos-operational-panel">
+          <div className="pos-operational-tabs" role="tablist" aria-label="مساحة التشغيل">
+            <button type="button" role="tab" aria-selected={operationalView === 'orders'} className={operationalView === 'orders' ? 'active' : ''} onClick={() => setOperationalView('orders')}>الطلبات <span>{orders.length}</span></button>
+            <button type="button" role="tab" aria-selected={operationalView === 'tables'} className={operationalView === 'tables' ? 'active' : ''} onClick={() => setOperationalView('tables')}>الطاولات <span>{occupiedTableIds.size}/{tables.length}</span></button>
+          </div>
+
+          {operationalView === 'orders' ? (
+            <>
+              <div className="pos-order-filters">
+                <select aria-label="فلتر نوع الطلب" value={orderTypeFilter} onChange={(event) => setOrderTypeFilter(event.target.value as 'all' | PosOrderType)}>
+                  <option value="all">كل الأنواع</option>
+                  {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+                <select aria-label="فلتر حالة الطلب" value={orderStatusFilter} onChange={(event) => setOrderStatusFilter(event.target.value as 'all' | PosOrderStatus)}>
+                  <option value="all">كل الحالات</option>
+                  {(['created', 'held', 'sent_to_kitchen', 'preparing', 'ready', 'partially_paid', 'paid'] as PosOrderStatus[]).map((status) => <option key={status} value={status}>{orderStatusLabels[status]}</option>)}
+                </select>
+              </div>
+              <div className="plain-list pos-active-orders-list">
+                {visibleOrders.map((order) => (
+                  <button key={order.id} type="button" className={selectedOrderId === order.id ? 'selected-row' : ''} onClick={() => setSelectedOrderId(order.id)}>
+                    <span className="pos-order-card-top"><strong>#{order.order_number}</strong><span className={`pos-status-dot status-${order.status}`}>{orderStatusLabels[order.status]}</span></span>
+                    <span>{orderTypeLabels[order.order_type]}{order.guest_count > 1 ? ` · ${order.guest_count} ضيوف` : ''}</span>
+                    <strong>{order.total.toFixed(2)}</strong>
+                  </button>
+                ))}
+                {!visibleOrders.length ? <p>لا توجد طلبات مطابقة.</p> : null}
+              </div>
+            </>
+          ) : (
+            <div className="pos-floor-workspace">
+              <div className="pos-floor-filter" role="group" aria-label="فلتر المنطقة">
+                <button type="button" className={selectedFloor === 'all' ? 'active' : ''} onClick={() => setSelectedFloor('all')}>الكل</button>
+                {floorNames.map((floor) => <button key={floor} type="button" className={selectedFloor === floor ? 'active' : ''} onClick={() => setSelectedFloor(floor)}>{floor}</button>)}
+              </div>
+              <div className="pos-table-grid">
+                {visibleTables.map((table) => {
+                  const order = tableOrderByTableId.get(table.id)
+                  const occupied = Boolean(order)
+                  return (
+                    <button
+                      key={table.id}
+                      type="button"
+                      className={`pos-table-tile ${occupied ? 'occupied' : 'available'}${selectedNewTableId === table.id ? ' selected' : ''}`}
+                      onClick={() => {
+                        if (order) {
+                          setSelectedOrderId(order.id)
+                          return
+                        }
+                        if (!canCreate || !hasShift) return
+                        setNewOrderType('dine_in')
+                        setSelectedNewTableId(table.id)
+                      }}
+                    >
+                      <span className="pos-table-tile-head"><strong>{table.name}</strong><span>{occupied ? 'مشغولة' : 'متاحة'}</span></span>
+                      <small>{table.floor_name?.trim() || 'بدون منطقة'} · {table.capacity} مقاعد</small>
+                      {order ? <span>طلب #{order.order_number} · {order.guest_count} ضيوف</span> : <span>اضغط لاختيارها لطلب صالة</span>}
+                    </button>
+                  )
+                })}
+                {!visibleTables.length ? <p>لا توجد طاولات في هذه المنطقة.</p> : null}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <div className="pos-main-panel">
+          {canCreate ? (
+            <form className="pos-create-order" onSubmit={(event) => { event.preventDefault(); void handleCreateOrder(event.currentTarget) }}>
+              <label className="pos-order-field"><span>نوع الطلب</span><select name="orderType" required value={newOrderType} onChange={(event) => { const value = event.target.value as PosOrderType; setNewOrderType(value); if (value !== 'dine_in') setSelectedNewTableId('') }}>
+                {Object.entries(orderTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select></label>
+              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الطاولة</span><select name="diningTableId" value={selectedNewTableId} onChange={(event) => setSelectedNewTableId(event.target.value)} required>
+                <option value="" disabled>اختر طاولة</option>
+                {tables.map((table) => <option key={table.id} value={table.id} disabled={occupiedTableIds.has(table.id)}>{table.name} · {table.capacity} مقاعد{occupiedTableIds.has(table.id) ? ' · مشغولة' : ''}</option>)}
+              </select></label> : <div className="pos-order-context-hint">لا يحتاج هذا النوع إلى طاولة</div>}
+              {newOrderType === 'dine_in' ? <label className="pos-order-field"><span>الضيوف</span><input name="guestCount" type="number" min="1" defaultValue="1" /></label> : <input type="hidden" name="guestCount" value="1" />}
+              <button type="submit" disabled={!hasShift}>طلب جديد</button>
+            </form>
+          ) : null}
+
+          {canManageTables ? (
+            <details className="pos-table-setup">
+              <summary>إعداد طاولة</summary>
+              <form className="inline-form" onSubmit={(event) => { event.preventDefault(); void handleCreateTable(event.currentTarget) }}>
+                <input name="code" required placeholder="كود الطاولة" />
+                <input name="name" required placeholder="اسم الطاولة" />
+                <input name="floorName" placeholder="الدور/المنطقة" />
+                <input name="capacity" type="number" min="1" defaultValue="4" required />
+                <button type="submit">إضافة طاولة</button>
+              </form>
+            </details>
+          ) : null}
+
+          {selectedOrder ? (
+            <div className="active-order-card">
+              <div className="active-order-header">
+                <div>
+                  <h3>طلب #{selectedOrder.order_number}</h3>
+                  <p>{orderTypeLabels[selectedOrder.order_type]} · {orderStatusLabels[selectedOrder.status]}</p>
+                </div>
+                <strong>{selectedOrder.total.toFixed(2)}</strong>
+              </div>
+
+              <CustomerOrderContextControls order={selectedOrder} canEdit={Boolean(canEdit && editable)} onChanged={refreshOrderState} />
+              <OrderNotesControls orderId={selectedOrder.id} value={selectedOrder.notes} editable={Boolean(canEdit && ['created', 'held'].includes(selectedOrder.status))} onChanged={refreshOrderState} />
+
+              <div className="order-items-list">
+                {items.filter((item) => !item.is_removed).map((item) => (
+                  <div key={item.id} className="order-item-block">
+                    <div className="order-item-row">
+                      <span>{item.product_name}</span>
+                      <span>{item.unit_price.toFixed(2)}</span>
+                      {canEdit && editable ? (
+                        <input
+                          aria-label={`كمية ${item.product_name}`}
+                          type="number"
+                          min="0.001"
+                          step="0.001"
+                          value={item.quantity}
+                          onChange={(event) => {
+                            const quantity = Number(event.target.value)
+                            if (quantity > 0) void runAction(() => setPosOrderItemQuantity(item.id, quantity))
+                          }}
+                        />
+                      ) : <span>{item.quantity}</span>}
+                      <strong>{item.line_total.toFixed(2)}</strong>
+                      {canEdit && editable ? <button type="button" onClick={() => void runAction(() => removePosOrderItem(item.id))}>حذف</button> : null}
+                    </div>
+                    <OrderItemNotesControls orderItemId={item.id} value={item.notes} editable={Boolean(canEdit && editable && item.sent_quantity === 0)} onChanged={refreshOrderState} />
+                    <OrderItemModifierControls
+                      branchId={activeBranchId}
+                      orderItemId={item.id}
+                      productId={item.product_id}
+                      sentQuantity={item.sent_quantity}
+                      canEdit={Boolean(canEdit && editable)}
+                      onChanged={refreshOrderState}
+                    />
+                  </div>
+                ))}
+                {!items.filter((item) => !item.is_removed).length ? <p>لم تتم إضافة منتجات بعد.</p> : null}
+              </div>
+
+              <div className="pos-actions">
+                {canEdit && selectedOrder.status === 'created' ? <button type="button" onClick={() => void runAction(() => holdPosOrder(selectedOrder.id))}>تعليق</button> : null}
+                {canEdit && selectedOrder.status === 'held' ? <button type="button" onClick={() => void runAction(() => resumePosOrder(selectedOrder.id))}>استئناف</button> : null}
+                {canCancel && cancellable ? <button type="button" onClick={() => { const reason = window.prompt('سبب الإلغاء قبل المطبخ'); if (reason) void runAction(() => cancelPosOrder(selectedOrder.id, reason)) }}>إلغاء الطلب</button> : null}
+                {canVoid && voidable ? <button type="button" onClick={() => { const reason = window.prompt('سبب إلغاء الطلب بعد المطبخ (Void)'); if (reason) void runAction(async () => { await voidPosOrder(selectedOrder.id, reason) }) }}>Void بعد المطبخ</button> : null}
+
+                {canSendKitchen && kitchenSendable ? (
+                  <div className="kitchen-send-controls">
+                    <select aria-label="مخزن خصم المطبخ" value={selectedWarehouseId} onChange={(event) => setSelectedWarehouseId(event.target.value)} disabled={!warehouses.length}>
+                      {!warehouses.length ? <option value="">لا يوجد مخزن</option> : null}
+                      {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_ar}</option>)}
+                    </select>
+                    <button type="button" disabled={!selectedWarehouseId || !hasKitchenDelta} onClick={() => void runAction(async () => { await sendOrderToKitchen(selectedOrder.id, selectedWarehouseId) })}>
+                      {hasBeenSent ? 'إرسال التغييرات' : 'إرسال للمطبخ'}
+                    </button>
+                    <span className={hasKitchenDelta ? 'pending-delta' : 'synced-delta'}>
+                      {hasKitchenDelta ? 'توجد تغييرات غير مرسلة' : 'المطبخ متزامن'}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              <OrderDiscountControls
+                order={selectedOrder}
+                canApply={canDiscount}
+                paymentStarted={payments.length > 0 || ['partially_paid', 'paid', 'closed'].includes(selectedOrder.status)}
+                onChanged={refreshOrderState}
+              />
+
+              <SplitBillControls
+                order={selectedOrder}
+                items={items}
+                canSplit={canSplit}
+                canPay={canPay}
+                onChanged={refreshOrderState}
+                onSplitStateChange={setHasBillSplits}
+              />
+
+              <TableOrderControls order={selectedOrder} orders={orders} tables={tables} canTransfer={canTransfer} onChanged={refreshOrderState} />
+
+              <ReceiptControls order={selectedOrder} canPrint={canPrintReceipt} canReprint={canReprintReceipt} />
+
+              <CustomerDisplayControls order={selectedOrder} />
+
+              {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
+                <CheckoutPanel
+                  order={selectedOrder}
+                  payments={payments}
+                  paidAmount={paidAmount}
+                  remainingAmount={remainingAmount}
+                  canPay={canPay}
+                  paymentReady={Boolean(paymentReady)}
+                  hasBillSplits={hasBillSplits}
+                  canClose={canClose}
+                  takePayment={takePayment}
+                  closePaidOrder={closePaidOrder}
+                  onChanged={refreshOrderState}
+                />
+              ) : null}
+            </div>
+          ) : <p>اختر طلبًا أو أنشئ طلبًا جديدًا.</p>}
+
+          <div className="pos-products-scroll" aria-label="المنتجات">
+            <div className="pos-product-search">
+              <label>
+                <span>المنتجات</span>
+                <input
+                  ref={productSearchRef}
+                  value={productQuery}
+                  onChange={(event) => setProductQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && exactSearchProduct) {
+                      event.preventDefault()
+                      void addSearchExactProduct()
+                    }
+                  }}
+                  placeholder="اسم المنتج / SKU / Barcode"
+                  aria-label="بحث المنتجات بالاسم أو SKU أو Barcode"
+                  autoComplete="off"
+                  spellCheck={false}
+                  inputMode="search"
+                />
+              </label>
+              <kbd>F2</kbd>
+              {productQuery ? <button type="button" onClick={() => { setProductQuery(''); productSearchRef.current?.focus() }}>مسح</button> : null}
+            </div>
+
+            <div className="pos-category-strip" role="group" aria-label="تصنيفات المنتجات">
+              <button type="button" className={selectedCategoryId === 'all' ? 'active' : ''} onClick={() => setSelectedCategoryId('all')}>الكل <span>{products.length}</span></button>
+              {categories.map((category) => <button key={category.id} type="button" className={selectedCategoryId === category.id ? 'active' : ''} onClick={() => setSelectedCategoryId(category.id)}>{category.name_ar} <span>{categoryCounts.get(category.id) ?? 0}</span></button>)}
+            </div>
+
+            {availabilityError ? <p className="error-text">{availabilityError}</p> : null}
+            {availabilityLoading ? <p className="muted-text">جارٍ تحديث توافر المنتجات…</p> : null}
+
+            {visibleProducts.map((product) => {
+              const availability = availabilityByProductId.get(product.id)
+              const available = availability?.is_available === true
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  className={`product-tile${available ? '' : ' product-unavailable'}`}
+                  disabled={!selectedOrder || !canEdit || !editable || !available}
+                  onClick={() => selectedOrder && void runAction(() => addPosOrderItem(selectedOrder.id, product.id, 1).then(() => undefined))}
+                >
+                  <span className="product-tile-media">{product.image_url ? <img src={product.image_url} alt="" loading="lazy" /> : <span>{product.name_ar.slice(0, 1)}</span>}</span>
+                  <strong>{product.name_ar}</strong>
+                  <span>{product.sale_price.toFixed(2)}</span>
+                  {product.sku ? <small>{product.sku}</small> : null}
+                  <small className={available ? 'product-stock-ok' : 'product-stock-blocked'}>
+                    {available ? `متاح · ${Math.floor(availability.available_quantity)}` : (availabilityReasonLabels[availability?.reason ?? ''] ?? 'غير متاح')}
+                  </small>
+                </button>
+              )
+            })}
+            {!visibleProducts.length ? <p className="pos-products-empty">لا توجد منتجات مطابقة.</p> : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

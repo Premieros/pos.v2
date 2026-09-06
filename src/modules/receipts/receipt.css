@@ -1,0 +1,21 @@
+.receipt-controls { display: grid; gap: 12px; padding: 14px; border: 1px solid #d1d5db; border-radius: 16px; background: #f9fafb; }
+.receipt-actions { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.receipt-actions > div:first-child { display: grid; gap: 4px; }
+.receipt-actions > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
+.receipt-actions button { min-height: 42px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.receipt-print-root { display: grid; justify-content: start; }
+.receipt-paper { width: min(80mm, 100%); background: white; border: 1px dashed #d1d5db; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.receipt-paper h3, .receipt-paper p { margin: 4px 0; }
+.receipt-lines { display: grid; gap: 6px; }
+.receipt-lines > div { display: flex; justify-content: space-between; gap: 10px; }
+
+@media (max-width: 560px) {
+  .receipt-actions { align-items: stretch; flex-direction: column; }
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  .receipt-print-root, .receipt-print-root * { visibility: visible !important; }
+  .receipt-print-root { position: absolute; inset: 0; display: block; width: 80mm; }
+  .receipt-paper { width: 80mm; border: 0; padding: 4mm; }
+}

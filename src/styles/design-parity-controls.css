@@ -1,0 +1,22 @@
+/* Phase 1 — administration / printing finishing pass. Visual/layout only. */
+
+/* Administration */
+.admin-workspace{gap:9px!important;min-height:calc(100dvh - 96px)}
+.admin-workspace>.workspace-heading{min-height:50px;border-bottom:1px solid #eceef1;padding-bottom:9px!important}.admin-workspace>.workspace-heading .eyebrow{display:none!important}
+.admin-tabs{gap:4px!important;padding:4px;border:1px solid #e5e7eb;border-radius:9px;background:#f8fafc;width:max-content;max-width:100%;overflow:auto}
+.admin-tabs button{min-height:32px!important;height:32px!important;padding:4px 9px!important;border-radius:7px!important;font-size:.72rem!important;border-color:transparent!important;background:transparent!important;white-space:nowrap}.admin-tabs button.active{outline:0!important;background:#fff!important;border-color:#d8dde5!important;box-shadow:0 1px 3px rgba(16,24,40,.06)}
+.admin-grid{gap:8px!important}.admin-panel{gap:7px!important;padding:10px!important;border-radius:10px!important;box-shadow:none!important}.admin-panel h3{font-size:.84rem}.admin-panel h4{font-size:.78rem}
+.admin-form{gap:6px!important}.admin-form label{gap:3px!important;font-size:.72rem!important}.admin-form input,.admin-form select,.admin-panel>select,.permission-row select,.admin-row input{min-height:34px!important;height:34px!important;border-radius:8px!important;padding:5px 8px!important;font-size:.74rem!important}
+.admin-form button,.admin-row button,.admin-panel>button{min-height:34px!important;height:34px!important;padding:5px 9px!important;font-size:.72rem!important}
+.admin-list{gap:4px!important}.admin-row{gap:6px!important;padding:7px 8px!important;border-radius:8px!important;font-size:.72rem}.admin-row.compact{min-height:42px}
+.admin-permission-groups{gap:5px!important}.permission-row{gap:8px!important;padding:7px 8px!important;border-radius:8px!important}.permission-row strong{font-size:.72rem}.permission-row small{font-size:.66rem!important;line-height:1.3!important}.permission-row select{min-width:150px}
+.role-permission-editor{gap:6px!important;max-height:calc(100dvh - 310px)!important}.role-permission-editor fieldset{gap:5px!important;border-radius:9px!important;padding:8px!important}.role-permission-editor legend{font-size:.72rem}.role-permission-editor .admin-check{font-size:.7rem!important}.admin-check{gap:5px!important}
+
+/* Printing */
+.printing-center{gap:9px!important;min-height:calc(100dvh - 96px)}
+.printing-center>.workspace-heading{min-height:50px;border-bottom:1px solid #eceef1;padding-bottom:9px!important;align-items:center!important}.printing-center>.workspace-heading .eyebrow{display:none!important}.printing-center>.workspace-heading>span{padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;font-size:.7rem;font-weight:800}
+.printing-tabs{gap:4px!important;padding:4px;border:1px solid #e5e7eb;border-radius:9px;background:#f8fafc;width:max-content;max-width:100%}.printing-tabs button{min-height:32px!important;height:32px!important;padding:4px 9px!important;border-radius:7px!important;font-size:.72rem!important;border-color:transparent!important;background:transparent!important}.printing-tabs button.active{outline:0!important;background:#fff!important;border-color:#d8dde5!important;box-shadow:0 1px 3px rgba(16,24,40,.06)}
+.printing-form{grid-template-columns:minmax(220px,1fr) auto!important;gap:7px!important;padding:9px!important;border-radius:9px!important;background:#fafbfc!important}.printing-form label{gap:3px!important;font-size:.72rem!important}.printing-form select,.printing-form input,.printing-form button{min-height:34px!important;height:34px!important;border-radius:8px!important;padding:5px 8px!important;font-size:.74rem!important}.printing-form small{font-size:.68rem!important;line-height:1.4!important;color:#667085}
+
+@media(max-width:900px){.role-permission-editor{max-height:none!important}.admin-tabs,.printing-tabs{width:100%}.admin-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))}.printing-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:640px){.admin-tabs,.printing-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.printing-form{grid-template-columns:1fr!important}.printing-form small{grid-column:auto!important}}

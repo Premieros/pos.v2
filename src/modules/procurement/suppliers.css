@@ -1,0 +1,17 @@
+.suppliers-workspace { display: grid; gap: 18px; }
+.supplier-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.supplier-form input { min-height: 42px; border: 1px solid #d1d5db; border-radius: 10px; padding-inline: 10px; background: white; }
+.supplier-form button, .supplier-row button { min-height: 42px; border: 0; border-radius: 10px; padding-inline: 14px; background: #111827; color: white; font-weight: 700; }
+.supplier-list { display: grid; gap: 10px; }
+.supplier-row { display: grid; grid-template-columns: minmax(180px, 1.5fr) minmax(180px, 1fr) 90px auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #e5e7eb; border-radius: 14px; background: #f9fafb; }
+.supplier-row > div { display: grid; gap: 3px; }
+.supplier-row span { color: #6b7280; }
+
+@media (max-width: 900px) {
+  .supplier-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .supplier-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .supplier-form, .supplier-row { grid-template-columns: 1fr; }
+}

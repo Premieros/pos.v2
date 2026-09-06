@@ -1,0 +1,48 @@
+name: Authenticated E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed POS.V2 URL
+        required: false
+        default: https://premieros.github.io/pos.v2/
+
+permissions:
+  contents: read
+
+jobs:
+  cashier-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_CASHIER_EMAIL: ${{ secrets.E2E_CASHIER_EMAIL }}
+      E2E_CASHIER_PASSWORD: ${{ secrets.E2E_CASHIER_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Require authorized E2E credentials
+        shell: bash
+        run: |
+          test -n "$E2E_CASHIER_EMAIL" || { echo "Missing E2E_CASHIER_EMAIL secret"; exit 1; }
+          test -n "$E2E_CASHIER_PASSWORD" || { echo "Missing E2E_CASHIER_PASSWORD secret"; exit 1; }
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run authenticated POS E2E
+        run: npm run test:e2e
+      - name: Upload E2E artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

@@ -1,0 +1,75 @@
+name: Verify
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [main, development]
+
+permissions:
+  contents: read
+
+env:
+  VITE_SUPABASE_URL: https://scpovyrqmsbiduanykod.supabase.co
+  VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_r1Qbehu-uzsQo-8vOr77OQ_Tzj6K_Jm
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install --ignore-scripts
+      - name: Batch 5 regression
+        run: npm run test:batch5
+      - name: Batch 6 regression
+        run: npm run test:batch6
+      - name: Batch 7 regression
+        run: npm run test:batch7
+      - name: Batch 8 regression
+        run: npm run test:batch8
+      - name: Batch 9 regression
+        run: npm run test:batch9
+      - name: Batch 10 POS operations regression
+        run: npm run test:batch10
+      - name: Batch 11 product media storage regression
+        run: npm run test:batch11
+      - name: Batch 12 authenticated harness regression
+        run: npm run test:batch12
+      - name: Batch 13 customer workspace regression
+        run: npm run test:batch13
+      - name: Batch 14 catalog management regression
+        run: npm run test:batch14
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+        uses: actions/configure-pages@v5
+      - name: Upload GitHub Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    needs: frontend
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

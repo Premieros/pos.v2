@@ -1,0 +1,87 @@
+import { supabase } from '../../lib/supabase/client'
+
+export type KitchenTicketStatus = 'queued' | 'preparing' | 'ready' | 'completed' | 'cancelled'
+
+export type KitchenTicketItem = {
+  id: string
+  kitchen_ticket_id: string
+  order_item_id: string
+  product_name: string
+  quantity_delta: number
+  line_notes: string | null
+  modifier_summary: string | null
+}
+
+export type KitchenTicket = {
+  id: string
+  order_id: string
+  sequence_no: number
+  status: KitchenTicketStatus
+  warehouse_id: string
+  created_at: string
+  started_at: string | null
+  ready_at: string | null
+  completed_at: string | null
+  order_number: number | null
+  order_type: string | null
+  order_notes: string | null
+  items: KitchenTicketItem[]
+}
+
+export async function listKitchenTickets(branchId: string): Promise<KitchenTicket[]> {
+  const { data: tickets, error: ticketError } = await supabase
+    .from('kitchen_tickets')
+    .select('id, order_id, sequence_no, status, warehouse_id, created_at, started_at, ready_at, completed_at')
+    .eq('branch_id', branchId)
+    .in('status', ['queued', 'preparing', 'ready'])
+    .order('created_at', { ascending: true })
+
+  if (ticketError) throw ticketError
+  if (!tickets?.length) return []
+
+  const orderIds = [...new Set(tickets.map((ticket) => ticket.order_id))]
+  const [{ data: orders, error: orderError }, { data: details, error: detailError }] = await Promise.all([
+    supabase.from('orders').select('id, order_number, order_type, notes').in('id', orderIds),
+    supabase.rpc('get_kitchen_ticket_details', { p_branch_id: branchId }),
+  ])
+
+  if (orderError) throw orderError
+  if (detailError) throw detailError
+
+  const orderById = new Map((orders ?? []).map((order) => [order.id, order]))
+  const itemsByTicket = new Map<string, KitchenTicketItem[]>()
+
+  for (const detail of details ?? []) {
+    const item: KitchenTicketItem = {
+      id: detail.kitchen_ticket_item_id,
+      kitchen_ticket_id: detail.kitchen_ticket_id,
+      order_item_id: detail.order_item_id,
+      product_name: detail.product_name,
+      quantity_delta: Number(detail.quantity_delta),
+      line_notes: detail.line_notes,
+      modifier_summary: detail.modifier_summary,
+    }
+    const current = itemsByTicket.get(item.kitchen_ticket_id) ?? []
+    current.push(item)
+    itemsByTicket.set(item.kitchen_ticket_id, current)
+  }
+
+  return tickets.map((ticket) => {
+    const order = orderById.get(ticket.order_id)
+    return {
+      ...ticket,
+      order_number: order?.order_number ?? null,
+      order_type: order?.order_type ?? null,
+      order_notes: order?.notes ?? null,
+      items: itemsByTicket.get(ticket.id) ?? [],
+    } as KitchenTicket
+  })
+}
+
+export async function updateKitchenTicketStatus(ticketId: string, status: Exclude<KitchenTicketStatus, 'queued' | 'cancelled'>): Promise<void> {
+  const { error } = await supabase.rpc('update_kitchen_ticket_status', {
+    p_ticket_id: ticketId,
+    p_status: status,
+  })
+  if (error) throw error
+}

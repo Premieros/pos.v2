@@ -1,0 +1,80 @@
+/* Phase 1 — module-specific back-office design parity. Visual/layout only. */
+
+/* Grouped application navigation */
+.sidebar-nav-group{display:grid;gap:2px;padding-block:3px}
+.sidebar-nav-group+.sidebar-nav-group{border-top:1px solid #f0f1f3;margin-top:3px;padding-top:7px}
+.sidebar-nav-group-label{padding:2px 9px 4px;font-size:.62rem;font-weight:800;letter-spacing:.02em;color:#98a2b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-shell[data-sidebar-collapsed="true"] .sidebar-nav-group-label{display:none}
+.app-shell[data-sidebar-collapsed="true"] .sidebar-nav-group+.sidebar-nav-group{padding-top:5px}
+
+/* Catalog */
+.catalog-workspace{display:grid;gap:10px;min-height:calc(100dvh - 96px)}
+.catalog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #eceef1;padding-bottom:10px!important}
+.catalog-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.catalog-header-actions button{min-height:34px;height:34px;padding-inline:10px;font-size:.76rem}
+.catalog-count{padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc;font-size:.7rem;font-weight:750;color:#475467;white-space:nowrap}
+.catalog-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:10px;min-height:0;align-items:start}
+.catalog-create-rail{display:grid;gap:8px;position:sticky;inset-block-start:74px;max-height:calc(100dvh - 100px);overflow:auto}
+.catalog-form{display:grid;gap:6px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#fafbfc}
+.catalog-form h3{margin:0 0 2px;font-size:.82rem}.catalog-form input,.catalog-form select,.catalog-form button{min-height:34px;height:34px;font-size:.74rem;padding:5px 8px}
+.catalog-data-area{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1.3fr);gap:9px;min-width:0}
+.catalog-panel{min-width:0;border:1px solid #e5e7eb;border-radius:10px;background:#fff;overflow:hidden}
+.catalog-panel-heading{height:42px;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #eceef1;background:#fafbfc}
+.catalog-panel-heading h3{margin:0;font-size:.82rem}.catalog-panel-heading span{font-size:.7rem;color:#667085}
+.catalog-list{display:grid;max-height:calc(100dvh - 180px);overflow:auto}
+.catalog-list-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,.55fr) auto;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid #f0f1f3;font-size:.75rem}
+.catalog-list-row:last-child{border-bottom:0}.catalog-list-row:hover{background:#fafbfc}.catalog-list-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.catalog-list-row span{color:#667085;font-variant-numeric:tabular-nums}
+
+/* Inventory */
+.inventory-workspace,.workspace-card:has(#inventory-title){display:grid;gap:10px}
+.inventory-setup-grid,.inventory-operations-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important;gap:8px!important}
+.inventory-setup-grid .inline-form,.inventory-operations-grid .inline-form,.inventory-mapping-section .inline-form{padding:9px!important;border:1px solid #e5e7eb!important;border-radius:10px!important;background:#fafbfc!important;box-shadow:none!important;gap:6px!important}
+.inventory-setup-grid h3,.inventory-operations-grid h3,.inventory-mapping-section h3,.inventory-mapping-section h4{font-size:.82rem!important;margin:0 0 2px!important}
+.inventory-setup-grid input,.inventory-setup-grid select,.inventory-setup-grid button,.inventory-operations-grid input,.inventory-operations-grid select,.inventory-operations-grid button,.inventory-mapping-section input,.inventory-mapping-section select,.inventory-mapping-section button{min-height:34px!important;height:34px!important;font-size:.74rem!important;padding:5px 8px!important}
+.inventory-mapping-section{display:grid;gap:8px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}.inventory-mapping-section>p{font-size:.74rem;color:#667085;margin:0}
+.mapping-list{display:grid;border:1px solid #e5e7eb;border-radius:9px;overflow:hidden}.mapping-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(150px,1fr) minmax(0,1.4fr);gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f1f3;font-size:.74rem}.mapping-row:last-child{border-bottom:0}.component-chips{display:flex;flex-wrap:wrap;gap:4px}.component-chips button{min-height:28px!important;height:auto!important;padding:4px 7px!important;font-size:.68rem!important;background:#f8fafc!important;color:#344054!important;border:1px solid #e5e7eb!important}
+.inventory-balance-grid,.balance-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))!important;gap:7px!important}
+
+/* Procurement */
+.purchases-workspace{display:grid!important;gap:9px!important;min-height:calc(100dvh - 96px)}
+.purchase-create-form{display:grid!important;grid-template-columns:minmax(180px,.7fr) minmax(220px,1fr) auto!important;gap:6px!important;padding:8px!important;border:1px solid #e5e7eb!important;border-radius:9px!important;background:#fafbfc!important}
+.purchase-create-form input,.purchase-create-form select,.purchase-create-form button,.purchase-line-form input,.purchase-line-form select,.purchase-line-form button{min-height:34px!important;height:34px!important;font-size:.74rem!important;padding:5px 8px!important}
+.purchase-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:9px!important;min-height:0!important;align-items:start!important}
+.purchase-order-list{display:grid!important;gap:4px!important;max-height:calc(100dvh - 210px);overflow:auto;padding-inline-end:2px}
+.purchase-order-card{display:grid!important;gap:2px!important;text-align:start!important;min-height:64px!important;padding:8px!important;border-radius:9px!important;background:#fff!important;box-shadow:none!important;font-size:.72rem!important}
+.purchase-order-card.is-active{border-color:#98a2b3!important;background:#f0f2f5!important;outline:0!important}.purchase-order-card strong{font-size:.8rem}.purchase-order-card span{color:#667085}
+.purchase-detail{min-width:0;display:grid!important;gap:8px!important;padding:10px!important;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+.purchase-summary{display:grid!important;grid-template-columns:repeat(4,minmax(110px,1fr))!important;gap:6px!important}.purchase-summary>div{display:grid;gap:2px;padding:7px 8px;border:1px solid #e5e7eb;border-radius:8px;background:#fafbfc}.purchase-summary span{font-size:.67rem;color:#667085}.purchase-summary strong{font-size:.8rem}
+.purchase-workflow-actions{display:flex!important;gap:6px!important;align-items:center!important;flex-wrap:wrap}.purchase-workflow-actions button{min-height:34px!important;height:34px!important;font-size:.74rem!important;padding:5px 9px!important}
+.purchase-line-form{display:grid!important;grid-template-columns:minmax(180px,1fr) 110px 110px auto!important;gap:6px!important;padding:8px!important;border:1px solid #e5e7eb;border-radius:9px;background:#fafbfc}
+.purchase-lines{border:1px solid #e5e7eb!important;border-radius:9px!important;overflow:auto!important}.purchase-line{display:grid!important;grid-template-columns:minmax(170px,1.5fr) repeat(4,minmax(80px,.7fr)) minmax(80px,.6fr)!important;gap:7px!important;align-items:center;padding:8px 9px!important;border-bottom:1px solid #f0f1f3!important;font-size:.73rem!important;min-width:720px}.purchase-line:last-child{border-bottom:0!important}.purchase-line-head{position:sticky;inset-block-start:0;z-index:2;background:#f8fafc!important;font-weight:800;color:#475467}
+
+/* Generic admin/accounting/printing productization */
+.admin-panel,.printing-form,.workspace-card:has(#accounting-title),.workspace-card:has(#journals-title),.workspace-card:has(#expenses-title),.workspace-card:has(#treasury-title),.workspace-card:has(#posting-title),.workspace-card:has(#statements-title){gap:9px!important}
+.admin-row,.permission-row{padding:8px 9px!important;border-radius:9px!important;box-shadow:none!important}
+.admin-panel input,.admin-panel select,.admin-panel button,.printing-form input,.printing-form select,.printing-form button{min-height:34px!important;font-size:.74rem!important}
+
+/* Common headings are operational, not marketing-sized. */
+.catalog-workspace .workspace-heading,.purchases-workspace .workspace-heading,.workspace-card:has(#inventory-title)>.workspace-heading{min-height:48px;align-items:center!important}
+.catalog-workspace .eyebrow,.purchases-workspace .eyebrow,.workspace-card:has(#inventory-title) .eyebrow{display:none!important}
+
+@media(max-width:1180px){
+  .catalog-layout{grid-template-columns:210px minmax(0,1fr)}
+  .catalog-data-area{grid-template-columns:1fr}.catalog-list{max-height:320px}
+  .purchase-layout{grid-template-columns:190px minmax(0,1fr)!important}.purchase-summary{grid-template-columns:repeat(2,minmax(120px,1fr))!important}
+}
+
+@media(max-width:900px){
+  .catalog-layout,.purchase-layout{grid-template-columns:1fr!important}.catalog-create-rail{position:static;max-height:none;grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-data-area{grid-template-columns:1fr 1fr}.catalog-list{max-height:300px}
+  .purchase-order-list{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none!important}.purchase-summary{grid-template-columns:repeat(4,minmax(100px,1fr))!important}.purchase-create-form{grid-template-columns:1fr 1fr!important}.purchase-create-form button{grid-column:1/-1}.purchase-line-form{grid-template-columns:1fr 1fr!important}.purchase-line-form button{grid-column:1/-1}
+  .mapping-row{grid-template-columns:1fr}.component-chips{justify-content:flex-start}
+  .sidebar-nav-group-label{font-size:.66rem}
+}
+
+@media(max-width:640px){
+  .catalog-header-actions{width:100%;justify-content:flex-start}.catalog-heading{align-items:flex-start;flex-direction:column}.catalog-create-rail,.catalog-data-area{grid-template-columns:1fr}.catalog-list{max-height:none}.catalog-list-row{grid-template-columns:minmax(0,1fr) auto}.catalog-list-row span:nth-child(2){display:none}
+  .purchase-order-list{grid-template-columns:1fr 1fr}.purchase-summary{grid-template-columns:1fr 1fr!important}.purchase-create-form,.purchase-line-form{grid-template-columns:1fr!important}.purchase-create-form button,.purchase-line-form button{grid-column:auto}
+  .inventory-setup-grid,.inventory-operations-grid{grid-template-columns:1fr!important}
+}
+
+@media(max-width:420px){.purchase-order-list,.purchase-summary{grid-template-columns:1fr!important}.catalog-count{display:none}}
