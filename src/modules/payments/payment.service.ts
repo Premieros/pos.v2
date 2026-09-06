@@ -27,7 +27,10 @@ export async function listOrderPayments(orderId: string): Promise<OrderPayment[]
     .order('created_at')
 
   if (paymentError) throw paymentError
-  return (payments ?? []) as OrderPayment[]
+  return (payments ?? []).map((payment) => ({
+    ...payment,
+    amount: Number(payment.amount),
+  })) as OrderPayment[]
 }
 
 export async function takePayment(input: { orderId: string; method: PaymentMethod; amount: number }): Promise<string> {
