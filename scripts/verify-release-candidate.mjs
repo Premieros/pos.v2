@@ -35,6 +35,7 @@ for (const path of [
   'scripts/verify-batch10.mjs',
   'scripts/verify-batch11.mjs',
   'scripts/verify-batch12.mjs',
+  'scripts/verify-batch13.mjs',
   'playwright.config.mjs',
   'e2e/authenticated-pos.spec.mjs',
   '.github/workflows/e2e.yml',
@@ -46,7 +47,7 @@ for (const path of [
 ]) read(path)
 
 const packageJson = JSON.parse(read('package.json'))
-for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9', 'test:batch10', 'test:batch11', 'test:batch12', 'test:e2e']) {
+for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9', 'test:batch10', 'test:batch11', 'test:batch12', 'test:batch13', 'test:e2e']) {
   if (!packageJson.scripts?.[script]) throw new Error(`Missing regression script: ${script}`)
 }
 
@@ -66,7 +67,7 @@ if (!client.includes('VITE_SUPABASE_URL') || !client.includes('VITE_SUPABASE_PUB
 }
 
 const app = read('src/app/App.tsx')
-for (const marker of ['GuidedSetupBanner', 'PrintingCenterPage', 'AdminPage', 'ReportsPage', 'ShiftsPage']) {
+for (const marker of ['GuidedSetupBanner', 'PrintingCenterPage', 'AdminPage', 'ReportsPage', 'ShiftsPage', 'CustomersPage']) {
   if (!app.includes(marker)) throw new Error(`App shell lost required module integration: ${marker}`)
 }
 
