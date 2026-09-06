@@ -21,6 +21,13 @@ export type PosProductAvailability = {
   reason: 'available' | 'out_of_stock' | 'insufficient_components' | 'inventory_mapping_required' | 'warehouse_unavailable' | 'permission_denied' | string
 }
 
+type PosProductAvailabilityRow = {
+  product_id: string
+  available_quantity: number | string | null
+  is_available: boolean | null
+  reason: string | null
+}
+
 export type PosCategory = {
   id: string
   name_ar: string
@@ -107,11 +114,12 @@ export async function listPosProductAvailability(branchId: string, warehouseId: 
     p_warehouse_id: warehouseId,
   })
   if (error) throw error
-  return (data ?? []).map((row) => ({
-    ...row,
-    available_quantity: Number(row.available_quantity),
+  return ((data ?? []) as PosProductAvailabilityRow[]).map((row) => ({
+    product_id: row.product_id,
+    available_quantity: Number(row.available_quantity ?? 0),
     is_available: Boolean(row.is_available),
-  })) as PosProductAvailability[]
+    reason: row.reason ?? 'unavailable',
+  }))
 }
 
 export async function listPosCategories(branchId: string): Promise<PosCategory[]> {
