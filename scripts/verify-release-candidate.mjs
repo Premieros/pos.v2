@@ -36,6 +36,7 @@ for (const path of [
   'scripts/verify-batch11.mjs',
   'scripts/verify-batch12.mjs',
   'scripts/verify-batch13.mjs',
+  'scripts/verify-batch14.mjs',
   'playwright.config.mjs',
   'e2e/authenticated-pos.spec.mjs',
   '.github/workflows/e2e.yml',
@@ -44,10 +45,11 @@ for (const path of [
   'supabase/migrations/20260905202048_guided_initial_setup_state.sql',
   'supabase/migrations/20260905202507_idempotent_shift_close_for_offline_queue.sql',
   'supabase/migrations/20260906095717_product_media_storage_bucket.sql',
+  'supabase/migrations/20260906102500_catalog_product_category_management.sql',
 ]) read(path)
 
 const packageJson = JSON.parse(read('package.json'))
-for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9', 'test:batch10', 'test:batch11', 'test:batch12', 'test:batch13', 'test:e2e']) {
+for (const script of ['test:batch5', 'test:batch6', 'test:batch7', 'test:batch8', 'test:batch9', 'test:batch10', 'test:batch11', 'test:batch12', 'test:batch13', 'test:batch14', 'test:e2e']) {
   if (!packageJson.scripts?.[script]) throw new Error(`Missing regression script: ${script}`)
 }
 
