@@ -13,6 +13,7 @@ import './styles/design-parity.css'
 import './styles/design-parity-backoffice.css'
 import './styles/design-parity-operations.css'
 import './styles/design-parity-controls.css'
+import './styles/pos-phase2.css'
 
 const root = document.getElementById('root')
 
