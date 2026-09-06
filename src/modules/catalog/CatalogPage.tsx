@@ -77,65 +77,83 @@ export function CatalogPage() {
   }
 
   return (
-    <section className="workspace" aria-labelledby="catalog-title">
-      <div className="workspace-header">
+    <section className="workspace-card catalog-workspace" aria-labelledby="catalog-title">
+      <div className="workspace-heading catalog-heading">
         <div>
           <p className="eyebrow">Catalog</p>
           <h2 id="catalog-title">الكتالوج</h2>
+          <p>إدارة المنتجات والتصنيفات المستخدمة في البيع ضمن مساحة عمل واحدة واضحة.</p>
         </div>
-        <button type="button" onClick={() => void refresh()} disabled={loading}>تحديث</button>
+        <div className="catalog-header-actions">
+          <span className="catalog-count">{categories.length} تصنيف</span>
+          <span className="catalog-count">{products.length} منتج</span>
+          <button type="button" onClick={() => void refresh()} disabled={loading}>تحديث</button>
+        </div>
       </div>
 
       {error ? <p className="error-text">{error}</p> : null}
+      {loading ? <p className="muted-text">جارٍ تحميل الكتالوج…</p> : null}
 
-      {mayManage ? (
-        <div className="form-grid">
-          <form className="card compact-card" onSubmit={handleCategorySubmit}>
-            <h3>إضافة تصنيف</h3>
-            <input name="code" placeholder="الكود" required />
-            <input name="nameAr" placeholder="الاسم بالعربية" required />
-            <input name="nameEn" placeholder="الاسم بالإنجليزية" />
-            <button type="submit">حفظ التصنيف</button>
-          </form>
+      <div className="catalog-layout">
+        {mayManage ? (
+          <aside className="catalog-create-rail" aria-label="إضافة عناصر للكتالوج">
+            <form className="catalog-form" onSubmit={handleCategorySubmit}>
+              <h3>إضافة تصنيف</h3>
+              <input name="code" placeholder="الكود" required />
+              <input name="nameAr" placeholder="الاسم بالعربية" required />
+              <input name="nameEn" placeholder="الاسم بالإنجليزية" />
+              <button type="submit">حفظ التصنيف</button>
+            </form>
 
-          <form className="card compact-card" onSubmit={handleProductSubmit}>
-            <h3>إضافة منتج</h3>
-            <select name="categoryId" defaultValue="">
-              <option value="">بدون تصنيف</option>
-              {categories.filter((category) => category.is_active).map((category) => (
-                <option key={category.id} value={category.id}>{category.name_ar}</option>
-              ))}
-            </select>
-            <input name="sku" placeholder="SKU" />
-            <input name="barcode" placeholder="Barcode" />
-            <input name="nameAr" placeholder="الاسم بالعربية" required />
-            <input name="nameEn" placeholder="الاسم بالإنجليزية" />
-            <input name="salePrice" type="number" min="0" step="0.01" placeholder="سعر البيع" required />
-            <button type="submit">حفظ المنتج</button>
-          </form>
+            <form className="catalog-form" onSubmit={handleProductSubmit}>
+              <h3>إضافة منتج</h3>
+              <select name="categoryId" defaultValue="">
+                <option value="">بدون تصنيف</option>
+                {categories.filter((category) => category.is_active).map((category) => (
+                  <option key={category.id} value={category.id}>{category.name_ar}</option>
+                ))}
+              </select>
+              <input name="sku" placeholder="SKU" />
+              <input name="barcode" placeholder="Barcode" />
+              <input name="nameAr" placeholder="الاسم بالعربية" required />
+              <input name="nameEn" placeholder="الاسم بالإنجليزية" />
+              <input name="salePrice" type="number" min="0" step="0.01" placeholder="سعر البيع" required />
+              <button type="submit">حفظ المنتج</button>
+            </form>
+          </aside>
+        ) : null}
+
+        <div className="catalog-data-area">
+          <section className="catalog-panel">
+            <div className="catalog-panel-heading"><h3>التصنيفات</h3><span>{categories.length}</span></div>
+            {categories.length === 0 ? <p className="muted-text">لا توجد تصنيفات بعد.</p> : (
+              <div className="catalog-list" role="list">
+                {categories.map((category) => (
+                  <div className="catalog-list-row" role="listitem" key={category.id}>
+                    <strong>{category.name_ar}</strong>
+                    <span>{category.code}</span>
+                    <span>{category.is_active ? 'نشط' : 'متوقف'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="catalog-panel catalog-products-panel">
+            <div className="catalog-panel-heading"><h3>المنتجات</h3><span>{products.length}</span></div>
+            {products.length === 0 ? <p className="muted-text">لا توجد منتجات بعد.</p> : (
+              <div className="catalog-list catalog-product-list" role="list">
+                {products.map((product) => (
+                  <div className="catalog-list-row" role="listitem" key={product.id}>
+                    <strong>{product.name_ar}</strong>
+                    <span>{product.sku || '—'}</span>
+                    <span>{product.sale_price.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-      ) : null}
-
-      <div className="form-grid">
-        <section className="card compact-card">
-          <h3>التصنيفات</h3>
-          {categories.length === 0 ? <p>لا توجد تصنيفات بعد.</p> : (
-            <ul className="plain-list">
-              {categories.map((category) => <li key={category.id}>{category.name_ar}</li>)}
-            </ul>
-          )}
-        </section>
-
-        <section className="card compact-card">
-          <h3>المنتجات</h3>
-          {products.length === 0 ? <p>لا توجد منتجات بعد.</p> : (
-            <ul className="plain-list">
-              {products.map((product) => (
-                <li key={product.id}>{product.name_ar} — {product.sale_price.toFixed(2)}</li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
     </section>
   )
