@@ -12,6 +12,7 @@ import './styles/final-ui.css'
 import './styles/design-parity.css'
 import './styles/design-parity-backoffice.css'
 import './styles/design-parity-operations.css'
+import './styles/design-parity-controls.css'
 
 const root = document.getElementById('root')
 
