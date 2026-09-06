@@ -140,18 +140,73 @@ Transactional DEMO smoke test (rolled back, no temporary order persisted):
 
 Review note: initial smoke used the DEMO kitchen warehouse and correctly failed because that warehouse has zero cheese/beef. We did not fabricate stock to make the test pass. The successful smoke used the DEMO main warehouse where the actual inventory balances exist.
 
+### Pass 2.6 — Product media + stock availability + notes + checkout ✅ VERIFIED
+Live migrations on locked project `scpovyrqmsbiduanykod`:
+- `20260906074952_product_media_and_pos_availability`
+- `20260906075434_kds_modifier_and_notes_projection`
+- `20260906080525_standardize_customer_modifier_rls_branch_helper`
+
+Product media:
+- Added `products.image_url` with bounded URL length.
+- Image mutation uses `update_product_image_url` RPC guarded by `catalog.manage`.
+- Catalog now contains a real media management panel with image/fallback preview.
+- POS product tiles display image or deterministic fallback initial.
+- This pass provides URL-backed product media; binary Storage upload is not falsely claimed and can be productized later if required.
+
+Warehouse availability:
+- New `get_pos_product_availability(branch, warehouse)` server projection guarded by `pos.view`.
+- Direct-stock products use their inventory-item balance.
+- BOM products use the limiting component quantity (`min(stock / component quantity)`).
+- Missing inventory mapping, zero stock, insufficient components and unavailable warehouse return explicit states.
+- POS disables unavailable products and displays real availability quantity/reason for the selected warehouse.
+- Availability is proactive UX only; `send_order_to_kitchen` remains the authoritative concurrency/stock guard.
+- Authenticated DEMO smoke returned all seven products with real warehouse-derived quantities.
+
+Notes + KDS:
+- Added server commands for order notes and line notes guarded by `pos.order.edit`.
+- Order notes lock after first kitchen send; line notes lock after their first send, preserving exact KDS lineage.
+- KDS detail projection now displays line notes and modifier snapshot summary.
+- KDS ticket also shows the order-level note.
+- Transactional authenticated DEMO smoke confirmed KDS received `كلاسيك برجر`, modifiers `جبنة إضافية، متوسط`, line note `بدون صوص على السطر`, and order note `بدون بصل على الطلب`; transaction rolled back.
+
+Runtime review fix:
+- Authenticated smoke exposed that newly introduced Customer/Modifier SELECT policies used `user_may_access_branch(branch,user)` directly while authenticated had no EXECUTE on that broader helper.
+- We did **not** grant the broader helper to authenticated.
+- Migration `20260906080525` standardized these policies on the established `current_user_may_access_branch(branch)` helper already used by the rest of POS.V2.
+- This repaired Customer + Modifier direct reads under RLS while keeping the narrower session-scoped authorization model.
+
+Checkout/payment productization:
+- Added `CheckoutPanel` and replaced the old inline payment form in POS.
+- Current contract remains Cash/Card only; Transfer/Credit were not invented.
+- Supports repeated partial payments / split tender through the existing atomic `take_payment` contract.
+- Cash UI separates applied payment amount from cash received and calculates customer change without over-posting the order payment.
+- Quick full/half/quarter amount controls and clearer paid/remaining/history states added.
+- Split-bill orders continue collecting through split controls to avoid duplicate collection paths.
+- Payment numeric values are normalized with `Number()` before totals, preventing PostgreSQL numeric-string concatenation in frontend reductions.
+- Transactional DEMO payment smoke: total 35.00 → cash 10.00 + card 25.00 → allocated 35.00 and order status `paid` ✅; rolled back.
+
+Verification checkpoint after full POS checkout integration: `6cde7679b37641aea8d0963496eef8f4e02ffe25`
+- CI #346 ✅
+- Verify #750 ✅
+- Release Guard #190 ✅
+
+Advisor gate after DDL:
+- Security: no new finding; only existing external Auth warning `Leaked Password Protection Disabled`.
+- Performance: expected unused-index INFO only; no new warning/error was introduced.
+
 ### Phase 2 UX layer ✅
 - `src/styles/pos-phase2.css` remains the isolated POS functional UX layer.
 - Search/F2/Clear + labeled order controls + active order cards + categories/filters + responsive fallbacks are independent from business authorization.
 - Modifier UI is isolated in `src/modules/modifiers/modifiers.css` and does not move permission/business rules into layout.
+- Checkout uses `src/styles/payments.css` and the existing payment service rather than duplicating payment business logic.
 
 ## Current parallel execution — NEXT GROUP
-1. Product Images + Availability contract review and implementation.
-2. POS product tiles: image/fallback/available/unavailable states and stock-aware disable behavior.
-3. Order + line notes contract/UI and KDS visibility review.
-4. Checkout workspace refinement: split tender + cash received/change + numeric keypad UX over server contracts.
-5. Active Orders / Floor / Tables operational UX refinement.
-6. Re-run cashier E2E against persistent DEMO after each accepted pass.
+1. Active Orders operational drawer/panel refinement.
+2. Floor / Tables workspace refinement: occupancy, guests, transfer/merge discoverability.
+3. Product media storage/upload productization decision; current URL-backed media remains valid.
+4. POS keyboard/touch workflow and scanner polish.
+5. Full five-order-type cashier E2E on persistent DEMO, including Delivery + Drive Thru prerequisites.
+6. Recheck split bill + receipt + customer display interactions after Checkout replacement.
 7. Continue Security + Performance Advisor review after every DDL batch.
 
 ## Current 10-stage roadmap
