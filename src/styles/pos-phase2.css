@@ -1,0 +1,34 @@
+/* Phase 2 POS functional UX — uses existing POS contracts only. */
+
+/* Replace the Phase 1 pseudo catalog label with a real sticky search toolbar. */
+.pos-products-scroll{padding:0 10px 10px!important;grid-auto-rows:96px!important}
+.pos-products-scroll::before{display:none!important;content:none!important}
+.pos-product-search{grid-column:1/-1;position:sticky;inset-block-start:0;z-index:8;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:end;padding:9px 2px 8px;background:rgba(245,246,248,.98);border-bottom:1px solid #e5e7eb;backdrop-filter:blur(10px)}
+.pos-product-search label{display:grid;gap:3px;min-width:0}.pos-product-search label>span{font-size:.7rem;font-weight:800;color:#475467}.pos-product-search input{height:34px!important;min-height:34px!important;padding:5px 9px!important;border-radius:8px!important;font-size:.76rem!important;background:#fff!important}
+.pos-product-search kbd{align-self:end;height:34px;display:grid;place-items:center;padding-inline:9px;border:1px solid #d0d5dd;border-bottom-width:2px;border-radius:7px;background:#fff;color:#475467;font:700 .68rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+.pos-product-search button{align-self:end;height:34px!important;min-height:34px!important;padding-inline:9px!important;font-size:.7rem!important;background:#fff!important;color:#344054!important;border:1px solid #d0d5dd!important}
+.pos-products-empty{grid-column:1/-1;margin:18px 4px!important;padding:18px;border:1px dashed #d0d5dd;border-radius:9px;background:#fff;color:#667085;text-align:center;font-size:.76rem}
+.product-tile small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem;color:#98a2b3}
+
+/* Order-start controls now have real labels instead of bare inputs. */
+.pos-create-order{align-items:end!important}
+.pos-order-field{display:grid;gap:3px;min-width:0;color:#475467;font-size:.66rem;font-weight:800}
+.pos-order-field>span{padding-inline:2px;white-space:nowrap}
+.pos-order-field input,.pos-order-field select{width:100%!important;margin:0!important}
+.pos-create-order>button{align-self:end}
+
+/* Active orders are scannable mini cards instead of one long sentence. */
+.pos-orders-panel .plain-list button{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:2px 6px!important;align-items:center!important}
+.pos-orders-panel .plain-list button strong{font-size:.76rem;line-height:1.2}
+.pos-orders-panel .plain-list button span{font-size:.66rem;color:#667085;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pos-orders-panel .plain-list button span:last-child{grid-column:2;grid-row:1;font-weight:800;color:#344054;font-variant-numeric:tabular-nums}
+
+@media(max-width:720px){
+  .pos-product-search{grid-template-columns:minmax(0,1fr) auto}.pos-product-search button{grid-column:1/-1;width:100%}.pos-product-search kbd{display:none}
+  .pos-create-order{grid-template-columns:1fr 1fr!important}.pos-create-order>button{min-height:42px!important;height:42px!important}
+}
+
+@media(max-width:460px){
+  .pos-create-order{grid-template-columns:1fr!important}.pos-order-field{width:100%}
+  .pos-product-search{grid-template-columns:1fr}.pos-product-search button{grid-column:auto}.pos-product-search input{height:40px!important;min-height:40px!important}
+}
