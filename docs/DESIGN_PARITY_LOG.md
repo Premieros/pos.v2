@@ -27,7 +27,7 @@ Reference: `Premieros/johna-s` — READ ONLY
 - Tablet/mobile fallbacks were added so the fixed desktop workspace does not create inaccessible content.
 - Back-office table density baseline was tightened without changing feature logic.
 
-## 2026-09-06 — Parallel execution pass
+## 2026-09-06 — Parallel execution pass A
 
 ### KDS / Operations track
 - KDS now uses an operational canvas instead of a generic admin-page composition.
@@ -37,7 +37,7 @@ Reference: `Premieros/johna-s` — READ ONLY
 - Status-specific action emphasis is visual only; existing ticket state transitions and permission checks remain unchanged.
 - KDS grid receives desktop fixed-workspace behavior and tablet/mobile fallbacks.
 
-### Back-office track
+### Reports / Back-office track
 - Reports filters were converted visually to a compact toolbar instead of tall form blocks.
 - Report selector became a denser navigation rail on desktop and compact grid on smaller screens.
 - Report result cards, totals, actions and table cells were compressed for information density.
@@ -49,23 +49,52 @@ Reference: `Premieros/johna-s` — READ ONLY
 - Preserved logical-direction properties (`inline-start`, `inline-end`) rather than physical left/right assumptions.
 - POS, KDS and Reports now degrade from fixed operational layouts to accessible stacked layouts below operational desktop widths.
 
+## 2026-09-06 — Parallel execution pass B
+
+### Grouped navigation
+- Reworked the sidebar into permission-preserving groups: Home, Sales, Operations, Inventory & Procurement, Finance & Reports, System.
+- No permission key or visibility rule was replaced; grouping only changes presentation and ordering.
+- Collapsed desktop sidebar hides group labels while retaining the same permitted links.
+- Mobile navigation keeps group labels and remains drawer-based.
+
+### Catalog track
+- Rebuilt Catalog presentation into a productized workspace rather than four equal stacked cards.
+- Added compact header counters and refresh action.
+- Management forms moved into a dedicated create rail.
+- Categories and products now use dense list panels with structured columns and independent scroll behavior.
+- Existing create/list service calls and permission checks remain unchanged.
+
+### Inventory / Procurement track
+- Added a module-specific parity layer for Inventory and Purchases.
+- Inventory setup, BOM mapping and movement forms use compact operational cards.
+- Mapping rows and component actions were normalized into table-like rows.
+- Purchase Orders now use list + detail workspace composition with compact summary cards, workflow actions and line table.
+- Desktop/tablet/mobile fallbacks added for catalog, inventory and procurement layouts.
+
+### Accounting / Admin / Printing track
+- Added compact shared controls for Admin, Accounting and Printing surfaces without changing their business actions.
+- Common operational headings/forms/tables now follow the same density system as Reports and Procurement.
+
 ### Current implementation checkpoint
-Parallel design commit: `d2d56dde2e99af7619b625576a28a76ee50af03a`.
-No DDL, Supabase mutation or reference-project write occurred.
+- Parallel visual core: `d2d56dde2e99af7619b625576a28a76ee50af03a`
+- Catalog productization: `6347af6fa5222353387bd095d490efc85a0502a1`
+- Back-office parity layer enabled: `43f9bde912a2329bcf49ec005f955e9fc8af3ad2`
+- Grouped navigation + styling checkpoint: `0742a380a72defb2f95d31fb08e89804c4cb0f5a`
+
+No DDL, Supabase mutation or reference-project write occurred in these design passes.
 
 ### Phase 1 status
 - 1.1 Design inventory: IN PROGRESS
-- 1.2 Global App Shell: PARTIAL — density/layout baseline implemented; grouped navigation still pending
-- 1.3 Global Design System: IN PROGRESS — parity layer now covers shell, POS, KDS, reports and common back-office surfaces
-- 1.4 POS visual clone: IN PROGRESS — primary desktop/tablet/mobile composition implemented
-- 1.5 KDS / Operations visual parity: IN PROGRESS — KDS primary composition implemented; broader operations screens still pending
-- 1.6 Back-office visual parity: IN PROGRESS — reports/common baseline implemented; Catalog/Inventory/Procurement/Accounting/Admin module-specific passes remain
+- 1.2 Global App Shell: IN PROGRESS — density + grouped navigation implemented; final acceptance sweep remains
+- 1.3 Global Design System: IN PROGRESS — shell/POS/KDS/reports/catalog/inventory/procurement/common admin surfaces covered
+- 1.4 POS visual clone: IN PROGRESS — primary desktop/tablet/mobile composition implemented; visual acceptance still required
+- 1.5 KDS / Operations visual parity: IN PROGRESS — KDS primary composition implemented; shifts/operations finishing pass remains
+- 1.6 Back-office visual parity: IN PROGRESS — Catalog/Inventory/Procurement/Reports covered; Accounting/Admin/Printing finishing audit remains
 - 1.7 Design acceptance gate: PENDING
 
 ## Next parallel execution
-1. Verify the current parallel pass and fix any regression immediately.
-2. Group navigation visually/structurally without touching permission semantics.
-3. Continue module-specific parity for Catalog + Inventory + Procurement in parallel.
-4. Continue Accounting + Admin + Printing/Reports finishing pass in parallel.
-5. Run desktop/tablet/mobile + RTL/LTR acceptance sweep.
-6. Keep this log updated after every accepted pass.
+1. Verify current HEAD and repair any CI/Typecheck/Build regression immediately.
+2. Finish Shifts/Operations visual pass.
+3. Audit Accounting/Admin/Printing module-specific compositions and patch remaining inconsistencies.
+4. Run desktop/tablet/mobile + RTL/LTR acceptance sweep.
+5. Mark Phase 1 complete only after the acceptance gate is green; then begin Phase 2 functional POS completion.
