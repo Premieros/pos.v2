@@ -4,6 +4,7 @@ import { CustomerDisplayControls } from '../customer-display/CustomerDisplayCont
 import { CustomerOrderContextControls } from '../customers/CustomerOrderContextControls'
 import { OrderDiscountControls } from '../discounts/OrderDiscountControls'
 import { OrderItemModifierControls } from '../modifiers/OrderItemModifierControls'
+import { CheckoutPanel } from '../payments/CheckoutPanel'
 import { usePayments } from '../payments/usePayments'
 import { usePermissions } from '../permissions/usePermissions'
 import { ReceiptControls } from '../receipts/ReceiptControls'
@@ -254,17 +255,6 @@ export function PosPage() {
     })
   }
 
-  async function handlePayment(form: HTMLFormElement) {
-    if (!selectedOrder) return
-    const data = new FormData(form)
-    const method = String(data.get('method')) as 'cash' | 'card'
-    const amount = Number(data.get('amount'))
-    await runAction(async () => {
-      await takePayment(method, amount)
-      form.reset()
-    })
-  }
-
   const editable = selectedOrder && ['created', 'held', 'sent_to_kitchen', 'preparing'].includes(selectedOrder.status)
   const cancellable = selectedOrder && ['created', 'held'].includes(selectedOrder.status)
   const voidable = selectedOrder && ['sent_to_kitchen', 'preparing', 'ready'].includes(selectedOrder.status) && payments.length === 0
@@ -463,36 +453,19 @@ export function PosPage() {
               <CustomerDisplayControls order={selectedOrder} />
 
               {(canPay && paymentReady) || payments.length || selectedOrder.status === 'paid' ? (
-                <div className="payment-card">
-                  <div className="payment-summary">
-                    <span>الإجمالي: <strong>{selectedOrder.total.toFixed(2)}</strong></span>
-                    <span>المدفوع: <strong>{paidAmount.toFixed(2)}</strong></span>
-                    <span>المتبقي: <strong>{remainingAmount.toFixed(2)}</strong></span>
-                  </div>
-
-                  {payments.length ? (
-                    <div className="payment-history">
-                      {payments.map((payment) => <span key={payment.id}>{payment.method === 'cash' ? 'نقدي' : 'بطاقة'} · {payment.amount.toFixed(2)}</span>)}
-                    </div>
-                  ) : null}
-
-                  {hasBillSplits && paymentReady ? <p className="muted-text">يتم التحصيل من الفواتير المقسمة أعلاه.</p> : null}
-
-                  {canPay && paymentReady && !hasBillSplits ? (
-                    <form className="payment-form" onSubmit={(event) => { event.preventDefault(); void handlePayment(event.currentTarget) }}>
-                      <select name="method" defaultValue="cash" aria-label="طريقة الدفع">
-                        <option value="cash">نقدي</option>
-                        <option value="card">بطاقة</option>
-                      </select>
-                      <input name="amount" type="number" min="0.01" step="0.01" max={remainingAmount} defaultValue={remainingAmount > 0 ? remainingAmount.toFixed(2) : ''} required aria-label="مبلغ الدفع" />
-                      <button type="submit" disabled={remainingAmount <= 0}>تحصيل</button>
-                    </form>
-                  ) : null}
-
-                  {canClose && selectedOrder.status === 'paid' ? (
-                    <button type="button" onClick={() => void runAction(async () => { await closePaidOrder() })}>إغلاق الطلب</button>
-                  ) : null}
-                </div>
+                <CheckoutPanel
+                  order={selectedOrder}
+                  payments={payments}
+                  paidAmount={paidAmount}
+                  remainingAmount={remainingAmount}
+                  canPay={canPay}
+                  paymentReady={Boolean(paymentReady)}
+                  hasBillSplits={hasBillSplits}
+                  canClose={canClose}
+                  takePayment={takePayment}
+                  closePaidOrder={closePaidOrder}
+                  onChanged={refreshOrderState}
+                />
               ) : null}
             </div>
           ) : <p>اختر طلبًا أو أنشئ طلبًا جديدًا.</p>}
