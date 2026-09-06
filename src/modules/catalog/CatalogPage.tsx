@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useBranch } from '../branches/useBranch'
+import { ModifierCatalogPanel } from '../modifiers/ModifierCatalogPanel'
+import '../modifiers/modifiers.css'
 import { usePermissions } from '../permissions/usePermissions'
 import {
   createCategory,
@@ -82,7 +84,7 @@ export function CatalogPage() {
         <div>
           <p className="eyebrow">Catalog</p>
           <h2 id="catalog-title">الكتالوج</h2>
-          <p>إدارة المنتجات والتصنيفات المستخدمة في البيع ضمن مساحة عمل واحدة واضحة.</p>
+          <p>إدارة المنتجات والتصنيفات والإضافات المستخدمة في البيع ضمن مساحة عمل واحدة واضحة.</p>
         </div>
         <div className="catalog-header-actions">
           <span className="catalog-count">{categories.length} تصنيف</span>
@@ -153,6 +155,8 @@ export function CatalogPage() {
               </div>
             )}
           </section>
+
+          {currentBranchId ? <ModifierCatalogPanel branchId={currentBranchId} products={products} mayManage={mayManage} /> : null}
         </div>
       </div>
     </section>
